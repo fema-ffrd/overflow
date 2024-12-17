@@ -1,0 +1,38 @@
+{
+	"name": "overflow-devcontainer",
+	"build": {
+		"dockerfile": "Dockerfile",
+		"context": ".."
+	},
+	"features": {
+		"ghcr.io/devcontainers/features/git:1": {},
+		"ghcr.io/mamba-org/devcontainer-features/micromamba:1": {
+			"envFile": "/tmp/env.yaml",
+			"envName": "overflow",
+			"autoActivate": true,
+			"version": "1.5.6"
+		},
+		"ghcr.io/devcontainers/features/aws-cli:1": {}
+	},
+	"runArgs": [
+		"--gpus",
+		"all"
+	],
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-python.python",
+				"ms-python.pylint",
+				"GitHub.copilot",
+				"ms-python.black-formatter"
+			],
+			"settings": {
+				"python.defaultInterpreterPath": "/opt/conda/envs/overflow/bin/python"
+			}
+		}
+	},
+	"postCreateCommand": "sudo chown -R vscode:vscode ${containerWorkspaceFolder}",
+	// start the dev container with the overflow environment activated
+	// avoid dubious ownership of the workspace folder https://www.kenmuse.com/blog/avoiding-dubious-ownership-in-dev-containers/
+	"postStartCommand": "micromamba shell init --shell=bash && echo 'micromamba activate overflow' >> ~/.bashrc && git config --global --add safe.directory ${containerWorkspaceFolder}"
+}

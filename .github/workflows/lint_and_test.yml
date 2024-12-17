@@ -1,0 +1,28 @@
+name: Lint and Test
+
+on: [pull_request]
+
+jobs:
+  test:
+    name: Lint and Test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11"]
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - uses: mamba-org/setup-micromamba@v1
+        with:
+          environment-file: ./env.yaml
+          cache-environment-key: environment-dev
+          cache-downloads-key: downloads-dev
+          environment-name: ci
+
+      - name: Run pylint and pytest
+        shell: bash -el {0}
+        run: |
+          pylint --fail-under=9 --fail-on=E ./src* ./tests*
+          pytest -k "not cuda"
