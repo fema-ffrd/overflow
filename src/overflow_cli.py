@@ -1,4 +1,5 @@
 import os
+import subprocess
 import click
 import numpy as np
 from osgeo import gdal
@@ -736,6 +737,51 @@ def process_dem_cli(
         console.print(
             f"[bold red]Error:[/bold red] process_dem failed with the following exception: {str(exc)}"
         )
+        raise click.Abort()
+
+
+@main.command(name="test")
+@click.option(
+    "--all",
+    "run_all",
+    help="Run all tests including CUDA tests",
+    is_flag=True,
+)
+@click.argument("pytest_args", nargs=-1, type=click.UNPROCESSED)
+def test_cli(run_all: bool, pytest_args: tuple):
+    """
+    Run pytest tests. By default, excludes CUDA tests with -k "not cuda".
+    Use --all to run all tests including CUDA tests.
+    Additional pytest arguments can be passed after the command options.
+
+    Examples:
+        overflow test                    # Run tests excluding CUDA
+        overflow test --all              # Run all tests including CUDA
+        overflow test tests/             # Run specific test directory
+        overflow test -v                 # Run with verbose output
+    """
+    try:
+        cmd = ["pytest"]
+
+        # Add -k "not cuda" flag by default unless --all is specified
+        if not run_all:
+            cmd.extend(["-k", "not cuda"])
+
+        # Add any additional pytest arguments
+        if pytest_args:
+            cmd.extend(pytest_args)
+
+        # Run pytest
+        result = subprocess.run(cmd, cwd=os.getcwd())
+
+        # Exit with the same code as pytest
+        raise SystemExit(result.returncode)
+
+    except FileNotFoundError:
+        print("Error: pytest not found. Make sure pytest is installed.")
+        raise click.Abort()
+    except Exception as exc:
+        print(f"test command failed with the following exception: {str(exc)}")
         raise click.Abort()
 
 
