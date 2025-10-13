@@ -536,6 +536,7 @@ def extract_streams_cli(
     "--da_sqmi",
     help="minimum drainage area in square miles for stream extraction",
     default=1,
+    type=float,
 )
 @click.option(
     "--basins",

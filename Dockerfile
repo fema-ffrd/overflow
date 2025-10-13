@@ -12,4 +12,6 @@ COPY pytest.ini /app/pytest.ini
 
 WORKDIR /app
 
+USER root
+
 ENTRYPOINT ["micromamba", "run", "-n", "overflow", "python", "src/overflow_cli.py"]
