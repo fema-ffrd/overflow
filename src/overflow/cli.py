@@ -64,7 +64,6 @@ def breach_single_cell_pits_cli(input_file: str, output_file: str, chunk_size: i
     None
     """
     try:
-
         breach_single_cell_pits(input_file, output_file, chunk_size)
     except Exception as exc:
         print(

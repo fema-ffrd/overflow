@@ -128,9 +128,7 @@ def create_perimeter_class(numba_type):
                 # The enitire bottom edge (from left to right) includes the corners
                 return self.data[
                     self.cols + self.rows - 2 : 2 * self.cols + self.rows - 2
-                ][
-                    ::-1
-                ]  # reversed from internal representation
+                ][::-1]  # reversed from internal representation
             elif side == Side.LEFT:
                 # The entire left edge (from bottom to top) includes the corners
                 indices = np.empty(self.rows, dtype=np.int32)

@@ -240,7 +240,7 @@ def add_downstream_junctions(
             endpoint = geom.GetPoint(point_count - 1)
             i, j = coords_to_cell(endpoint[0], endpoint[1], geotransform)
             downstream_hash = grid_hash(i, j)
-            
+
             # Get second to last point (one cell upstream from endpoint)
             junction_point = geom.GetPoint(point_count - 2)
             i, j = coords_to_cell(junction_point[0], junction_point[1], geotransform)
@@ -304,11 +304,11 @@ def draw_lines(
         for i in range(node_cell_indices.shape[0]):
             if is_a_tty:
                 status.update(
-                    f"[bold green]Processing Streams: {i+1}/{node_cell_indices.shape[0]}"
+                    f"[bold green]Processing Streams: {i + 1}/{node_cell_indices.shape[0]}"
                 )
             else:
                 print(
-                    f"Processing Streams: {i+1}/{node_cell_indices.shape[0]}",
+                    f"Processing Streams: {i + 1}/{node_cell_indices.shape[0]}",
                     end="\r",
                     flush=True,
                 )

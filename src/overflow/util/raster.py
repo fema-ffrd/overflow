@@ -176,10 +176,7 @@ class RasterChunk:
 
 
 def raster_chunker(
-    band: gdal.Band,
-    chunk_size: int,
-    chunk_buffer_size: int = 0,
-    lock = None
+    band: gdal.Band, chunk_size: int, chunk_buffer_size: int = 0, lock=None
 ) -> Generator[RasterChunk, Any, None]:
     """Generator that yields chunks of a raster.
 

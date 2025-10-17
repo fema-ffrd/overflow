@@ -254,7 +254,9 @@ def priority_flood_tile(
     return labels, graph, label_count
 
 
-def fill_depressions(dem_file: str, out_file: str | None, fill_holes: bool = False) -> None:
+def fill_depressions(
+    dem_file: str, out_file: str | None, fill_holes: bool = False
+) -> None:
     """
     Fill depressions in a DEM using the Priority-Flood algorithm.
     This is an all in RAM implementation.

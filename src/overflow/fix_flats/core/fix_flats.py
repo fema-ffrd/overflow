@@ -358,7 +358,10 @@ def fix_flats_from_file(
 ) -> None:
     """Runs fix_flats on a DEM and flow direction raster on disk and writes the output to a new file."""
     dem_ds = open_dataset(dem_filepath)
-    fdr_ds = open_dataset(flow_dirs_filepath, gdal.GA_Update if output_filepath is None else gdal.GA_ReadOnly)
+    fdr_ds = open_dataset(
+        flow_dirs_filepath,
+        gdal.GA_Update if output_filepath is None else gdal.GA_ReadOnly,
+    )
     dem_band = dem_ds.GetRasterBand(1)
     fdr_band = fdr_ds.GetRasterBand(1)
     dem = dem_band.ReadAsArray()

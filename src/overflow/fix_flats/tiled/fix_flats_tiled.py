@@ -40,7 +40,9 @@ def setup_datasets(
             - flat_mask_ds (gdal.Dataset): The temporary flat mask dataset.
     """
     dem_ds = open_dataset(dem_filepath)
-    fdr_ds = open_dataset(fdr_filepath, gdal.GA_Update if fixed_fdr_filepath is None else gdal.GA_ReadOnly)
+    fdr_ds = open_dataset(
+        fdr_filepath, gdal.GA_Update if fixed_fdr_filepath is None else gdal.GA_ReadOnly
+    )
     dem_band = dem_ds.GetRasterBand(1)
     x_size = dem_band.XSize
     y_size = dem_band.YSize
@@ -139,11 +141,13 @@ def fix_flats_tiled(
     flat_mask_band = flat_mask_ds.GetRasterBand(1)
 
     print("Step 1 of 3: Creating global state")
-    
+
     global_state = create_global_state(dem_band, fdr_band, labels_band, chunk_size)
 
     with console.status("Solving graph..."):
-        dist_to_low_edge_tiles, dist_to_high_edge_tiles = global_state.graph.solve_graph()
+        dist_to_low_edge_tiles, dist_to_high_edge_tiles = (
+            global_state.graph.solve_graph()
+        )
 
     print("Step 2 of 3: Creating flat mask")
 

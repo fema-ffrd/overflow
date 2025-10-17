@@ -64,7 +64,7 @@ Repository = "https://github.com/fema-ffrd/overflow"
 Issues = "https://github.com/fema-ffrd/overflow/issues"
 
 [project.scripts]
-overflow = "overflow_cli:main"
+overflow = "overflow.cli:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

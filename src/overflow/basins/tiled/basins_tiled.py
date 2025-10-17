@@ -165,7 +165,7 @@ def label_watersheds_tiled(
             task_queue.get()
 
     print("Step 1 of 3: Labeling tiles")
-    
+
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         for fdr_tile in raster_chunker(fdr_band, chunk_size, 0):
             while task_queue.full():
@@ -209,7 +209,7 @@ def label_watersheds_tiled(
             task_queue.get()
 
     print("Step 2 of 3: Finalizing watersheds")
-    
+
     # iterate over labels now using the graph to assign ids to drainage points or outlets
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         for labels_tile in raster_chunker(labels_band, chunk_size, lock=lock):
@@ -236,7 +236,7 @@ def label_watersheds_tiled(
     graph = global_state.graph
 
     print("Step 3 of 3: Creating basin polygons")
-    
+
     basin_polygons_filepath = output_filepath.replace(".tif", ".gpkg")
     create_basin_polygons(
         labels_band,
