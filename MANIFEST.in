@@ -1,0 +1,13 @@
+include README.md
+include LICENSE
+include pyproject.toml
+recursive-include src *.py
+recursive-exclude tests *
+recursive-exclude .github *
+exclude .gitignore
+exclude .gitattributes
+exclude .gitconfig
+exclude .pylintrc
+exclude Dockerfile
+exclude env.yaml
+exclude pytest.ini

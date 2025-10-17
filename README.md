@@ -88,13 +88,49 @@ The tiled approach allows processing of very large datasets with minimal memory 
 - Only tile edges are kept in memory for cross-tile connectivity
 - Efficient data structures minimize memory overhead
 
+## Installation
+
+### Recommended Installation
+
+The recommended approach is to use conda/mamba for system dependencies (GDAL, Numba, CUDA) and pip for installing Overflow:
+
+```bash
+# Create a new conda environment with required system dependencies
+conda create -n overflow python=3.11 gdal=3.8.4 numba=0.59.0 numpy=1.26.4 -c conda-forge
+
+# Activate the environment
+conda activate overflow
+
+# Install overflow from PyPI
+pip install overflow-hydro
+```
+
+**With CUDA support (optional, for GPU acceleration):**
+
+```bash
+# Create environment with CUDA support
+conda create -n overflow python=3.11 gdal=3.8.4 numba=0.59.0 numpy=1.26.4 \
+    cuda-nvrtc=12.3.107 cuda-nvcc=12.3.107 -c conda-forge
+
+conda activate overflow
+pip install overflow-hydro
+```
+
 ## Requirements
 
-- GDAL
-- NumPy
-- Numba
-- Rich (for progress displays)
-- CUDA Toolkit (optional, for GPU acceleration)
+**System Dependencies:**
+- GDAL >= 3.8
+- CUDA Toolkit >= 12.3 (optional, for GPU acceleration)
+
+**Python Dependencies (automatically installed via pip):**
+- Python >= 3.11
+- NumPy >= 1.26
+- Numba >= 0.59
+- Click >= 8.0
+- Rich >= 13.0
+- Shapely >= 2.0
+- psutil >= 6.0
+- tqdm >= 4.62
 
 ## Performance Considerations
 

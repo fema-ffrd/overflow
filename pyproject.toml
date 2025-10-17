@@ -1,0 +1,93 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "overflow-hydro"
+version = "0.1.0"
+description = "High-performance Python library for hydrological terrain analysis with parallel, tiled algorithms"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [
+    {name = "Overflow Contributors"}
+]
+keywords = [
+    "hydrology",
+    "terrain-analysis",
+    "dem",
+    "digital-elevation-model",
+    "flow-accumulation",
+    "watershed",
+    "geospatial",
+    "gis",
+    "parallel-processing",
+    "numba"
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: GIS",
+    "Topic :: Scientific/Engineering :: Hydrology",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+]
+
+dependencies = [
+    "numpy>=1.26.0",
+    "numba>=0.59.0",
+    "click>=8.0.0",
+    "rich>=13.0.0",
+    "shapely>=2.0.0",
+    "psutil>=6.0.0",
+    "tqdm>=4.62.0",
+]
+
+[project.optional-dependencies]
+cuda = [
+    # CUDA dependencies are system-level and must be installed separately
+    # This extra is provided for documentation purposes
+]
+dev = [
+    "pytest>=8.0.0",
+    "black>=24.0.0",
+    "pylint>=3.1.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/fema-ffrd/overflow"
+Documentation = "https://github.com/fema-ffrd/overflow#readme"
+Repository = "https://github.com/fema-ffrd/overflow"
+Issues = "https://github.com/fema-ffrd/overflow/issues"
+
+[project.scripts]
+overflow = "overflow_cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["overflow*"]
+exclude = ["tests*"]
+
+[tool.black]
+line-length = 88
+target-version = ["py311"]
+
+[tool.pylint.messages_control]
+max-line-length = 100
+disable = [
+    "C0103",  # Invalid name
+    "R0913",  # Too many arguments
+    "R0914",  # Too many local variables
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
