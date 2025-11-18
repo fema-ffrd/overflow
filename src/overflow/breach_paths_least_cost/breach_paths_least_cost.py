@@ -18,6 +18,7 @@ from overflow.util.constants import (
     NEIGHBOR_OFFSETS,
     UNVISITED_INDEX,
 )
+from overflow.util.progress import ProgressCallback, silent_callback
 from overflow.util.raster import (
     GridCellFloat32 as GridCell,
 )
@@ -347,6 +348,7 @@ def breach_paths_least_cost(
     chunk_size: int = DEFAULT_CHUNK_SIZE,
     search_radius: int = DEFAULT_SEARCH_RADIUS,
     max_cost: float = np.inf,
+    progress_callback: ProgressCallback | None = None,
 ) -> None:
     """Main function to breach paths in a DEM using least cost algorithm.
     This function will tile the input DEM into chunks and breach the paths in
@@ -364,11 +366,16 @@ def breach_paths_least_cost(
         Search radius in cells for finding breach paths, by default DEFAULT_SEARCH_RADIUS.
     max_cost : float, optional
         Maximum cost (elevation removed) allowed for breaching, by default np.inf.
+    progress_callback : ProgressCallback | None, optional
+        Optional callback for progress reporting, by default None (silent).
 
     Returns
     -------
     None
     """
+    if progress_callback is None:
+        progress_callback = silent_callback
+
     input_ds = gdal.Open(input_path)
     projection = input_ds.GetProjection()
     geotransform = input_ds.GetGeoTransform()
@@ -402,7 +409,10 @@ def breach_paths_least_cost(
 
     with concurrent.futures.ThreadPoolExecutor(max_workers) as executor:
         for chunk in raster_chunker(
-            input_band, chunk_size=chunk_size, chunk_buffer_size=search_radius
+            input_band,
+            chunk_size=chunk_size,
+            chunk_buffer_size=search_radius,
+            progress_callback=progress_callback,
         ):
             while task_queue.full():
                 time.sleep(0.1)

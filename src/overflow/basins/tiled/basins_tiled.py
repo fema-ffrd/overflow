@@ -13,6 +13,7 @@ from overflow.basins.core import label_watersheds
 from overflow.basins.core.basin_polygons import create_basin_polygons
 from overflow.util.constants import DEFAULT_CHUNK_SIZE
 from overflow.util.perimeter import get_tile_perimeter
+from overflow.util.progress import ProgressCallback, ProgressTracker, silent_callback
 from overflow.util.raster import (
     RasterChunk,
     create_dataset,
@@ -102,6 +103,7 @@ def label_watersheds_tiled(
     output_filepath: str,
     chunk_size: int = DEFAULT_CHUNK_SIZE,
     all_basins: bool = True,
+    progress_callback: ProgressCallback | None = None,
 ) -> dict:
     """
     Label watersheds using a tiled approach.
@@ -112,6 +114,8 @@ def label_watersheds_tiled(
     - output_filepath (str): The file path to save the labeled watersheds raster.
     - chunk_size (int): The size of each chunk (default: DEFAULT_CHUNK_SIZE).
     - all_basins (bool): If True, label all basins. If False, only label basins connected to drainage points.
+    - progress_callback (ProgressCallback | None): Optional callback for progress updates.
+        If None, the operation runs silently.
 
     Returns:
     - dict: The global graph representing the watershed connections. This is a singly
@@ -127,6 +131,10 @@ def label_watersheds_tiled(
 
     This function is designed to handle large rasters by processing them in chunks.
     """
+    # Setup progress tracking
+    if progress_callback is None:
+        progress_callback = silent_callback
+    tracker = ProgressTracker(progress_callback, "Label Watersheds", total_steps=3)
     fdr_ds = gdal.Open(fdr_filepath)
     fdr_band = fdr_ds.GetRasterBand(1)
     gt = fdr_ds.GetGeoTransform()
@@ -167,10 +175,12 @@ def label_watersheds_tiled(
             global_state.graph.update(local_graph)
             task_queue.get()
 
-    print("Step 1 of 3: Labeling tiles")
+    tracker.update(1, "Labeling tiles")
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        for fdr_tile in raster_chunker(fdr_band, chunk_size, 0):
+        for fdr_tile in raster_chunker(
+            fdr_band, chunk_size, 0, progress_callback=progress_callback
+        ):
             while task_queue.full():
                 time.sleep(0.1)
             task_queue.put(tile_index)
@@ -211,11 +221,13 @@ def label_watersheds_tiled(
             chunk.write(labels_band)
             task_queue.get()
 
-    print("Step 2 of 3: Finalizing watersheds")
+    tracker.update(2, "Finalizing watersheds")
 
     # iterate over labels now using the graph to assign ids to drainage points or outlets
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        for labels_tile in raster_chunker(labels_band, chunk_size, lock=lock):
+        for labels_tile in raster_chunker(
+            labels_band, chunk_size, lock=lock, progress_callback=progress_callback
+        ):
             while task_queue.full():
                 time.sleep(0.1)
             task_queue.put(1)
@@ -238,7 +250,7 @@ def label_watersheds_tiled(
 
     graph = global_state.graph
 
-    print("Step 3 of 3: Creating basin polygons")
+    tracker.update(3, "Creating basin polygons")
 
     basin_polygons_filepath = output_filepath.replace(".tif", ".gpkg")
     create_basin_polygons(
@@ -248,6 +260,7 @@ def label_watersheds_tiled(
         basin_polygons_filepath,
         gt,
         projection,
+        progress_callback,
     )
 
     labels_ds = None

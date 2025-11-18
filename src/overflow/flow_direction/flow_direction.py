@@ -10,6 +10,7 @@ from overflow.util.constants import (
     FLOW_DIRECTIONS,
     NEIGHBOR_OFFSETS,
 )
+from overflow.util.progress import ProgressCallback, silent_callback
 from overflow.util.raster import create_dataset, raster_chunker
 
 
@@ -97,7 +98,12 @@ def calculate_slope(
     )
 
 
-def flow_direction(input_path: str, output_path: str, chunk_size: int = 4000) -> None:
+def flow_direction(
+    input_path: str,
+    output_path: str,
+    chunk_size: int = 4000,
+    progress_callback: ProgressCallback | None = None,
+) -> None:
     """
     Generates a flow direction raster from a DEM chunks of a given size.
 
@@ -109,11 +115,16 @@ def flow_direction(input_path: str, output_path: str, chunk_size: int = 4000) ->
         Path to the output flow direction raster file (must be GeoTIFF).
     chunk_size : int, optional
         Size of chunks to process at a time, by default 4000.
+    progress_callback : ProgressCallback | None, optional
+        Optional callback for progress reporting, by default None (silent).
 
     Returns
     -------
     None
     """
+    if progress_callback is None:
+        progress_callback = silent_callback
+
     input_raster = gdal.Open(input_path)
     projection = input_raster.GetProjection()
     transform = input_raster.GetGeoTransform()
@@ -132,7 +143,12 @@ def flow_direction(input_path: str, output_path: str, chunk_size: int = 4000) ->
     )
     output_band = output_ds.GetRasterBand(1)
 
-    for chunk in raster_chunker(band, chunk_size=chunk_size, chunk_buffer_size=1):
+    for chunk in raster_chunker(
+        band,
+        chunk_size=chunk_size,
+        chunk_buffer_size=1,
+        progress_callback=progress_callback,
+    ):
         result = flow_direction_for_tile(chunk.data, nodata_value)
         chunk.from_numpy(result)
         chunk.write(output_band)

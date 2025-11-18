@@ -268,6 +268,7 @@ def create_flat_mask(
     global_state: GlobalState,
     dist_to_high_edge_tiles: np.ndarray,
     dist_to_low_edge_tiles: np.ndarray,
+    progress_callback=None,
 ):
     """
     Create a flat mask for the entire raster.
@@ -300,7 +301,9 @@ def create_flat_mask(
             task_queue.get()
 
     with concurrent.futures.ThreadPoolExecutor(max_workers) as executor:
-        for fdr_tile in raster_chunker(fdr_band, chunk_size, 0):
+        for fdr_tile in raster_chunker(
+            fdr_band, chunk_size, 0, progress_callback=progress_callback
+        ):
             while task_queue.full():
                 time.sleep(0.1)
             task_queue.put(tile_index)

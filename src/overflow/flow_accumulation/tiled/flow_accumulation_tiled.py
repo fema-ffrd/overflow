@@ -8,7 +8,6 @@ import numba
 import numpy as np
 from numba import njit  # type: ignore[attr-defined]
 from osgeo import gdal
-from rich.console import Console
 
 from overflow.flow_accumulation.core.flow_accumulation import (
     get_next_cell,
@@ -19,6 +18,7 @@ from overflow.util.constants import (
     FLOW_DIRECTION_NODATA,
 )
 from overflow.util.perimeter import get_tile_perimeter
+from overflow.util.progress import ProgressCallback, ProgressTracker, silent_callback
 from overflow.util.raster import (
     RasterChunk,
     create_dataset,
@@ -129,7 +129,12 @@ def finalize_flow_accumulation(
     return flow_acc, tile_row, tile_col
 
 
-def flow_accumulation_tiled(input_path: str, output_path: str, chunk_size: int) -> None:
+def flow_accumulation_tiled(
+    input_path: str,
+    output_path: str,
+    chunk_size: int,
+    progress_callback: ProgressCallback | None = None,
+) -> None:
     """
     Compute flow accumulation using a tiled approach for large rasters.
 
@@ -143,11 +148,17 @@ def flow_accumulation_tiled(input_path: str, output_path: str, chunk_size: int) 
         input_path (str): Path to the input flow direction raster.
         output_path (str): Path for the output flow accumulation raster.
         chunk_size (int): Size of each tile (chunk) in pixels.
+        progress_callback (ProgressCallback | None): Optional callback for progress updates.
+            If None, the operation runs silently.
 
     Returns:
         None
     """
-    console = Console()
+    # Setup progress tracking
+    if progress_callback is None:
+        progress_callback = silent_callback
+    tracker = ProgressTracker(progress_callback, "Flow Accumulation", total_steps=3)
+
     # Setup datasets
     flow_dir_ds, output_ds, no_data_value = setup_datasets(input_path, output_path)
     global_state, input_band, output_band = init_global_state(
@@ -184,11 +195,13 @@ def flow_accumulation_tiled(input_path: str, output_path: str, chunk_size: int) 
             flow_acc_tile.write(output_band)
             task_queue.get()
 
-    print("Step 1 of 2: Calculating flow accumulation for each tile")
+    tracker.update(1, "Calculating flow accumulation for each tile")
 
     # Process each tile in parallel
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        for flow_dir_tile in raster_chunker(input_band, chunk_size):
+        for flow_dir_tile in raster_chunker(
+            input_band, chunk_size, progress_callback=progress_callback
+        ):
             while task_queue.full():
                 time.sleep(0.1)
             task_queue.put(0)
@@ -208,8 +221,8 @@ def flow_accumulation_tiled(input_path: str, output_path: str, chunk_size: int) 
     output_ds.FlushCache()
 
     # Calculate global accumulation
-    with console.status("Calculating global accumulation..."):
-        global_acc, global_offset = global_state.calculate_global_accumulation()
+    tracker.update(2, "Calculating global accumulation")
+    global_acc, global_offset = global_state.calculate_global_accumulation()
 
     def handle_finalize_flow_acc_result(future):
         """Handle the result of finalizing flow accumulation for a tile."""
@@ -224,11 +237,13 @@ def flow_accumulation_tiled(input_path: str, output_path: str, chunk_size: int) 
             finally:
                 task_queue.get()
 
-    print("Step 2 of 2: Finalizing flow accumulation for each tile")
+    tracker.update(3, "Finalizing flow accumulation for each tile")
 
     # Finalize flow accumulation for each tile in parallel
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        for flow_acc_tile in raster_chunker(output_band, chunk_size, lock=lock):
+        for flow_acc_tile in raster_chunker(
+            output_band, chunk_size, lock=lock, progress_callback=progress_callback
+        ):
             while task_queue.full():
                 time.sleep(0.1)
             task_queue.put(0)

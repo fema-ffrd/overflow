@@ -9,9 +9,14 @@ RUN micromamba create -n overflow -f /tmp/env.yaml && \
 COPY src /app/src
 COPY tests /app/tests
 COPY pytest.ini /app/pytest.ini
+COPY pyproject.toml /app/pyproject.toml
+COPY README.md /app/README.md
 
 WORKDIR /app
 
 USER root
 
-ENTRYPOINT ["micromamba", "run", "-n", "overflow", "python", "src/overflow_cli.py"]
+# Install the overflow package
+RUN micromamba run -n overflow pip install -e .
+
+ENTRYPOINT ["micromamba", "run", "-n", "overflow", "overflow"]

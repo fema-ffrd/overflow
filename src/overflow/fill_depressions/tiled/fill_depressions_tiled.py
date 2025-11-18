@@ -11,10 +11,10 @@ import numba
 import numpy as np
 from numba import njit, prange  # type: ignore[attr-defined]
 from osgeo import gdal
-from rich.console import Console
 
 from overflow.fill_depressions.core import make_sides, priority_flood_tile
 from overflow.util.perimeter import get_tile_perimeter
+from overflow.util.progress import ProgressCallback, ProgressTracker, silent_callback
 from overflow.util.raster import (
     RasterChunk,
     create_dataset,
@@ -163,6 +163,7 @@ def fill_depressions_tiled(
     chunk_size: int,
     working_dir: str | None,
     fill_holes: bool = False,
+    progress_callback: ProgressCallback | None = None,
 ) -> None:
     """
     Fill depressions in a digital elevation model (DEM) using a parallel tiled approach.
@@ -179,6 +180,8 @@ def fill_depressions_tiled(
         chunk_size (int): Size of each tile in pixels.
         working_dir (str): Directory to store temporary files during processing.
         fill_holes (bool): If True, fills holes in the DEM before filling depressions.
+        progress_callback (ProgressCallback | None): Optional callback for progress updates.
+            If None, the operation runs silently.
 
     Returns:
         None
@@ -220,7 +223,11 @@ def fill_depressions_tiled(
     - The function follows the overall structure of Algorithm 3 in the paper, which describes
       the main steps of the parallel depression-filling algorithm.
     """
-    console = Console()
+    # Setup progress tracking
+    if progress_callback is None:
+        progress_callback = silent_callback
+    tracker = ProgressTracker(progress_callback, "Fill Depressions", total_steps=3)
+
     # setup
     working_dir, cleanup_working_dir = setup_working_dir(working_dir)
     dem_ds, output_ds, labels_ds, no_data_value = setup_datasets(
@@ -248,10 +255,12 @@ def fill_depressions_tiled(
             dem_tile.write(output_band)
             task_queue.get()
 
-    print("Step 1 of 2: Fill depressions in each tile")
+    tracker.update(1, "Fill depressions in each tile")
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        for dem_tile in raster_chunker(input_band, chunk_size):
+        for dem_tile in raster_chunker(
+            input_band, chunk_size, progress_callback=progress_callback
+        ):
             while task_queue.full():
                 time.sleep(0.1)
             task_queue.put(0)
@@ -276,9 +285,9 @@ def fill_depressions_tiled(
     output_ds.FlushCache()
 
     # connect tile edges and corners and solve the graph
-    with console.status("Connecting tiles and solving graph..."):
-        global_state.connect_tile_edges_and_corners()
-        label_min_elevations = global_state.solve_graph()
+    tracker.update(2, "Connecting tiles and solving graph")
+    global_state.connect_tile_edges_and_corners()
+    label_min_elevations = global_state.solve_graph()
 
     # raise elevation of dem to match global labels
     def handle_raise_tile_result(future):
@@ -289,10 +298,12 @@ def fill_depressions_tiled(
             dem_tile.write(output_band)
             task_queue.get()
 
-    print("Step 2 of 2: Raise elevation of each tile to match global labels")
+    tracker.update(3, "Raise elevation of each tile to match global labels")
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        for dem_tile in raster_chunker(output_band, chunk_size, lock=lock):
+        for dem_tile in raster_chunker(
+            output_band, chunk_size, lock=lock, progress_callback=progress_callback
+        ):
             while task_queue.full():
                 time.sleep(0.1)
             task_queue.put(0)

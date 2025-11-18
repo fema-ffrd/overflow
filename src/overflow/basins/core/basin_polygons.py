@@ -1,6 +1,5 @@
 import concurrent.futures
 import queue
-import sys
 import time
 from threading import Lock
 
@@ -8,10 +7,10 @@ import numba
 import numpy as np
 from numba import njit, prange  # type: ignore[attr-defined]
 from osgeo import gdal, ogr
-from rich.console import Console
 from shapely.geometry import Polygon
 
 from overflow.util.constants import NEIGHBOR_OFFSETS_4, NEIGHBOR_OFFSETS_8
+from overflow.util.progress import ProgressCallback, silent_callback
 from overflow.util.raster import cell_to_coords, raster_chunker
 
 
@@ -288,6 +287,7 @@ def create_basin_polygons(
     output_filepath: str,
     gt: tuple,
     projection: str,
+    progress_callback: ProgressCallback | None = None,
 ):
     """
     Create polygons for each basin in the watershed raster. The polygons are created by tracing the boundary of each
@@ -305,6 +305,10 @@ def create_basin_polygons(
     Returns:
     - None
     """
+    # Use silent callback if none provided
+    if progress_callback is None:
+        progress_callback = silent_callback
+
     max_workers = numba.config.NUMBA_NUM_THREADS  # type: ignore[attr-defined]
     task_queue: queue.Queue[int] = queue.Queue(max_workers)
     lock = Lock()
@@ -321,7 +325,9 @@ def create_basin_polygons(
             task_queue.get()
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        for chunk in raster_chunker(watersheds_band, chunk_size, 1):
+        for chunk in raster_chunker(
+            watersheds_band, chunk_size, 1, progress_callback=progress_callback
+        ):
             while task_queue.full():
                 time.sleep(0.1)
             task_queue.put(1)
@@ -365,40 +371,37 @@ def create_basin_polygons(
     upstream_basins_dict = compute_targeted_upstream_basins(
         graph, set(boundary_cells.keys())
     )
-    console = Console()
-    is_a_tty = sys.stdout.isatty()
     index = 0
     num_basins = len(boundary_cells)
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        with console.status("[bold green]Processing Basins: ") as status:
-            for basin_id in boundary_cells:
-                index += 1
-                if is_a_tty:
-                    status.update(
-                        f"[bold green]Processing Basins: {index}/{num_basins}"
-                    )
-                else:
-                    print(
-                        f"Processing Basins: {index}/{num_basins}", end="\r", flush=True
-                    )
-                while task_queue.full():
-                    time.sleep(0.1)
-                task_queue.put(1)
+        for basin_id in boundary_cells:
+            index += 1
+            # Report progress
+            progress_callback(
+                phase="Processing Basins",
+                step=index,
+                total_steps=num_basins,
+                progress=index / num_basins,
+                message=f"Basin {index}/{num_basins}",
+            )
+            while task_queue.full():
+                time.sleep(0.1)
+            task_queue.put(1)
 
-                upstream_basins = upstream_basins_dict[basin_id]
-                # union the boundary cells of all upstream basins
-                upstream_basin_boundary_cells = set.union(
-                    *[
-                        boundary_cells[upstream_basin]
-                        for upstream_basin in upstream_basins
-                        if upstream_basin in boundary_cells
-                    ]
-                )
+            upstream_basins = upstream_basins_dict[basin_id]
+            # union the boundary cells of all upstream basins
+            upstream_basin_boundary_cells = set.union(
+                *[
+                    boundary_cells[upstream_basin]
+                    for upstream_basin in upstream_basins
+                    if upstream_basin in boundary_cells
+                ]
+            )
 
-                future = executor.submit(
-                    process_basin, basin_id, upstream_basin_boundary_cells, gt
-                )
-                future.add_done_callback(handle_basin_result)
+            future = executor.submit(
+                process_basin, basin_id, upstream_basin_boundary_cells, gt
+            )
+            future.add_done_callback(handle_basin_result)
 
     # Wait for all tasks to finish
     while not task_queue.empty():

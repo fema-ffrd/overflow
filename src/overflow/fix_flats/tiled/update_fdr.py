@@ -10,9 +10,12 @@ def update_fdr(
     fixed_fdr_band: gdal.Band,
     flat_mask_band: gdal.Band,
     chunk_size: int,
+    progress_callback=None,
 ):
     # update fdr using d8_masked_flow_dirs
-    for fdr_tile in raster_chunker(fdr_band, chunk_size, 1):
+    for fdr_tile in raster_chunker(
+        fdr_band, chunk_size, 1, progress_callback=progress_callback
+    ):
         dem_tile = RasterChunk(fdr_tile.row, fdr_tile.col, chunk_size, 1)
         dem_tile.read(dem_band)
         flat_mask_tile = RasterChunk(fdr_tile.row, fdr_tile.col, chunk_size, 1)

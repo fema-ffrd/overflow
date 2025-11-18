@@ -3,12 +3,12 @@ import shutil
 import tempfile
 
 from osgeo import gdal
-from rich.console import Console
 
 from overflow.fix_flats.tiled.flat_mask import create_flat_mask
 from overflow.fix_flats.tiled.global_state import create_global_state
 from overflow.fix_flats.tiled.update_fdr import update_fdr
 from overflow.util.constants import DEFAULT_CHUNK_SIZE, FLOW_DIRECTION_NODATA
+from overflow.util.progress import ProgressCallback, ProgressTracker, silent_callback
 from overflow.util.raster import create_dataset, open_dataset
 
 LABELS_FILENAME = "labels.tif"
@@ -89,6 +89,7 @@ def fix_flats_tiled(
     output_filepath: str | None,
     chunk_size: int = DEFAULT_CHUNK_SIZE,
     working_dir: str | None = None,
+    progress_callback: ProgressCallback | None = None,
 ) -> None:
     """
     Fix flats in a DEM using a tiled approach.
@@ -106,6 +107,8 @@ def fix_flats_tiled(
             Default is DEFAULT_CHUNK_SIZE.
         working_dir (str | None, optional): The directory where the temporary datasets will be created.
             If not provided, a temporary directory will be created and cleaned up after processing.
+        progress_callback (ProgressCallback | None): Optional callback for progress updates.
+            If None, the operation runs silently.
 
     Returns:
         None
@@ -128,7 +131,11 @@ def fix_flats_tiled(
         - The scalability and memory efficiency of the parallel algorithm come with the trade-off
           of potentially slower execution times for smaller DEMs or DEMs with larger flat regions.
     """
-    console = Console()
+    # Setup progress tracking
+    if progress_callback is None:
+        progress_callback = silent_callback
+    tracker = ProgressTracker(progress_callback, "Fix Flats", total_steps=4)
+
     cleanup_working_dir = False
     if working_dir is None:
         working_dir = tempfile.mkdtemp()
@@ -142,16 +149,16 @@ def fix_flats_tiled(
     labels_band = labels_ds.GetRasterBand(1)
     flat_mask_band = flat_mask_ds.GetRasterBand(1)
 
-    print("Step 1 of 3: Creating global state")
+    tracker.update(1, "Creating global state")
 
-    global_state = create_global_state(dem_band, fdr_band, labels_band, chunk_size)
+    global_state = create_global_state(
+        dem_band, fdr_band, labels_band, chunk_size, progress_callback
+    )
 
-    with console.status("Solving graph..."):
-        dist_to_low_edge_tiles, dist_to_high_edge_tiles = (
-            global_state.graph.solve_graph()
-        )
+    tracker.update(2, "Solving graph")
+    dist_to_low_edge_tiles, dist_to_high_edge_tiles = global_state.graph.solve_graph()
 
-    print("Step 2 of 3: Creating flat mask")
+    tracker.update(3, "Creating flat mask")
 
     create_flat_mask(
         chunk_size,
@@ -161,11 +168,19 @@ def fix_flats_tiled(
         global_state,
         dist_to_high_edge_tiles,
         dist_to_low_edge_tiles,
+        progress_callback,
     )
 
-    print("Step 3 of 3: Updating flow direction")
+    tracker.update(4, "Updating flow direction")
 
-    update_fdr(dem_band, fdr_band, fixed_fdr_band, flat_mask_band, chunk_size)
+    update_fdr(
+        dem_band,
+        fdr_band,
+        fixed_fdr_band,
+        flat_mask_band,
+        chunk_size,
+        progress_callback,
+    )
     if cleanup_working_dir:
         shutil.rmtree(working_dir)
     dem_ds = None

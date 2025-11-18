@@ -1,4 +1,3 @@
-import sys
 from collections.abc import Generator
 from enum import Enum
 from typing import Any
@@ -7,9 +6,9 @@ import numpy as np
 from numba import float32, int64, njit  # type: ignore[attr-defined]
 from numba.experimental import jitclass
 from osgeo import gdal, osr
-from rich.console import Console
 
 from overflow.util.constants import NEIGHBOR_OFFSETS
+from overflow.util.progress import ProgressCallback, silent_callback
 
 gdal.UseExceptions()
 
@@ -180,16 +179,21 @@ class RasterChunk:
 
 
 def raster_chunker(
-    band: gdal.Band, chunk_size: int, chunk_buffer_size: int = 0, lock=None
+    band: gdal.Band,
+    chunk_size: int,
+    chunk_buffer_size: int = 0,
+    lock=None,
+    progress_callback: ProgressCallback | None = None,
 ) -> Generator[RasterChunk, Any, None]:
     """Generator that yields chunks of a raster.
 
     Args:
-        band  (gdal.Band): The raster band to read from.
-        chunk_row_size (int): The number of rows in each chunk.
-        chunk_col_size (int): The number of columns in each chunk.
-        buffer_row_size (int): The number of rows in the buffer region.
-        buffer_col_size (int): The number of columns in the buffer region.
+        band (gdal.Band): The raster band to read from.
+        chunk_size (int): The size of each chunk in pixels.
+        chunk_buffer_size (int): The size of the buffer region around each chunk.
+        lock: Optional threading lock for concurrent access.
+        progress_callback (ProgressCallback | None): Optional callback for progress updates.
+            If None, the operation runs silently.
 
     Yields:
         Generator[RasterChunk]: A generator that yields a RasterChunk.
@@ -199,36 +203,38 @@ def raster_chunker(
     n_chunks_col = (band.XSize + chunk_size - 1) // chunk_size
     # Calculate the total number of chunks
     total_chunks = n_chunks_row * n_chunks_col
-    console = Console()
-    is_a_tty = sys.stdout.isatty()
+
+    # Use silent callback if none provided
+    if progress_callback is None:
+        progress_callback = silent_callback
+
     # Iterate over the chunks
-    with console.status("[bold green]Processing Chunks: ") as status:
-        for chunk_row in range(n_chunks_row):
-            for chunk_col in range(n_chunks_col):
-                # Read the chunk and yield it
-                chunk = RasterChunk(
-                    chunk_row,
-                    chunk_col,
-                    chunk_size,
-                    chunk_buffer_size,
-                )
-                if lock:
-                    with lock:
-                        chunk.read(band)
-                else:
+    for chunk_row in range(n_chunks_row):
+        for chunk_col in range(n_chunks_col):
+            chunk_index = chunk_row * n_chunks_col + chunk_col + 1
+
+            # Report progress
+            progress_callback(
+                phase="Processing Chunks",
+                step=chunk_index,
+                total_steps=total_chunks,
+                progress=chunk_index / total_chunks,
+                message=f"Chunk {chunk_index}/{total_chunks}",
+            )
+
+            # Read the chunk and yield it
+            chunk = RasterChunk(
+                chunk_row,
+                chunk_col,
+                chunk_size,
+                chunk_buffer_size,
+            )
+            if lock:
+                with lock:
                     chunk.read(band)
-                yield chunk
-                # Log progress
-                if is_a_tty:
-                    status.update(
-                        f"[bold green]Processing Chunks: {chunk_row * n_chunks_col + chunk_col + 1}/{total_chunks}"
-                    )
-                else:
-                    print(
-                        f"Processing Chunks: {chunk_row * n_chunks_col + chunk_col + 1}/{total_chunks}",
-                        end="\r",
-                        flush=True,
-                    )
+            else:
+                chunk.read(band)
+            yield chunk
 
 
 def create_grid_cell_class(value_type):

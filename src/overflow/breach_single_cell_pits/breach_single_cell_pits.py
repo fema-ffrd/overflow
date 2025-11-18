@@ -3,6 +3,7 @@ from numba import njit, prange  # type: ignore[attr-defined]
 from osgeo import gdal
 
 from overflow.util.constants import DEFAULT_CHUNK_SIZE, EPSILON_GRADIENT
+from overflow.util.progress import ProgressCallback, silent_callback
 from overflow.util.raster import create_dataset, raster_chunker
 
 
@@ -86,7 +87,10 @@ def breach_single_cell_pits_in_chunk(
 
 
 def breach_single_cell_pits(
-    input_path: str, output_path: str, chunk_size: int = DEFAULT_CHUNK_SIZE
+    input_path: str,
+    output_path: str,
+    chunk_size: int = DEFAULT_CHUNK_SIZE,
+    progress_callback: ProgressCallback | None = None,
 ) -> None:
     """
     This function is used to breach single cell pits in a DEM raster.
@@ -99,11 +103,15 @@ def breach_single_cell_pits(
         The path to save the output DEM raster with breached single cell pits.
     chunk_size : int, optional
         The size of the chunks in which the DEM is processed, by default DEFAULT_CHUNK_SIZE.
+    progress_callback : ProgressCallback | None, optional
+        Optional callback for progress reporting, by default None (silent).
 
     Returns
     -------
     None
     """
+    if progress_callback is None:
+        progress_callback = silent_callback
 
     input_raster = gdal.Open(input_path)
     projection = input_raster.GetProjection()
@@ -123,6 +131,11 @@ def breach_single_cell_pits(
     )
     output_band = output_ds.GetRasterBand(1)
 
-    for chunk in raster_chunker(band, chunk_size=chunk_size, chunk_buffer_size=2):
+    for chunk in raster_chunker(
+        band,
+        chunk_size=chunk_size,
+        chunk_buffer_size=2,
+        progress_callback=progress_callback,
+    ):
         _ = breach_single_cell_pits_in_chunk(chunk.data, nodata_value)
         chunk.write(output_band)

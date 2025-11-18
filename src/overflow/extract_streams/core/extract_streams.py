@@ -1,13 +1,12 @@
 import os
-import sys
 
 import numpy as np
 from numba import njit, prange  # type: ignore[attr-defined]
 from osgeo import gdal, ogr, osr
-from rich.console import Console
 
 from overflow.basins.core import upstream_neighbor_generator
 from overflow.util.constants import NEIGHBOR_OFFSETS
+from overflow.util.progress import ProgressCallback, silent_callback
 from overflow.util.raster import (
     cell_to_coords,
     coords_to_cell,
@@ -198,13 +197,14 @@ def add_downstream_junctions(
     streams_dataset_path: str,
     streams_layer: str = "streams",
     junctions_layer: str = "junctions",
+    progress_callback: ProgressCallback | None = None,
 ):
     """
     Add junctions one cell upstream from the downstream end of any stream
     that does not already have a junction at its downstream end.
     """
-    console = Console()
-    is_a_tty = sys.stdout.isatty()
+    if progress_callback is None:
+        progress_callback = silent_callback
 
     ds = ogr.Open(streams_dataset_path, gdal.GA_Update)
     streams_layer = ds.GetLayer(streams_layer)
@@ -223,59 +223,57 @@ def add_downstream_junctions(
     total_streams = streams_layer.GetFeatureCount()  # type: ignore[attr-defined]
     junctions_to_add = []
 
-    with console.status(
-        "[bold green]Finding streams without downstream junctions..."
-    ) as status:
-        for i, feature in enumerate(streams_layer, 1):
-            if is_a_tty:
-                status.update(f"[bold green]Checking streams: {i}/{total_streams}")
-            else:
-                print(f"Checking streams: {i}/{total_streams}", end="\r", flush=True)
+    for idx, feature in enumerate(streams_layer, 1):
+        # Report progress
+        progress_callback(
+            phase="Finding streams without downstream junctions",
+            step=idx,
+            total_steps=total_streams,
+            progress=idx / total_streams * 0.5,
+            message=f"Checking stream {idx}/{total_streams}",
+        )
 
-            geom = feature.GetGeometryRef()  # type: ignore[attr-defined]
-            point_count = geom.GetPointCount()
+        geom = feature.GetGeometryRef()  # type: ignore[attr-defined]
+        point_count = geom.GetPointCount()
 
-            if point_count < 2:
-                continue
+        if point_count < 2:
+            continue
 
-            # Get the downstream endpoint
-            endpoint = geom.GetPoint(point_count - 1)
-            i, j = coords_to_cell(endpoint[0], endpoint[1], geotransform)
-            downstream_hash = grid_hash(i, j)
+        # Get the downstream endpoint
+        endpoint = geom.GetPoint(point_count - 1)
+        i, j = coords_to_cell(endpoint[0], endpoint[1], geotransform)
+        downstream_hash = grid_hash(i, j)
 
-            # Get second to last point (one cell upstream from endpoint)
-            junction_point = geom.GetPoint(point_count - 2)
-            i, j = coords_to_cell(junction_point[0], junction_point[1], geotransform)
-            hash_key = grid_hash(i, j)
+        # Get second to last point (one cell upstream from endpoint)
+        junction_point = geom.GetPoint(point_count - 2)
+        i, j = coords_to_cell(junction_point[0], junction_point[1], geotransform)
+        hash_key = grid_hash(i, j)
 
-            if downstream_hash not in junction_hashes:
-                junctions_to_add.append(junction_point)
-                junction_hashes.add(
-                    hash_key
-                )  # Add to set to avoid duplicates at same location
-
-    if not is_a_tty:
-        print()
+        if downstream_hash not in junction_hashes:
+            junctions_to_add.append(junction_point)
+            junction_hashes.add(
+                hash_key
+            )  # Add to set to avoid duplicates at same location
 
     # Add new junctions
     total_to_add = len(junctions_to_add)
-    with console.status("[bold green]Adding downstream junctions...") as status:
-        for i, point in enumerate(junctions_to_add, 1):
-            if is_a_tty:
-                status.update(f"[bold green]Adding junctions: {i}/{total_to_add}")
-            else:
-                print(f"Adding junctions: {i}/{total_to_add}", end="\r", flush=True)
+    for i, point in enumerate(junctions_to_add, 1):
+        # Report progress
+        progress_callback(
+            phase="Adding downstream junctions",
+            step=i,
+            total_steps=total_to_add,
+            progress=0.5 + (i / total_to_add * 0.5),
+            message=f"Adding junction {i}/{total_to_add}",
+        )
 
-            # Create new junction
-            new_junction = ogr.Feature(junctions_layer.GetLayerDefn())  # type: ignore[attr-defined]
-            point_geom = ogr.Geometry(ogr.wkbPoint)
-            point_geom.AddPoint(point[0], point[1])
-            new_junction.SetGeometry(point_geom)
-            junctions_layer.CreateFeature(new_junction)  # type: ignore[attr-defined]
-            new_junction = None
-
-    if not is_a_tty:
-        print()
+        # Create new junction
+        new_junction = ogr.Feature(junctions_layer.GetLayerDefn())  # type: ignore[attr-defined]
+        point_geom = ogr.Geometry(ogr.wkbPoint)
+        point_geom.AddPoint(point[0], point[1])
+        new_junction.SetGeometry(point_geom)
+        junctions_layer.CreateFeature(new_junction)  # type: ignore[attr-defined]
+        new_junction = None
 
     # Cleanup
     ds = None
@@ -286,6 +284,7 @@ def draw_lines(
     node_cells: np.ndarray,
     node_cell_indices: np.ndarray,
     geotransform: tuple,
+    progress_callback: ProgressCallback | None = None,
 ):
     """
     Generate line features representing stream segments between node cells.
@@ -295,50 +294,52 @@ def draw_lines(
         node_cells (np.ndarray): Boolean array indicating node cells.
         node_cell_indices (np.ndarray): Array of (row, col) indices of node cells.
         geotransform (tuple): Geotransform of the raster.
+        progress_callback (ProgressCallback | None): Optional callback for progress updates.
 
     Returns:
         list: List of line features, where each line is a list of (x, y) coordinate tuples.
     """
+    if progress_callback is None:
+        progress_callback = silent_callback
+
     lines = []
-    console = Console()
-    is_a_tty = sys.stdout.isatty()
-    with console.status("[bold green]Processing Streams: ") as status:
-        for i in range(node_cell_indices.shape[0]):
-            if is_a_tty:
-                status.update(
-                    f"[bold green]Processing Streams: {i + 1}/{node_cell_indices.shape[0]}"
-                )
-            else:
-                print(
-                    f"Processing Streams: {i + 1}/{node_cell_indices.shape[0]}",
-                    end="\r",
-                    flush=True,
-                )
-            row, col = node_cell_indices[i]
-            current_node = (row, col)
-            line = []
-            x, y = cell_to_coords(row, col, geotransform)
-            line.append((x, y))
-            length = 1
-            while True:
-                length += 1
-                next_cell = get_downstream_cell(fdr, current_node[0], current_node[1])
-                if next_cell[0] == -1:  # Reached edge of raster
-                    lines.append(line)
-                    break
-                if node_cells[next_cell[0], next_cell[1]]:  # Reached another node
-                    line.append(
-                        cell_to_coords(next_cell[0], next_cell[1], geotransform)
-                    )
-                    lines.append(line)
-                    break
+    total_nodes = node_cell_indices.shape[0]
+    for i in range(total_nodes):
+        # Report progress
+        progress_callback(
+            phase="Processing Streams",
+            step=i + 1,
+            total_steps=total_nodes,
+            progress=(i + 1) / total_nodes,
+            message=f"Stream {i + 1}/{total_nodes}",
+        )
+        row, col = node_cell_indices[i]
+        current_node = (row, col)
+        line = []
+        x, y = cell_to_coords(row, col, geotransform)
+        line.append((x, y))
+        length = 1
+        while True:
+            length += 1
+            next_cell = get_downstream_cell(fdr, current_node[0], current_node[1])
+            if next_cell[0] == -1:  # Reached edge of raster
+                lines.append(line)
+                break
+            if node_cells[next_cell[0], next_cell[1]]:  # Reached another node
                 line.append(cell_to_coords(next_cell[0], next_cell[1], geotransform))
-                current_node = next_cell
-        return lines
+                lines.append(line)
+                break
+            line.append(cell_to_coords(next_cell[0], next_cell[1], geotransform))
+            current_node = next_cell
+    return lines
 
 
 def extract_streams(
-    fac_path: str, fdr_path: str, output_dir: str, cell_count_threshold: int
+    fac_path: str,
+    fdr_path: str,
+    output_dir: str,
+    cell_count_threshold: int,
+    progress_callback: ProgressCallback | None = None,
 ) -> None:
     """
     Extract stream networks from flow accumulation and flow direction rasters.
@@ -360,7 +361,8 @@ def extract_streams(
     Returns:
         None
     """
-    print(f"Extracting streams with threshold {cell_count_threshold}")
+    if progress_callback is None:
+        progress_callback = silent_callback
 
     # Open input datasets
     fac_ds = open_dataset(fac_path)
@@ -372,7 +374,13 @@ def extract_streams(
     geotransform = fac_ds.GetGeoTransform()
     projection = fac_ds.GetProjection()
 
-    print("Get Stream Raster")
+    progress_callback(
+        phase="Getting Stream Raster",
+        step=1,
+        total_steps=6,
+        progress=0.17,
+        message=f"Extracting streams with threshold {cell_count_threshold}",
+    )
     streams_array = get_stream_raster(fac, cell_count_threshold)
 
     # Save stream raster
@@ -389,27 +397,51 @@ def extract_streams(
     streams_band = streams_ds.GetRasterBand(1)
     streams_band.WriteArray(streams_array)
 
-    print("Find Node Cells")
+    progress_callback(
+        phase="Finding Node Cells",
+        step=2,
+        total_steps=6,
+        progress=0.33,
+        message="Identifying stream confluences and sources",
+    )
     node_cells = find_node_cells(streams_array, fdr)
     num_node_cells = np.sum(node_cells)
     node_cell_indices = np.argwhere(node_cells)
-    print(f"Found {num_node_cells} node cells")
 
     points = nodes_to_points(node_cell_indices, geotransform)
 
-    print("Creating GeoPackage")
+    progress_callback(
+        phase="Creating GeoPackage",
+        step=3,
+        total_steps=6,
+        progress=0.5,
+        message=f"Found {num_node_cells} node cells",
+    )
     streams_dataset_path = os.path.join(output_dir, "streams.gpkg")
     output_ds, points_layer, lines_layer = setup_datasource(
         streams_dataset_path, fac_ds
     )
 
-    print("Writing Points")
+    progress_callback(
+        phase="Writing Points",
+        step=4,
+        total_steps=6,
+        progress=0.67,
+        message="Writing node points",
+    )
     write_points(points_layer, points)
 
-    print("Drawing Lines")
-    lines = draw_lines(fdr, node_cells, node_cell_indices, geotransform)
+    progress_callback(
+        phase="Drawing Lines",
+        step=5,
+        total_steps=6,
+        progress=0.83,
+        message="Tracing stream lines",
+    )
+    lines = draw_lines(
+        fdr, node_cells, node_cell_indices, geotransform, progress_callback
+    )
 
-    print("Writing Lines")
     write_lines(lines_layer, lines)
 
     # Clean up
@@ -417,7 +449,13 @@ def extract_streams(
     fac_ds = None
     fdr_ds = None
 
-    print("Adding Downstream Junctions")
-    add_downstream_junctions(geotransform, streams_dataset_path)
-
-    print("Done")
+    progress_callback(
+        phase="Adding Downstream Junctions",
+        step=6,
+        total_steps=6,
+        progress=1.0,
+        message="Adding junctions",
+    )
+    add_downstream_junctions(
+        geotransform, streams_dataset_path, progress_callback=progress_callback
+    )

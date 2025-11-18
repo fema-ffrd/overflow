@@ -116,8 +116,6 @@ pip install overflow-hydro
 - Click >= 8.0
 - Rich >= 13.0
 - Shapely >= 2.0
-- psutil >= 6.0
-- tqdm >= 4.62
 
 ## Performance Considerations
 

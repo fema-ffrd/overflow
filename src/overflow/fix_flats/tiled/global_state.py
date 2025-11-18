@@ -138,6 +138,7 @@ def create_global_state(
     fdr_band: gdal.Band,
     labels_band: gdal.Band,
     chunk_size: int,
+    progress_callback=None,
 ) -> GlobalState:
     """
     Create a GlobalState object representing the global state of the DEM processing.
@@ -189,7 +190,9 @@ def create_global_state(
             task_queue.get()
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        for dem_tile in raster_chunker(dem_band, chunk_size, 1):
+        for dem_tile in raster_chunker(
+            dem_band, chunk_size, 1, progress_callback=progress_callback
+        ):
             while task_queue.full():
                 time.sleep(0.1)
             task_queue.put(tile_index)

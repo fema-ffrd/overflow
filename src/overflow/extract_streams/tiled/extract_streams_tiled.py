@@ -1,7 +1,6 @@
 import concurrent.futures
 import os
 import queue
-import sys
 import time
 from threading import Lock
 
@@ -11,7 +10,6 @@ from numba import njit, types  # type: ignore[attr-defined]
 from numba.typed import Dict, List  # type: ignore[attr-defined]
 from numba.types import float64, int64
 from osgeo import gdal, ogr
-from rich.console import Console
 from shapely.geometry import LineString
 from shapely.wkt import dumps, loads
 
@@ -26,6 +24,7 @@ from overflow.extract_streams.core import (
     write_points,
 )
 from overflow.util.constants import NEIGHBOR_OFFSETS
+from overflow.util.progress import ProgressCallback, ProgressTracker, silent_callback
 from overflow.util.raster import (
     RasterChunk,
     cell_to_coords,
@@ -344,13 +343,14 @@ def remove_tile_edge_junctions(
     streams_dataset_path: str,
     streams_layer: str = "streams",
     junctions_layer: str = "junctions",
+    progress_callback: ProgressCallback | None = None,
 ):
     """
     Remove junctions that have exactly 2 stream endpoints coincident with the junction
     and merge the connecting stream segments.
     """
-    console = Console()
-    is_a_tty = sys.stdout.isatty()
+    if progress_callback is None:
+        progress_callback = silent_callback
 
     ds = ogr.Open(streams_dataset_path, gdal.GA_Update)
     streams_layer = ds.GetLayer(streams_layer)
@@ -381,12 +381,18 @@ def remove_tile_edge_junctions(
     stream_endpoints = np.array(stream_endpoints, dtype=np.float64)  # type: ignore[assignment]
 
     # Get lists of what needs to be merged/deleted
-    with console.status("[bold green]Finding streams to merge...") as status:
-        junction_fids_to_remove, stream_pairs_to_merge, new_endpoints = (
-            find_streams_to_merge(
-                junction_points, junction_fids, stream_endpoints, geotransform
-            )
+    progress_callback(
+        phase="Finding streams to merge",
+        step=1,
+        total_steps=3,
+        progress=0.33,
+        message="Analyzing stream connections",
+    )
+    junction_fids_to_remove, stream_pairs_to_merge, new_endpoints = (
+        find_streams_to_merge(
+            junction_points, junction_fids, stream_endpoints, geotransform
         )
+    )
 
     # Process the results with GDAL
     total = len(junction_fids_to_remove)
@@ -394,64 +400,71 @@ def remove_tile_edge_junctions(
     # Keep track of stream replacements
     stream_replacements: dict[int, int] = {}  # old_fid -> new_fid
 
-    with console.status("[bold green]Merging streams...") as status:
-        for i, (
-            (fid1, fid2, merge_type),
-            (_up_x, _up_y, _down_x, _down_y),
-        ) in enumerate(zip(stream_pairs_to_merge, new_endpoints), 1):
-            if is_a_tty:
-                status.update(f"[bold green]Merging streams: {i}/{total}")
+    for i, (
+        (fid1, fid2, merge_type),
+        (_up_x, _up_y, _down_x, _down_y),
+    ) in enumerate(zip(stream_pairs_to_merge, new_endpoints), 1):
+        # Report progress
+        progress_callback(
+            phase="Merging streams",
+            step=i,
+            total_steps=total,
+            progress=(i / total) * 0.33 + 0.33,
+            message=f"Merging stream {i}/{total}",
+        )
 
-            # Get current FIDs accounting for previous merges
-            current_fid1 = stream_replacements.get(fid1, fid1)
-            current_fid2 = stream_replacements.get(fid2, fid2)
+        # Get current FIDs accounting for previous merges
+        current_fid1 = stream_replacements.get(fid1, fid1)
+        current_fid2 = stream_replacements.get(fid2, fid2)
 
-            # Get and merge the streams
-            stream1 = streams_layer.GetFeature(current_fid1)  # type: ignore[attr-defined]
-            stream2 = streams_layer.GetFeature(current_fid2)  # type: ignore[attr-defined]
+        # Get and merge the streams
+        stream1 = streams_layer.GetFeature(current_fid1)  # type: ignore[attr-defined]
+        stream2 = streams_layer.GetFeature(current_fid2)  # type: ignore[attr-defined]
 
-            if stream1 is None or stream2 is None:
-                console.print(
-                    f"[yellow]Warning: Could not find streams {current_fid1} and/or {current_fid2}, skipping..."
-                )
-                continue
+        if stream1 is None or stream2 is None:
+            # Skip this merge - warning would clutter output
+            continue
 
-            geom1 = stream1.GetGeometryRef().Clone()
-            geom2 = stream2.GetGeometryRef().Clone()
+        geom1 = stream1.GetGeometryRef().Clone()
+        geom2 = stream2.GetGeometryRef().Clone()
 
-            merged_geom = merge_stream_geometries(geom1, geom2, merge_type)
+        merged_geom = merge_stream_geometries(geom1, geom2, merge_type)
 
-            # Create new feature
-            new_feature = ogr.Feature(streams_layer.GetLayerDefn())  # type: ignore[attr-defined]
-            new_feature.SetGeometry(merged_geom)
-            streams_layer.CreateFeature(new_feature)  # type: ignore[attr-defined]
-            new_fid = new_feature.GetFID()
+        # Create new feature
+        new_feature = ogr.Feature(streams_layer.GetLayerDefn())  # type: ignore[attr-defined]
+        new_feature.SetGeometry(merged_geom)
+        streams_layer.CreateFeature(new_feature)  # type: ignore[attr-defined]
+        new_fid = new_feature.GetFID()
 
-            # Update stream replacements
-            stream_replacements[fid1] = new_fid
-            stream_replacements[fid2] = new_fid
+        # Update stream replacements
+        stream_replacements[fid1] = new_fid
+        stream_replacements[fid2] = new_fid
 
-            # For any streams that were previously merged into fid1 or fid2,
-            # update their replacements to point to the new FID
-            for old_fid, replacement_fid in list(stream_replacements.items()):
-                if replacement_fid in (current_fid1, current_fid2):
-                    stream_replacements[old_fid] = new_fid
+        # For any streams that were previously merged into fid1 or fid2,
+        # update their replacements to point to the new FID
+        for old_fid, replacement_fid in list(stream_replacements.items()):
+            if replacement_fid in (current_fid1, current_fid2):
+                stream_replacements[old_fid] = new_fid
 
-            # Delete original features
-            streams_layer.DeleteFeature(current_fid1)  # type: ignore[attr-defined]
-            streams_layer.DeleteFeature(current_fid2)  # type: ignore[attr-defined]
+        # Delete original features
+        streams_layer.DeleteFeature(current_fid1)  # type: ignore[attr-defined]
+        streams_layer.DeleteFeature(current_fid2)  # type: ignore[attr-defined]
 
-            # Cleanup
-            stream1 = None
-            stream2 = None
-            new_feature = None
+        # Cleanup
+        stream1 = None
+        stream2 = None
+        new_feature = None
 
     # Remove junctions
-    with console.status("[bold green]Removing junctions...") as status:
-        for i, junction_fid in enumerate(junction_fids_to_remove, 1):
-            if is_a_tty:
-                status.update(f"[bold green]Removing junctions: {i}/{total}")
-            junctions_layer.DeleteFeature(junction_fid)  # type: ignore[attr-defined]
+    for i, junction_fid in enumerate(junction_fids_to_remove, 1):
+        progress_callback(
+            phase="Removing junctions",
+            step=i,
+            total_steps=total,
+            progress=(i / total) * 0.33 + 0.67,
+            message=f"Removing junction {i}/{total}",
+        )
+        junctions_layer.DeleteFeature(junction_fid)  # type: ignore[attr-defined]
 
     # Cleanup
     ds = None
@@ -463,6 +476,7 @@ def extract_streams_tiled(
     output_dir: str,
     cell_count_threshold: int,
     chunk_size: int,
+    progress_callback: ProgressCallback | None = None,
 ) -> None:
     """
     Extract stream networks from flow accumulation and flow direction rasters using a tiled approach.
@@ -481,10 +495,17 @@ def extract_streams_tiled(
         output_dir (str): Directory to save output files.
         cell_count_threshold (int): Minimum flow accumulation to be considered a stream.
         chunk_size (int): Size of each tile for processing.
+        progress_callback (ProgressCallback | None): Optional callback for progress updates.
+            If None, the operation runs silently.
 
     Returns:
         None
     """
+    # Setup progress tracking
+    if progress_callback is None:
+        progress_callback = silent_callback
+    tracker = ProgressTracker(progress_callback, "Extract Streams", total_steps=3)
+
     # Open input datasets
     fac_ds = open_dataset(fac_path)
     fdr_ds = open_dataset(fdr_path)
@@ -539,11 +560,13 @@ def extract_streams_tiled(
             write_lines(lines_layer, lines)
             task_queue.get()
 
-    print("Step 1 of 3: Extracting stream networks from tiles")
+    tracker.update(1, "Extracting stream networks from tiles")
 
     # Process tiles in parallel
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        for fac_tile in raster_chunker(fac_band, chunk_size):
+        for fac_tile in raster_chunker(
+            fac_band, chunk_size, progress_callback=progress_callback
+        ):
             while task_queue.full():
                 time.sleep(0.1)
             task_queue.put(0)
@@ -575,10 +598,14 @@ def extract_streams_tiled(
     fac_ds = None
     fdr_ds = None
 
-    print("Step 2 of 3: Merging stream segments across tiles")
+    tracker.update(2, "Merging stream segments across tiles")
 
-    remove_tile_edge_junctions(geotransform, streams_dataset_path)
+    remove_tile_edge_junctions(
+        geotransform, streams_dataset_path, progress_callback=progress_callback
+    )
 
-    print("Step 3 of 3: Adding downstream junctions")
+    tracker.update(3, "Adding downstream junctions")
 
-    add_downstream_junctions(geotransform, streams_dataset_path)
+    add_downstream_junctions(
+        geotransform, streams_dataset_path, progress_callback=progress_callback
+    )

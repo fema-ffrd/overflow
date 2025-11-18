@@ -17,6 +17,7 @@ from overflow.fix_flats.tiled import fix_flats_tiled
 from overflow.flow_accumulation.core import flow_accumulation
 from overflow.flow_accumulation.tiled import flow_accumulation_tiled
 from overflow.flow_direction import flow_direction
+from overflow.util.cli_progress import RichProgressDisplay
 from overflow.util.constants import DEFAULT_CHUNK_SIZE, DEFAULT_SEARCH_RADIUS
 from overflow.util.raster import feet_to_cell_count, sqmi_to_cell_count
 from overflow.util.timer import console, resource_stats, timer
@@ -59,13 +60,25 @@ def breach_single_cell_pits_cli(input_file: str, output_file: str, chunk_size: i
     -------
     None
     """
+    success = False
     try:
-        breach_single_cell_pits(input_file, output_file, chunk_size)
+        progress_display = RichProgressDisplay()
+        with progress_display.progress_context("Breaching single cell pits"):
+            with timer("Breach single cell pits", spinner=False):
+                breach_single_cell_pits(
+                    input_file, output_file, chunk_size, progress_display.callback
+                )
+                resource_stats.add_output_file("Breached DEM", output_file)
+                success = True
+
+        console.print(resource_stats.get_summary_panel(success=success))
     except Exception as exc:
-        print(
-            f"breach_single_cell_pits failed with the following exception: {str(exc)}"
+        console.print(
+            f"[bold red]Error:[/bold red] breach_single_cell_pits failed with the following exception: {str(exc)}"
         )
-        raise click.Abort()  # exit with non-zero exit code. Everytime zero is returned on failure a baby kitten dies
+        if not success:
+            console.print(resource_stats.get_summary_panel(success=False))
+        raise click.Abort()
 
 
 @main.command(name="flow-direction")
@@ -93,11 +106,24 @@ def flow_direction_cli(input_file: str, output_file: str, chunk_size: int):
     -------
     None
     """
+    success = False
     try:
-        flow_direction(input_file, output_file, chunk_size)
+        progress_display = RichProgressDisplay()
+        with progress_display.progress_context("Computing flow direction"):
+            with timer("Flow direction", spinner=False):
+                flow_direction(
+                    input_file, output_file, chunk_size, progress_display.callback
+                )
+                resource_stats.add_output_file("Flow Direction", output_file)
+                success = True
+
+        console.print(resource_stats.get_summary_panel(success=success))
     except Exception as exc:
-        print(f"flow_direction failed with the following exception: {str(exc)}")
-        # exit with non-zero exit code. Everytime zero is returned on failure a baby kitten dies
+        console.print(
+            f"[bold red]Error:[/bold red] flow_direction failed with the following exception: {str(exc)}"
+        )
+        if not success:
+            console.print(resource_stats.get_summary_panel(success=False))
         raise click.Abort()
 
 
@@ -142,15 +168,29 @@ def breach_paths_least_cost_cli(
     -------
     None
     """
+    success = False
     try:
-        breach_paths_least_cost(
-            input_file, output_file, chunk_size, search_radius, max_cost
-        )
+        progress_display = RichProgressDisplay()
+        with progress_display.progress_context("Breaching paths (least cost)"):
+            with timer("Breach paths least cost", spinner=False):
+                breach_paths_least_cost(
+                    input_file,
+                    output_file,
+                    chunk_size,
+                    search_radius,
+                    max_cost,
+                    progress_display.callback,
+                )
+                resource_stats.add_output_file("Breached DEM", output_file)
+                success = True
+
+        console.print(resource_stats.get_summary_panel(success=success))
     except Exception as exc:
-        print(
-            f"breach_paths_least_cost failed with the following exception: {str(exc)}"
+        console.print(
+            f"[bold red]Error:[/bold red] breach_paths_least_cost failed with the following exception: {str(exc)}"
         )
-        # exit with non-zero exit code. Everytime zero is returned on failure a baby kitten dies
+        if not success:
+            console.print(resource_stats.get_summary_panel(success=False))
         raise click.Abort()
 
 
@@ -206,14 +246,32 @@ def fix_flats_cli(
     -------
     None
     """
+    success = False
     try:
-        if chunk_size <= 1:
-            fix_flats_from_file(dem_file, fdr_file, output_file)
-        else:
-            fix_flats_tiled(dem_file, fdr_file, output_file, chunk_size, working_dir)
+        progress_display = RichProgressDisplay()
+        with progress_display.progress_context("Fixing flats"):
+            with timer("Fix flats", spinner=False):
+                if chunk_size <= 1:
+                    fix_flats_from_file(dem_file, fdr_file, output_file)
+                else:
+                    fix_flats_tiled(
+                        dem_file,
+                        fdr_file,
+                        output_file,
+                        chunk_size,
+                        working_dir,
+                        progress_display.callback,
+                    )
+                resource_stats.add_output_file("Fixed FDR", output_file)
+                success = True
+
+        console.print(resource_stats.get_summary_panel(success=success))
     except Exception as exc:
-        print(f"fix_flats failed with the following exception: {str(exc)}")
-        # exit with non-zero exit code. Everytime zero is returned on failure a baby kitten dies
+        console.print(
+            f"[bold red]Error:[/bold red] fix_flats failed with the following exception: {str(exc)}"
+        )
+        if not success:
+            console.print(resource_stats.get_summary_panel(success=False))
         raise click.Abort()
 
 
@@ -273,16 +331,32 @@ def fill_depressions_cli(
     -------
     None
     """
+    success = False
     try:
-        if chunk_size <= 1:
-            fill_depressions(dem_file, output_file, fill_holes)
-        else:
-            fill_depressions_tiled(
-                dem_file, output_file, chunk_size, working_dir, fill_holes
-            )
+        progress_display = RichProgressDisplay()
+        with progress_display.progress_context("Filling depressions"):
+            with timer("Fill depressions", spinner=False):
+                if chunk_size <= 1:
+                    fill_depressions(dem_file, output_file, fill_holes)
+                else:
+                    fill_depressions_tiled(
+                        dem_file,
+                        output_file,
+                        chunk_size,
+                        working_dir,
+                        fill_holes,
+                        progress_display.callback,
+                    )
+                resource_stats.add_output_file("Filled DEM", output_file)
+                success = True
+
+        console.print(resource_stats.get_summary_panel(success=success))
     except Exception as exc:
-        print(f"fill_depressions failed with the following exception: {str(exc)}")
-        # exit with non-zero exit code. Everytime zero is returned on failure a baby kitten dies
+        console.print(
+            f"[bold red]Error:[/bold red] fill_depressions failed with the following exception: {str(exc)}"
+        )
+        if not success:
+            console.print(resource_stats.get_summary_panel(success=False))
         raise click.Abort()
 
 
@@ -326,14 +400,27 @@ def flow_accumulation_cli(
     -------
     None
     """
+    success = False
     try:
-        if chunk_size <= 1:
-            flow_accumulation(fdr_file, output_file)
-        else:
-            flow_accumulation_tiled(fdr_file, output_file, chunk_size)
+        progress_display = RichProgressDisplay()
+        with progress_display.progress_context("Computing flow accumulation"):
+            with timer("Flow accumulation", spinner=False):
+                if chunk_size <= 1:
+                    flow_accumulation(fdr_file, output_file)
+                else:
+                    flow_accumulation_tiled(
+                        fdr_file, output_file, chunk_size, progress_display.callback
+                    )
+                resource_stats.add_output_file("Flow Accumulation", output_file)
+                success = True
+
+        console.print(resource_stats.get_summary_panel(success=success))
     except Exception as exc:
-        print(f"flow_accumulation failed with the following exception: {str(exc)}")
-        # exit with non-zero exit code. Everytime zero is returned on failure a baby kitten dies
+        console.print(
+            f"[bold red]Error:[/bold red] flow_accumulation failed with the following exception: {str(exc)}"
+        )
+        if not success:
+            console.print(resource_stats.get_summary_panel(success=False))
         raise click.Abort()
 
 
@@ -398,20 +485,38 @@ def label_watersheds_cli(
     -------
     None
     """
+    success = False
     try:
-        # TODO, snap the drainage points to the flow accumulation grid
-        if chunk_size <= 1:
-            label_watersheds_from_file(
-                fdr_file, dp_file, output_file, all_basins, dp_layer
-            )
-        else:
-            drainage_points = drainage_points_from_file(fdr_file, dp_file, dp_layer)
-            label_watersheds_tiled(
-                fdr_file, drainage_points, output_file, chunk_size, all_basins
-            )
+        progress_display = RichProgressDisplay()
+        with progress_display.progress_context("Labeling watersheds"):
+            with timer("Label watersheds", spinner=False):
+                # TODO, snap the drainage points to the flow accumulation grid
+                if chunk_size <= 1:
+                    label_watersheds_from_file(
+                        fdr_file, dp_file, output_file, all_basins, dp_layer
+                    )
+                else:
+                    drainage_points = drainage_points_from_file(
+                        fdr_file, dp_file, dp_layer
+                    )
+                    label_watersheds_tiled(
+                        fdr_file,
+                        drainage_points,
+                        output_file,
+                        chunk_size,
+                        all_basins,
+                        progress_display.callback,
+                    )
+                resource_stats.add_output_file("Watersheds", output_file)
+                success = True
+
+        console.print(resource_stats.get_summary_panel(success=success))
     except Exception as exc:
-        print(f"label_watersheds failed with the following exception: {str(exc)}")
-        # exit with non-zero exit code. Everytime zero is returned on failure a baby kitten dies
+        console.print(
+            f"[bold red]Error:[/bold red] label_watersheds failed with the following exception: {str(exc)}"
+        )
+        if not success:
+            console.print(resource_stats.get_summary_panel(success=False))
         raise click.Abort()
 
 
@@ -471,16 +576,38 @@ def extract_streams_cli(
     -------
     None
     """
+    success = False
     try:
-        if chunk_size <= 1:
-            extract_streams(fac_file, fdr_file, output_dir, cell_count_threshold)
-        else:
-            extract_streams_tiled(
-                fac_file, fdr_file, output_dir, cell_count_threshold, chunk_size
-            )
+        progress_display = RichProgressDisplay()
+        with progress_display.progress_context("Extracting streams"):
+            with timer("Extract streams", spinner=False):
+                if chunk_size <= 1:
+                    extract_streams(
+                        fac_file,
+                        fdr_file,
+                        output_dir,
+                        cell_count_threshold,
+                        progress_display.callback,
+                    )
+                else:
+                    extract_streams_tiled(
+                        fac_file,
+                        fdr_file,
+                        output_dir,
+                        cell_count_threshold,
+                        chunk_size,
+                        progress_display.callback,
+                    )
+                resource_stats.add_output_file("Streams", f"{output_dir}/streams.gpkg")
+                success = True
+
+        console.print(resource_stats.get_summary_panel(success=success))
     except Exception as exc:
-        print(f"extract_streams failed with the following exception: {str(exc)}")
-        # exit with non-zero exit code. Everytime zero is returned on failure a baby kitten dies
+        console.print(
+            f"[bold red]Error:[/bold red] extract_streams failed with the following exception: {str(exc)}"
+        )
+        if not success:
+            console.print(resource_stats.get_summary_panel(success=False))
         raise click.Abort()
 
 
@@ -565,8 +692,10 @@ def process_dem_cli(
     -------
     None
     """
+    success = False
     try:
         console.rule("[bold blue]DEM Processing")
+        progress_display = RichProgressDisplay()
 
         with timer("Total processing", silent=True, spinner=False):
             search_radius = feet_to_cell_count(search_radius_ft, dem_file)
@@ -597,125 +726,162 @@ def process_dem_cli(
             console.print(f"  Fill holes: [cyan]{fill_holes}[/cyan]")
 
             if search_radius > 0:
-                with timer("Breaching", spinner=False):
-                    breach_paths_least_cost(
-                        dem_file,
+                with progress_display.progress_context("Breaching paths"):
+                    with timer("Breaching", spinner=False):
+                        breach_paths_least_cost(
+                            dem_file,
+                            f"{output_dir}/dem_corrected.tif",
+                            core_chunk_size,
+                            search_radius,
+                            max_cost,
+                            progress_display.callback,
+                        )
+
+                with progress_display.progress_context("Filling depressions"):
+                    with timer("Filling", spinner=False):
+                        if chunk_size <= 0:
+                            fill_depressions(
+                                f"{output_dir}/dem_corrected.tif", None, fill_holes
+                            )
+                        else:
+                            fill_depressions_tiled(
+                                f"{output_dir}/dem_corrected.tif",
+                                None,
+                                chunk_size,
+                                output_dir,
+                                fill_holes,
+                                progress_display.callback,
+                            )
+            else:
+                with progress_display.progress_context("Filling depressions"):
+                    with timer("Filling", spinner=False):
+                        if chunk_size <= 0:
+                            fill_depressions(
+                                dem_file, f"{output_dir}/dem_corrected.tif", fill_holes
+                            )
+                        else:
+                            fill_depressions_tiled(
+                                dem_file,
+                                f"{output_dir}/dem_corrected.tif",
+                                chunk_size,
+                                output_dir,
+                                fill_holes,
+                                progress_display.callback,
+                            )
+
+            resource_stats.add_output_file(
+                "Corrected DEM", f"{output_dir}/dem_corrected.tif"
+            )
+
+            with progress_display.progress_context("Computing flow direction"):
+                with timer("Flow direction", spinner=False):
+                    flow_direction(
                         f"{output_dir}/dem_corrected.tif",
+                        f"{output_dir}/fdr.tif",
                         core_chunk_size,
-                        search_radius,
-                        max_cost,
+                        progress_display.callback,
                     )
 
-                with timer("Filling", spinner=False):
+            resource_stats.add_output_file("Flow Direction", f"{output_dir}/fdr.tif")
+
+            with progress_display.progress_context("Fixing flats"):
+                with timer("Fixing flats", spinner=False):
                     if chunk_size <= 0:
-                        fill_depressions(
-                            f"{output_dir}/dem_corrected.tif", None, fill_holes
+                        fix_flats_from_file(
+                            f"{output_dir}/dem_corrected.tif",
+                            f"{output_dir}/fdr.tif",
+                            None,
                         )
                     else:
-                        fill_depressions_tiled(
+                        fix_flats_tiled(
                             f"{output_dir}/dem_corrected.tif",
+                            f"{output_dir}/fdr.tif",
                             None,
                             chunk_size,
                             output_dir,
-                            fill_holes,
+                            progress_display.callback,
                         )
-            else:
-                with timer("Filling", spinner=False):
+
+            with progress_display.progress_context("Computing flow accumulation"):
+                with timer("Flow accumulation", spinner=False):
                     if chunk_size <= 0:
-                        fill_depressions(
-                            dem_file, f"{output_dir}/dem_corrected.tif", fill_holes
+                        flow_accumulation(
+                            f"{output_dir}/fdr.tif", f"{output_dir}/accum.tif"
                         )
                     else:
-                        fill_depressions_tiled(
-                            dem_file,
-                            f"{output_dir}/dem_corrected.tif",
+                        flow_accumulation_tiled(
+                            f"{output_dir}/fdr.tif",
+                            f"{output_dir}/accum.tif",
                             chunk_size,
-                            output_dir,
-                            fill_holes,
+                            progress_display.callback,
                         )
 
-            with timer("Flow direction", spinner=False):
-                flow_direction(
-                    f"{output_dir}/dem_corrected.tif",
-                    f"{output_dir}/fdr.tif",
-                    core_chunk_size,
-                )
+            resource_stats.add_output_file(
+                "Flow Accumulation", f"{output_dir}/accum.tif"
+            )
 
-            with timer("Fixing flats", spinner=False):
-                if chunk_size <= 0:
-                    fix_flats_from_file(
-                        f"{output_dir}/dem_corrected.tif", f"{output_dir}/fdr.tif", None
-                    )
-                else:
-                    fix_flats_tiled(
-                        f"{output_dir}/dem_corrected.tif",
-                        f"{output_dir}/fdr.tif",
-                        None,
-                        chunk_size,
-                        output_dir,
-                    )
+            with progress_display.progress_context("Extracting streams"):
+                with timer("Stream extraction", spinner=False):
+                    if chunk_size <= 0:
+                        extract_streams(
+                            f"{output_dir}/accum.tif",
+                            f"{output_dir}/fdr.tif",
+                            output_dir,
+                            threshold,
+                            progress_display.callback,
+                        )
+                    else:
+                        extract_streams_tiled(
+                            f"{output_dir}/accum.tif",
+                            f"{output_dir}/fdr.tif",
+                            output_dir,
+                            threshold,
+                            chunk_size,
+                            progress_display.callback,
+                        )
 
-            with timer("Flow accumulation", spinner=False):
-                if chunk_size <= 0:
-                    flow_accumulation(
-                        f"{output_dir}/fdr.tif", f"{output_dir}/accum.tif"
-                    )
-                else:
-                    flow_accumulation_tiled(
-                        f"{output_dir}/fdr.tif", f"{output_dir}/accum.tif", chunk_size
-                    )
-
-            with timer("Stream extraction", spinner=False):
-                if chunk_size <= 0:
-                    extract_streams(
-                        f"{output_dir}/accum.tif",
-                        f"{output_dir}/fdr.tif",
-                        output_dir,
-                        threshold,
-                    )
-                else:
-                    extract_streams_tiled(
-                        f"{output_dir}/accum.tif",
-                        f"{output_dir}/fdr.tif",
-                        output_dir,
-                        threshold,
-                        chunk_size,
-                    )
+            resource_stats.add_output_file("Streams", f"{output_dir}/streams.gpkg")
 
             if basins:
-                with timer("Watershed delineation", spinner=False):
-                    drainage_points = drainage_points_from_file(
-                        f"{output_dir}/fdr.tif",
-                        f"{output_dir}/streams.gpkg",
-                        "junctions",
-                    )
-
-                    if chunk_size <= 0:
-                        label_watersheds_from_file(
+                with progress_display.progress_context("Labeling watersheds"):
+                    with timer("Watershed delineation", spinner=False):
+                        drainage_points = drainage_points_from_file(
                             f"{output_dir}/fdr.tif",
                             f"{output_dir}/streams.gpkg",
-                            f"{output_dir}/basins.tif",
-                            False,
                             "junctions",
                         )
-                    else:
-                        label_watersheds_tiled(
-                            f"{output_dir}/fdr.tif",
-                            drainage_points,
-                            f"{output_dir}/basins.tif",
-                            chunk_size,
-                            False,
-                        )
+
+                        if chunk_size <= 0:
+                            label_watersheds_from_file(
+                                f"{output_dir}/fdr.tif",
+                                f"{output_dir}/streams.gpkg",
+                                f"{output_dir}/basins.tif",
+                                False,
+                                "junctions",
+                            )
+                        else:
+                            label_watersheds_tiled(
+                                f"{output_dir}/fdr.tif",
+                                drainage_points,
+                                f"{output_dir}/basins.tif",
+                                chunk_size,
+                                False,
+                                progress_display.callback,
+                            )
+
+                resource_stats.add_output_file("Basins", f"{output_dir}/basins.tif")
+
+            success = True
 
         console.rule("[bold green]Processing Complete")
-
-        # Display resource summary chart
-        console.print(resource_stats.get_chart())
+        console.print(resource_stats.get_summary_panel(success=True))
 
     except Exception as exc:
         console.print(
             f"[bold red]Error:[/bold red] process_dem failed with the following exception: {str(exc)}"
         )
+        if not success:
+            console.print(resource_stats.get_summary_panel(success=False))
         raise click.Abort()
 
 

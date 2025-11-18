@@ -82,9 +82,12 @@ target/
 # Mypy cache
 .mypy_cache/
 
+# .pytest_cache/
+.pytest_cache/
+
+# ruff cache
+.ruff_cache/
+
 # data folder
 data/
 /*.vscode*/
-benchmarks.txt
-combined_files.txt
-wolfrevo.pem
