@@ -14,23 +14,25 @@
 		},
 		"ghcr.io/devcontainers/features/aws-cli:1": {}
 	},
-    "hostRequirements": {
-        "gpu": "optional"
-    },
-	"runArgs": [
-		"--gpus",
-		"all"
-	],
 	"customizations": {
 		"vscode": {
 			"extensions": [
 				"ms-python.python",
-				"ms-python.pylint",
-				"GitHub.copilot",
-				"ms-python.black-formatter"
+				"charliermarsh.ruff",
+				"ms-python.mypy-type-checker",
+				"GitHub.copilot"
 			],
 			"settings": {
-				"python.defaultInterpreterPath": "/opt/conda/envs/overflow/bin/python"
+				"python.defaultInterpreterPath": "/opt/conda/envs/overflow/bin/python",
+				"python.linting.enabled": false,
+				"[python]": {
+					"editor.defaultFormatter": "charliermarsh.ruff",
+					"editor.formatOnSave": true,
+					"editor.codeActionsOnSave": {
+						"source.organizeImports": "explicit",
+						"source.fixAll": "explicit"
+					}
+				}
 			}
 		}
 	},

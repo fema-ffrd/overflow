@@ -1,16 +1,17 @@
 import numpy as np
+from numba import njit  # type: ignore[attr-defined]
 from osgeo import gdal
-from numba import njit
+
 from overflow.util.constants import (
-    FLOW_DIRECTION_UNDEFINED,
-    FLOW_DIRECTION_NODATA,
     FLOW_ACCUMULATION_NODATA,
-    FLOW_TERMINATES,
+    FLOW_DIRECTION_NODATA,
+    FLOW_DIRECTION_UNDEFINED,
     FLOW_EXTERNAL,
+    FLOW_TERMINATES,
     NEIGHBOR_OFFSETS,
 )
-from overflow.util.raster import create_dataset
 from overflow.util.queue import Int64PairQueue as Queue
+from overflow.util.raster import create_dataset
 
 
 @njit
@@ -42,7 +43,18 @@ def get_next_cell(
 
 @njit
 def perimeter_indices(shape):
-    """Return the indices of the perimeter cells of a 2D array."""
+    """Return the indices of the perimeter cells of a 2D array.
+
+    Parameters
+    ----------
+    shape : tuple
+        The shape (rows, cols) of the array.
+
+    Returns
+    -------
+    list
+        List of (row, col) tuples representing perimeter indices.
+    """
     rows, cols = shape
     indices = []
     for i in range(rows):
@@ -87,7 +99,7 @@ def follow_path(flow_direction, row, col, links):
                 links[init_row, init_col, 0] = row
                 links[init_row, init_col, 1] = col
             break
-        if next_val == FLOW_DIRECTION_NODATA or next_val == FLOW_DIRECTION_UNDEFINED:
+        if next_val in (FLOW_DIRECTION_NODATA, FLOW_DIRECTION_UNDEFINED):
             # cell terminates within the tile
             links[init_row, init_col, 0] = FLOW_TERMINATES[0]
             links[init_row, init_col, 1] = FLOW_TERMINATES[1]
@@ -151,7 +163,7 @@ def single_tile_flow_accumulation(
             queue.push((next_row, next_col))
 
     if not create_links:
-        return flow_accumulation, None
+        return flow_accumulation, None  # type: ignore[return-value]
     # links is a 3d numpy array containing the row and col on the
     # perimeter that each cell utlimatly drains to.
     # Only cells on the perimeter of the tile are considered.
@@ -167,9 +179,20 @@ def single_tile_flow_accumulation(
     return flow_accumulation, links
 
 
-def flow_accumulation(fdr_path, output_fac_path):
+def flow_accumulation(fdr_path: str, output_fac_path: str) -> None:
     """
-    Generates a flow accumulation raster from a flow direction raster chunks of a given size.
+    Generates a flow accumulation raster from a flow direction raster.
+
+    Parameters
+    ----------
+    fdr_path : str
+        Path to the input flow direction raster file.
+    output_fac_path : str
+        Path to the output flow accumulation raster file.
+
+    Returns
+    -------
+    None
     """
     fdr_ds = gdal.Open(fdr_path)
     projection = fdr_ds.GetProjection()

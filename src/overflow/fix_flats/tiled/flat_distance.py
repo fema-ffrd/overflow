@@ -1,9 +1,10 @@
-from numba import njit, prange
-from numba.types import int32
 import numpy as np
+from numba import njit, prange  # type: ignore[attr-defined]
+from numba.types import int32
+
+from overflow.util.perimeter import Int64Perimeter, get_tile_perimeter
 from overflow.util.queue import Int64PairQueue as Queue
 from overflow.util.raster import neighbor_generator
-from overflow.util.perimeter import Int64Perimeter, get_tile_perimeter
 
 UNREACHABLE = np.iinfo(np.int32).max
 
@@ -68,8 +69,8 @@ def chebyshev_distance(
     """
     # is path does not exist, return 0
     if not path_exists(labels_array, row1, col1, row2, col2):
-        return int32(0)
-    return int32(max(abs(row1 - row2), abs(col1 - col2)))
+        return int32(0)  # type: ignore[no-any-return]
+    return int32(max(abs(row1 - row2), abs(col1 - col2)))  # type: ignore[no-any-return]
 
 
 @njit(parallel=True)
@@ -86,7 +87,7 @@ def compute_min_dist_chebyshev_paths(
 
     """
     min_dist = np.zeros((perimeter_count, perimeter_count), dtype=np.int32)
-    for i in prange(perimeter_count):  # pylint: disable=not-an-iterable
+    for i in prange(perimeter_count):
         label = labels_perimeter.data[i]
         if label == 0:
             continue
@@ -131,8 +132,7 @@ def compute_min_dist_bfs(labels_array: np.ndarray) -> np.ndarray:
         labels_array, labels_perimeter, perimeter_count
     )
     # min_dist = np.zeros((perimeter_count, perimeter_count), dtype=np.int64)
-    # Disabling pylint warning, see https://github.com/PyCQA/pylint/issues/2910
-    for i in prange(perimeter_count):  # pylint: disable=not-an-iterable
+    for i in prange(perimeter_count):
         label = labels_perimeter.data[i]
         if label == 0:
             continue
@@ -182,7 +182,7 @@ def compute_min_dist_bfs(labels_array: np.ndarray) -> np.ndarray:
                 if labels_array[neighbor_row, neighbor_col] == label:
                     queue.push((neighbor_row, neighbor_col))
 
-    return min_dist
+    return min_dist  # type: ignore[no-any-return]
 
 
 @njit

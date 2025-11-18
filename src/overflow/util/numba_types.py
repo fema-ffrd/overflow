@@ -1,6 +1,5 @@
-from numba import int64, float32
-from numba.types import UniTuple, ListType, DictType, Tuple, Array
-
+from numba import float32, int64  # type: ignore[attr-defined]
+from numba.types import Array, DictType, ListType, UniTuple
 
 Int64List = ListType(int64)
 Int64Pair = UniTuple(int64, 2)

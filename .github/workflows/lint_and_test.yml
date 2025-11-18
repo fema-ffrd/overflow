@@ -21,8 +21,17 @@ jobs:
           cache-downloads-key: downloads-dev
           environment-name: ci
 
-      - name: Run pylint and pytest
+      - name: Run ruff linting
         shell: bash -el {0}
         run: |
-          pylint --fail-under=9 --fail-on=E ./src* ./tests*
-          pytest -k "not cuda"
+          ruff check src/ tests/
+
+      - name: Run mypy type checking
+        shell: bash -el {0}
+        run: |
+          mypy src/ tests/
+
+      - name: Run pytest
+        shell: bash -el {0}
+        run: |
+          pytest

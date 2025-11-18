@@ -1,11 +1,14 @@
-from enum import Enum
 import sys
-from typing import Generator, Any
-from osgeo import gdal, osr
+from collections.abc import Generator
+from enum import Enum
+from typing import Any
+
 import numpy as np
-from rich.console import Console
-from numba import int64, float32, njit
+from numba import float32, int64, njit  # type: ignore[attr-defined]
 from numba.experimental import jitclass
+from osgeo import gdal, osr
+from rich.console import Console
+
 from overflow.util.constants import NEIGHBOR_OFFSETS
 
 gdal.UseExceptions()
@@ -36,7 +39,7 @@ def gdal_data_type_to_numpy_data_type(gdal_dtype: int) -> np.dtype:
         "CFloat32": np.complex64,
         "CFloat64": np.complex128,
     }
-    return gdal_numpy_dtype_mapping[gdal.GetDataTypeName(gdal_dtype)]
+    return gdal_numpy_dtype_mapping[gdal.GetDataTypeName(gdal_dtype)]  # type: ignore[return-value]
 
 
 def read_raster_with_bounds_handling(
@@ -117,7 +120,7 @@ class RasterChunk:
         size: int,
         buffer_size: int,
     ):
-        self.data = None
+        self.data: np.ndarray | None = None
         self.row = row
         self.col = col
         self.size = size
@@ -149,6 +152,7 @@ class RasterChunk:
         )
 
     def _get_unbuffered_data(self, band: gdal.Band) -> np.ndarray:
+        assert self.data is not None
         y_remaining = max(band.YSize - self.row * self.size, 0)
         x_remaining = max(band.XSize - self.col * self.size, 0)
         unbuffered_y_size = min(self.size, y_remaining)
@@ -232,9 +236,9 @@ def create_grid_cell_class(value_type):
     class GridCell:
         """A class to represent a cell in the grid. Used with heapq to prioritize cells by cost."""
 
-        row: int64
-        col: int64
-        value: value_type
+        row: int64  # type: ignore[annotation-unchecked]
+        col: int64  # type: ignore[annotation-unchecked]
+        value: value_type  # type: ignore[annotation-unchecked]
 
         def __init__(self, row, col, value):
             self.row = row
@@ -319,7 +323,7 @@ def get_tile_perimeter(array: np.ndarray) -> np.ndarray:
 
 
 @njit
-def neighbor_generator(row, col, n_row, n_col):
+def neighbor_generator(row: int, col: int, n_row: int, n_col: int):
     """
     A generator function that yields the coordinates of the neighbors of a given cell in a 2D grid.
 
@@ -381,8 +385,8 @@ def create_dataset(
     data_type: int,
     x_size: int,
     y_size: int,
-    geotransform: tuple = None,
-    projection: str = None,
+    geotransform: tuple | None = None,
+    projection: str | None = None,
 ) -> gdal.Dataset:
     """
     Creates a new raster dataset with the specified parameters using ZSTD compression.
@@ -426,7 +430,7 @@ def create_dataset(
         raise ValueError(f"Error creating dataset '{filepath}': {e}") from e
 
 
-def read_tile(filepath: str):
+def read_tile(filepath: str) -> np.ndarray:
     """
     Reads a raster tile from the specified file path and returns its data as a numpy array.
 
@@ -438,7 +442,7 @@ def read_tile(filepath: str):
     """
     ds = open_dataset(filepath)
     band = ds.GetRasterBand(1)
-    return band.ReadAsArray()
+    return band.ReadAsArray()  # type: ignore[no-any-return]
 
 
 def mosaic_tiles(
@@ -452,7 +456,7 @@ def mosaic_tiles(
     y_size: int,
     geotransform: tuple,
     projection: str,
-):
+) -> None:
     """
     Mosaics multiple raster tiles into a single raster dataset.
 
@@ -545,8 +549,8 @@ class TileManager:
             tile_data = self.cache[tile_key]
             offset_x = tile_col * self.tile_size
             offset_y = tile_row * self.tile_size
-            tile_width = min(self.tile_size, self.raster_width - offset_x)
-            tile_height = min(self.tile_size, self.raster_height - offset_y)
+            min(self.tile_size, self.raster_width - offset_x)
+            min(self.tile_size, self.raster_height - offset_y)
 
             self.band.WriteArray(tile_data, offset_x, offset_y)
             self.dirty_tiles.remove(tile_key)
@@ -586,9 +590,9 @@ def cell_to_coords(
     i: np.int32,
     j: np.int32,
     gt: np.ndarray,
-    tile_row: np.int32 = 0,
-    tile_col: np.int32 = 0,
-    chunk_size: np.int32 = 0,
+    tile_row: np.int32 = 0,  # type: ignore[assignment]
+    tile_col: np.int32 = 0,  # type: ignore[assignment]
+    chunk_size: np.int32 = 0,  # type: ignore[assignment]
 ) -> tuple[np.float64, np.float64]:
     """
     Convert raster cell indices to geographic coordinates using numerically stable calculations.
@@ -624,9 +628,9 @@ def coords_to_cell(
     x: np.float64,
     y: np.float64,
     gt: np.ndarray,
-    tile_row: np.int32 = 0,
-    tile_col: np.int32 = 0,
-    chunk_size: np.int32 = 0,
+    tile_row: np.int32 = 0,  # type: ignore[assignment]
+    tile_col: np.int32 = 0,  # type: ignore[assignment]
+    chunk_size: np.int32 = 0,  # type: ignore[assignment]
 ) -> tuple[np.int32, np.int32]:
     """
     Convert geographic coordinates to raster cell indices using numerically stable calculations.
@@ -696,7 +700,7 @@ def grid_hash(i: int, j: int) -> int:
     a = np.uint64(2 * abs(i) if i >= 0 else 2 * abs(i) - 1)
     b = np.uint64(2 * abs(j) if j >= 0 else 2 * abs(j) - 1)
     c = np.int64((a * a + a + b if a >= b else a + b * b) // 2)
-    return c if (i < 0 and j < 0) or (i >= 0 and j >= 0) else -c - 1
+    return c if (i < 0 and j < 0) or (i >= 0 and j >= 0) else -c - 1  # type: ignore[return-value]
 
 
 def get_units_to_meters_conversion(raster_ds: gdal.Dataset) -> float:
@@ -767,13 +771,13 @@ def get_units_to_meters_conversion(raster_ds: gdal.Dataset) -> float:
         # Calculate distance in meters per degree
         meters_per_degree = np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2) / long_offset
 
-        return meters_per_degree
+        return meters_per_degree  # type: ignore[no-any-return]
     else:
         # For projected coordinates, return the linear unit conversion factor
-        return linear_units
+        return linear_units  # type: ignore[no-any-return]
 
 
-def feet_to_cell_count(feet: float, raster_path: str):
+def feet_to_cell_count(feet: float, raster_path: str) -> int:
     """
     Convert feet to cell count based on the cell size of a raster.
 
@@ -798,7 +802,7 @@ def feet_to_cell_count(feet: float, raster_path: str):
 SQ_MILES_TO_SQ_METERS = 2589988.11
 
 
-def sqmi_to_cell_count(sqmi: float, raster_path: str):
+def sqmi_to_cell_count(sqmi: float, raster_path: str) -> int:
     """
     Convert square miles to cell count based on the area of a raster.
 

@@ -1,16 +1,18 @@
 import math
+
 import numpy as np
+from numba import njit, prange  # type: ignore[attr-defined]
+from numba.typed import List  # type: ignore[attr-defined]
 from osgeo import gdal
-from numba import njit, prange
-from numba.typed import List  # pylint: disable=no-name-in-module
-from overflow.util.raster import neighbor_generator, open_dataset, create_dataset
+
 from overflow.util.constants import (
-    NEIGHBOR_OFFSETS,
     FLOW_DIRECTION_NODATA,
     FLOW_DIRECTION_UNDEFINED,
     FLOW_DIRECTIONS,
+    NEIGHBOR_OFFSETS,
 )
 from overflow.util.queue import Int64PairQueue as Queue
+from overflow.util.raster import create_dataset, neighbor_generator, open_dataset
 
 
 @njit
@@ -50,10 +52,7 @@ def flat_edges(dem: np.ndarray, fdr: np.ndarray) -> tuple[list, list]:
             fdr_current = fdr[row, col]
             if (
                 fdr_current != FLOW_DIRECTION_UNDEFINED
-                and (
-                    fdr_neighbor == FLOW_DIRECTION_UNDEFINED
-                    or fdr_neighbor == FLOW_DIRECTION_NODATA
-                )
+                and (fdr_neighbor in (FLOW_DIRECTION_UNDEFINED, FLOW_DIRECTION_NODATA))
                 and dem[row, col] == dem[neighbor_row, neighbor_col]
             ):
                 # cell is a low edge cell since it has a defined flow direction and a neighbor does not
@@ -114,7 +113,7 @@ def label_flats(
         for d_row, d_col in NEIGHBOR_OFFSETS:
             neighbor_row = row + d_row
             neighbor_col = col + d_col
-            to_be_filled.push((neighbor_row, neighbor_col))
+            to_be_filled.push((neighbor_row, neighbor_col))  # type: ignore[attr-defined]
 
 
 @njit
@@ -147,12 +146,12 @@ def away_from_higher(
     high_edges = Queue(high_edges)
     loops = 1
     marker = (-1, -1)
-    high_edges.push(marker)
+    high_edges.push(marker)  # type: ignore[attr-defined]
     while len(high_edges) > 1:
         row, col = high_edges.pop()
         if row == marker[0] and col == marker[1]:
             loops += 1
-            high_edges.push(marker)
+            high_edges.push(marker)  # type: ignore[attr-defined]
             continue
         if flat_mask[row, col] > 0:
             continue
@@ -164,7 +163,7 @@ def away_from_higher(
                 dem[neighbor_row, neighbor_col] == dem[row, col]
                 and fdr[neighbor_row, neighbor_col] == FLOW_DIRECTION_UNDEFINED
             ):
-                high_edges.push((neighbor_row, neighbor_col))
+                high_edges.push((neighbor_row, neighbor_col))  # type: ignore[attr-defined]
 
 
 @njit
@@ -201,13 +200,13 @@ def towards_lower(
     loops = 1
     marker = (-1, -1)
     low_edges = Queue(low_edges)
-    low_edges.push(marker)
+    low_edges.push(marker)  # type: ignore[attr-defined]
     max_flat_height = (2**31 - 1) // 2
     while len(low_edges) > 1:
         row, col = low_edges.pop()
         if row == marker[0] and col == marker[1]:
             loops += 1
-            low_edges.push(marker)
+            low_edges.push(marker)  # type: ignore[attr-defined]
             continue
         if flat_mask[row, col] > 0:
             continue
@@ -222,7 +221,7 @@ def towards_lower(
                 dem[neighbor_row, neighbor_col] == dem[row, col]
                 and fdr[neighbor_row, neighbor_col] == FLOW_DIRECTION_UNDEFINED
             ):
-                low_edges.push((neighbor_row, neighbor_col))
+                low_edges.push((neighbor_row, neighbor_col))  # type: ignore[attr-defined]
 
 
 @njit
@@ -259,7 +258,7 @@ def resolve_flats(dem: np.ndarray, flow_dirs: np.ndarray) -> tuple[np.ndarray]:
     # Compute gradient towards lower terrain
     towards_lower(dem, flat_mask, flow_dirs, low_edges)
 
-    return flat_mask
+    return flat_mask  # type: ignore[return-value]
 
 
 @njit(parallel=True)
@@ -288,8 +287,7 @@ def d8_masked_flow_dirs(
     Returns:
         None: The function modifies the fdr array in place.
     """
-    # Disabling pylint warning, see https://github.com/PyCQA/pylint/issues/2910
-    for row in prange(fdr.shape[0]):  # pylint: disable=not-an-iterable
+    for row in prange(fdr.shape[0]):
         for col in range(fdr.shape[1]):
             if fdr[row, col] != FLOW_DIRECTION_UNDEFINED:
                 continue

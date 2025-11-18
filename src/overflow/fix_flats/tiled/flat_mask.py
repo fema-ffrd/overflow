@@ -1,19 +1,20 @@
 import concurrent.futures
+import queue
 import time
 from threading import Lock
-import queue
+
 import numba
-from numba.typed import List  # pylint: disable=no-name-in-module
-from numba import njit
 import numpy as np
+from numba import njit  # type: ignore[attr-defined]
+from numba.typed import List  # type: ignore[attr-defined]
 from osgeo import gdal
-from overflow.util.raster import raster_chunker, RasterChunk
+
+from overflow.fix_flats.tiled.global_state import GlobalState
+from overflow.util.constants import FLOW_DIRECTION_UNDEFINED
+from overflow.util.numba_types import Int64PairList
 from overflow.util.perimeter import Int64Perimeter
 from overflow.util.queue import Int64PairQueue as Queue
-from overflow.util.constants import FLOW_DIRECTION_UNDEFINED
-from overflow.util.raster import neighbor_generator
-from overflow.util.numba_types import Int64PairList
-from overflow.fix_flats.tiled.global_state import GlobalState
+from overflow.util.raster import RasterChunk, neighbor_generator, raster_chunker
 
 # MAX_FLAT_HEIGHT can be any arbitrary large number
 # as long as is is greater than the maximum distance
@@ -284,9 +285,9 @@ def create_flat_mask(
         None
     """
     tile_index = 0
-    tile_index_map = {}
-    max_workers = numba.config.NUMBA_NUM_THREADS  # pylint: disable=no-member
-    task_queue = queue.Queue(max_workers)
+    tile_index_map: dict[int, tuple[int, int]] = {}
+    max_workers = numba.config.NUMBA_NUM_THREADS  # type: ignore[attr-defined]
+    task_queue: queue.Queue[int] = queue.Queue(max_workers)
     lock = Lock()
 
     def handle_result(future):

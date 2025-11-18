@@ -1,28 +1,31 @@
 import concurrent.futures
+import math
+import queue
 import time
 from threading import Lock
-import queue
-import math
-import numpy as np
-from rich.console import Console
-from numba import njit
+
 import numba
+import numpy as np
+from numba import njit  # type: ignore[attr-defined]
 from osgeo import gdal
-from overflow.util.raster import (
-    open_dataset,
-    create_dataset,
-    RasterChunk,
-    raster_chunker,
+from rich.console import Console
+
+from overflow.flow_accumulation.core.flow_accumulation import (
+    get_next_cell,
+    single_tile_flow_accumulation,
+)
+from overflow.util.constants import (
+    FLOW_ACCUMULATION_NODATA,
+    FLOW_DIRECTION_NODATA,
 )
 from overflow.util.perimeter import get_tile_perimeter
-from overflow.util.constants import (
-    FLOW_DIRECTION_NODATA,
-    FLOW_ACCUMULATION_NODATA,
+from overflow.util.raster import (
+    RasterChunk,
+    create_dataset,
+    open_dataset,
+    raster_chunker,
 )
-from overflow.flow_accumulation.core.flow_accumulation import (
-    single_tile_flow_accumulation,
-    get_next_cell,
-)
+
 from .global_state import GlobalState
 
 
@@ -126,7 +129,7 @@ def finalize_flow_accumulation(
     return flow_acc, tile_row, tile_col
 
 
-def flow_accumulation_tiled(input_path, output_path, chunk_size):
+def flow_accumulation_tiled(input_path: str, output_path: str, chunk_size: int) -> None:
     """
     Compute flow accumulation using a tiled approach for large rasters.
 
@@ -141,6 +144,8 @@ def flow_accumulation_tiled(input_path, output_path, chunk_size):
         output_path (str): Path for the output flow accumulation raster.
         chunk_size (int): Size of each tile (chunk) in pixels.
 
+    Returns:
+        None
     """
     console = Console()
     # Setup datasets
@@ -150,8 +155,8 @@ def flow_accumulation_tiled(input_path, output_path, chunk_size):
     )
 
     # Setup for parallel processing
-    max_workers = numba.config.NUMBA_NUM_THREADS  # pylint: disable=no-member
-    task_queue = queue.Queue(max_workers)
+    max_workers = numba.config.NUMBA_NUM_THREADS  # type: ignore[attr-defined]
+    task_queue: queue.Queue[int] = queue.Queue(max_workers)
     lock = Lock()
 
     def handle_flow_acc_tile_result(future):

@@ -1,17 +1,19 @@
 import os
 import sys
-from rich.console import Console
-from osgeo import gdal, ogr, osr
+
 import numpy as np
-from numba import njit, prange
+from numba import njit, prange  # type: ignore[attr-defined]
+from osgeo import gdal, ogr, osr
+from rich.console import Console
+
 from overflow.basins.core import upstream_neighbor_generator
 from overflow.util.constants import NEIGHBOR_OFFSETS
 from overflow.util.raster import (
-    create_dataset,
-    open_dataset,
     cell_to_coords,
     coords_to_cell,
+    create_dataset,
     grid_hash,
+    open_dataset,
 )
 
 
@@ -62,7 +64,7 @@ def find_node_cells(streams_array, fdr):
     """
     node_cells = np.zeros_like(streams_array, dtype=np.bool_)
     # Iterate over all cells in parallel
-    for i in prange(streams_array.shape[0]):  # pylint: disable=not-an-iterable
+    for i in prange(streams_array.shape[0]):
         for j in range(streams_array.shape[1]):
             if streams_array[i, j]:
                 upstream_count = 0
@@ -88,7 +90,7 @@ def get_stream_raster(fac: np.ndarray, cell_count_threshold: int):
         np.ndarray: Boolean array where True indicates a stream cell.
     """
     streams_array = np.empty_like(fac, dtype=np.bool_)
-    for i in prange(fac.shape[0]):  # pylint: disable=not-an-iterable
+    for i in prange(fac.shape[0]):
         for j in range(fac.shape[1]):
             streams_array[i, j] = fac[i, j] >= cell_count_threshold
     return streams_array
@@ -183,7 +185,7 @@ def nodes_to_points(
         np.ndarray: Array of (x, y) coordinates for each node cell.
     """
     points = np.empty_like(node_cell_indices, dtype=np.float64)
-    for i in prange(node_cell_indices.shape[0]):  # pylint: disable=not-an-iterable
+    for i in prange(node_cell_indices.shape[0]):
         row, col = node_cell_indices[i]
         x, y = cell_to_coords(row, col, geotransform, tile_row, tile_col, chunk_size)
         points[i][0] = x
@@ -211,14 +213,14 @@ def add_downstream_junctions(
     # Get all existing junction locations
     junction_hashes = set()
     for feature in junctions_layer:
-        geom = feature.GetGeometryRef()
+        geom = feature.GetGeometryRef()  # type: ignore[attr-defined]
         x, y = geom.GetX(), geom.GetY()
         i, j = coords_to_cell(x, y, geotransform)
         hash_key = grid_hash(i, j)
         junction_hashes.add(hash_key)
 
     # Find streams without downstream junctions
-    total_streams = streams_layer.GetFeatureCount()
+    total_streams = streams_layer.GetFeatureCount()  # type: ignore[attr-defined]
     junctions_to_add = []
 
     with console.status(
@@ -230,7 +232,7 @@ def add_downstream_junctions(
             else:
                 print(f"Checking streams: {i}/{total_streams}", end="\r", flush=True)
 
-            geom = feature.GetGeometryRef()
+            geom = feature.GetGeometryRef()  # type: ignore[attr-defined]
             point_count = geom.GetPointCount()
 
             if point_count < 2:
@@ -265,11 +267,11 @@ def add_downstream_junctions(
                 print(f"Adding junctions: {i}/{total_to_add}", end="\r", flush=True)
 
             # Create new junction
-            new_junction = ogr.Feature(junctions_layer.GetLayerDefn())
+            new_junction = ogr.Feature(junctions_layer.GetLayerDefn())  # type: ignore[attr-defined]
             point_geom = ogr.Geometry(ogr.wkbPoint)
             point_geom.AddPoint(point[0], point[1])
             new_junction.SetGeometry(point_geom)
-            junctions_layer.CreateFeature(new_junction)
+            junctions_layer.CreateFeature(new_junction)  # type: ignore[attr-defined]
             new_junction = None
 
     if not is_a_tty:
@@ -337,7 +339,7 @@ def draw_lines(
 
 def extract_streams(
     fac_path: str, fdr_path: str, output_dir: str, cell_count_threshold: int
-):
+) -> None:
     """
     Extract stream networks from flow accumulation and flow direction rasters.
 
@@ -354,6 +356,9 @@ def extract_streams(
         fdr_path (str): Path to the flow direction raster.
         output_dir (str): Directory to save output files.
         cell_count_threshold (int): Minimum flow accumulation to be considered a stream.
+
+    Returns:
+        None
     """
     print(f"Extracting streams with threshold {cell_count_threshold}")
 
@@ -408,7 +413,7 @@ def extract_streams(
     write_lines(lines_layer, lines)
 
     # Clean up
-    output_ds = None
+    del output_ds
     fac_ds = None
     fdr_ds = None
 

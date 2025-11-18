@@ -7,7 +7,6 @@ recursive-exclude .github *
 exclude .gitignore
 exclude .gitattributes
 exclude .gitconfig
-exclude .pylintrc
 exclude Dockerfile
 exclude env.yaml
 exclude pytest.ini

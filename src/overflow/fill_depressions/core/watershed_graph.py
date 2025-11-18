@@ -1,7 +1,8 @@
-from numba import int64, float32
+from numba import float32, int64  # type: ignore[attr-defined]
 from numba.experimental import jitclass
-from numba.typed import Dict  # pylint: disable=no-name-in-module
+from numba.typed import Dict  # type: ignore[attr-defined]
 from numba.types import DictType
+
 from overflow.util.numba_types import DictInt64Float32
 
 
@@ -33,7 +34,7 @@ class WatershedGraph:
 
     def __getitem__(self, edge: tuple[int, int]) -> float:
         u, v = edge
-        return self._edges[u][v]
+        return self._edges[u][v]  # type: ignore[no-any-return]
 
     def __setitem__(self, edge: tuple[int, int], weight: float):
         # adds both edges u -> v and v -> u since the graph is undirected
@@ -49,7 +50,7 @@ class WatershedGraph:
         """
         Updates the graph with the edges from another graph.
         """
-        # pylint: disable=protected-access
+
         for u, neighbors in other._edges.items():
             for v, weight in neighbors.items():
                 self[u, v] = weight

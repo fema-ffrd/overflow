@@ -1,22 +1,25 @@
-import math
 import concurrent.futures
+import math
+import queue
 import time
 from threading import Lock
-import queue
-import numpy as np
+
 import numba
+import numpy as np
+from numba import njit  # type: ignore[attr-defined]
 from osgeo import gdal
-from numba import njit
-from overflow.util.raster import (
-    raster_chunker,
-    create_dataset,
-    RasterChunk,
-)
-from overflow.util.constants import DEFAULT_CHUNK_SIZE
+
 from overflow.basins.core import label_watersheds
-from overflow.util.perimeter import get_tile_perimeter
-from .global_state import GlobalState
 from overflow.basins.core.basin_polygons import create_basin_polygons
+from overflow.util.constants import DEFAULT_CHUNK_SIZE
+from overflow.util.perimeter import get_tile_perimeter
+from overflow.util.raster import (
+    RasterChunk,
+    create_dataset,
+    raster_chunker,
+)
+
+from .global_state import GlobalState
 
 
 @njit(nogil=True)
@@ -145,8 +148,8 @@ def label_watersheds_tiled(
     global_state = GlobalState(tile_rows, tile_cols, chunk_size)
     tile_index = 0
 
-    max_workers = numba.config.NUMBA_NUM_THREADS  # pylint: disable=no-member
-    task_queue = queue.Queue(max_workers)
+    max_workers = numba.config.NUMBA_NUM_THREADS  # type: ignore[attr-defined]
+    task_queue: queue.Queue[int] = queue.Queue(max_workers)
 
     lock = Lock()
 

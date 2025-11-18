@@ -1,22 +1,26 @@
-from heapq import heappush, heappop
+from heapq import heappop, heappush
+
 import numpy as np
+from numba import float32, njit  # type: ignore[attr-defined]
 from osgeo import gdal
-from numba import njit, float32
+
+from overflow.fill_depressions.core.watershed_graph import WatershedGraph
+from overflow.util.constants import (
+    BOTTOM,
+    EDGE_LABEL,
+    LEFT,
+    NEIGHBOR_OFFSETS,
+    RIGHT,
+    TOP,
+)
+from overflow.util.queue import GridCellFloat32Queue as Queue
 from overflow.util.raster import (
-    open_dataset,
-    create_dataset,
     GridCellFloat32 as GridCell,
 )
-from overflow.util.constants import (
-    EDGE_LABEL,
-    NEIGHBOR_OFFSETS,
-    TOP,
-    RIGHT,
-    BOTTOM,
-    LEFT,
+from overflow.util.raster import (
+    create_dataset,
+    open_dataset,
 )
-from overflow.fill_depressions.core.watershed_graph import WatershedGraph
-from overflow.util.queue import GridCellFloat32Queue as Queue
 
 
 @njit
@@ -53,7 +57,7 @@ def priority_flood_tile(
     dem: np.ndarray,
     sides: int = 0,
     no_data: float = -9999.0,
-    label_offset: np.int64 = 2,
+    label_offset: np.int64 = 2,  # type: ignore[assignment]
     fill_holes: bool = False,
 ) -> tuple[np.ndarray, WatershedGraph, np.int64]:
     """
@@ -212,44 +216,44 @@ def priority_flood_tile(
     # Add edge labels to the graph
     if sides & TOP:
         for j in range(cols):
-            label_pair = tuple((EDGE_LABEL, labels[0, j]))
+            label_pair = (EDGE_LABEL, labels[0, j])
             dem_c = (
                 dem[0, j]
                 if dem[0, j] != no_data and not np.isnan(dem[0, j])
                 else minus_inf
             )
-            if label_pair not in graph or dem_c < graph[label_pair]:
-                graph[label_pair] = dem_c
+            if label_pair not in graph or dem_c < graph[label_pair]:  # type: ignore[operator, index]
+                graph[label_pair] = dem_c  # type: ignore[index]
     if sides & RIGHT:
         for i in range(rows):
-            label_pair = tuple((EDGE_LABEL, labels[i, cols - 1]))
+            label_pair = (EDGE_LABEL, labels[i, cols - 1])
             dem_c = (
                 dem[i, cols - 1]
                 if dem[i, cols - 1] != no_data and not np.isnan(dem[i, cols - 1])
                 else minus_inf
             )
-            if label_pair not in graph or dem_c < graph[label_pair]:
-                graph[label_pair] = dem_c
+            if label_pair not in graph or dem_c < graph[label_pair]:  # type: ignore[operator, index]
+                graph[label_pair] = dem_c  # type: ignore[index]
     if sides & BOTTOM:
         for j in range(cols):
-            label_pair = tuple((EDGE_LABEL, labels[rows - 1, j]))
+            label_pair = (EDGE_LABEL, labels[rows - 1, j])
             dem_c = (
                 dem[rows - 1, j]
                 if dem[rows - 1, j] != no_data and not np.isnan(dem[rows - 1, j])
                 else minus_inf
             )
-            if label_pair not in graph or dem_c < graph[label_pair]:
-                graph[label_pair] = dem_c
+            if label_pair not in graph or dem_c < graph[label_pair]:  # type: ignore[operator, index]
+                graph[label_pair] = dem_c  # type: ignore[index]
     if sides & LEFT:
         for i in range(rows):
-            label_pair = tuple((EDGE_LABEL, labels[i, 0]))
+            label_pair = (EDGE_LABEL, labels[i, 0])
             dem_c = (
                 dem[i, 0]
                 if dem[i, 0] != no_data and not np.isnan(dem[i, 0])
                 else minus_inf
             )
-            if label_pair not in graph or dem_c < graph[label_pair]:
-                graph[label_pair] = dem_c
+            if label_pair not in graph or dem_c < graph[label_pair]:  # type: ignore[operator, index]
+                graph[label_pair] = dem_c  # type: ignore[index]
 
     return labels, graph, label_count
 

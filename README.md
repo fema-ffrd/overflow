@@ -5,7 +5,7 @@ Overflow is a high-performance Python library for hydrological terrain analysis 
 ## Why Overflow?
 
 ### Performance at Scale
-- **Parallel Processing**: Every algorithm is designed for parallel execution using Numba, with additional CUDA acceleration for supported operations
+- **Parallel Processing**: Every algorithm is designed for parallel execution using Numba
 - **Memory-Efficient Tiling**: Process DEMs larger than RAM through sophisticated tiled algorithms that maintain accuracy across tile boundaries
 - **Flexible Processing Modes**: Choose between in-memory processing for speed on smaller datasets or tiled processing for massive datasets
 
@@ -24,7 +24,7 @@ Overflow is a high-performance Python library for hydrological terrain analysis 
 Choose Overflow when you need to:
 - Process very large DEMs (10,000+ pixels in any dimension)
 - Integrate hydrological processing into automated pipelines
-- Leverage multiple CPU cores or GPU acceleration
+- Leverage multiple CPU cores for parallel processing
 - Handle datasets too large for traditional GIS tools
 - Maintain programmatic control over the processing pipeline
 
@@ -66,7 +66,6 @@ All algorithms in Overflow are designed to process DEMs in tiles, enabling the h
 Overflow utilizes parallel processing at multiple levels:
 - Tile-level parallelism where multiple tiles are processed concurrently
 - Within-tile parallelism using Numba for CPU acceleration
-- Optional CUDA implementation for breach path calculation on GPUs
 
 ### Depression Handling
 
@@ -92,7 +91,7 @@ The tiled approach allows processing of very large datasets with minimal memory 
 
 ### Recommended Installation
 
-The recommended approach is to use conda/mamba for system dependencies (GDAL, Numba, CUDA) and pip for installing Overflow:
+The recommended approach is to use conda/mamba for system dependencies (GDAL, Numba) and pip for installing Overflow:
 
 ```bash
 # Create a new conda environment with required system dependencies
@@ -105,22 +104,10 @@ conda activate overflow
 pip install overflow-hydro
 ```
 
-**With CUDA support (optional, for GPU acceleration):**
-
-```bash
-# Create environment with CUDA support
-conda create -n overflow python=3.11 gdal=3.8.4 numba=0.59.0 numpy=1.26.4 \
-    cuda-nvrtc=12.3.107 cuda-nvcc=12.3.107 -c conda-forge
-
-conda activate overflow
-pip install overflow-hydro
-```
-
 ## Requirements
 
 **System Dependencies:**
 - GDAL >= 3.8
-- CUDA Toolkit >= 12.3 (optional, for GPU acceleration)
 
 **Python Dependencies (automatically installed via pip):**
 - Python >= 3.11
@@ -154,7 +141,7 @@ Overflow provides a comprehensive command line interface for processing DEMs and
 ### Full DEM Processing Pipeline
 
 ```bash
-python overflow_cli.py process-dem \
+overflow process-dem \
     --dem_file input.tif \
     --output_dir results \
     --chunk_size 2000 \
@@ -168,7 +155,7 @@ python overflow_cli.py process-dem \
 
 #### Breach Single Cell Pits
 ```bash
-python overflow_cli.py breach-single-cell-pits \
+overflow breach-single-cell-pits \
     --input_file dem.tif \
     --output_file breached.tif \
     --chunk_size 2000
@@ -176,24 +163,17 @@ python overflow_cli.py breach-single-cell-pits \
 
 #### Breach Paths (Least Cost)
 ```bash
-python overflow_cli.py breach-paths-least-cost \
+overflow breach-paths-least-cost \
     --input_file dem.tif \
     --output_file breached.tif \
     --chunk_size 2000 \
     --search_radius 200 \
     --max_cost 100
-
-# With CUDA acceleration
-python overflow_cli.py breach-paths-least-cost \
-    --input_file dem.tif \
-    --output_file breached.tif \
-    --cuda \
-    --max_pits 10000
 ```
 
 #### Fill Depressions
 ```bash
-python overflow_cli.py fill-depressions \
+overflow fill-depressions \
     --dem_file dem.tif \
     --output_file filled.tif \
     --chunk_size 2000 \
@@ -203,7 +183,7 @@ python overflow_cli.py fill-depressions \
 
 #### Calculate Flow Direction
 ```bash
-python overflow_cli.py flow-direction \
+overflow flow-direction \
     --input_file dem.tif \
     --output_file flowdir.tif \
     --chunk_size 2000
@@ -211,7 +191,7 @@ python overflow_cli.py flow-direction \
 
 #### Fix Flats in Flow Direction
 ```bash
-python overflow_cli.py fix-flats \
+overflow fix-flats \
     --dem_file dem.tif \
     --fdr_file flowdir.tif \
     --output_file flowdir_fixed.tif \
@@ -221,7 +201,7 @@ python overflow_cli.py fix-flats \
 
 #### Calculate Flow Accumulation
 ```bash
-python overflow_cli.py flow-accumulation \
+overflow flow-accumulation \
     --fdr_file flowdir.tif \
     --output_file flowacc.tif \
     --chunk_size 2000
@@ -229,7 +209,7 @@ python overflow_cli.py flow-accumulation \
 
 #### Extract Stream Network
 ```bash
-python overflow_cli.py extract-streams \
+overflow extract-streams \
     --fac_file flowacc.tif \
     --fdr_file flowdir.tif \
     --output_dir streams \
@@ -239,7 +219,7 @@ python overflow_cli.py extract-streams \
 
 #### Delineate Watersheds
 ```bash
-python overflow_cli.py label-watersheds \
+overflow label-watersheds \
     --fdr_file flowdir.tif \
     --dp_file points.gpkg \
     --output_file basins.tif \
@@ -263,7 +243,6 @@ python overflow_cli.py label-watersheds \
 
 - All operations support both in-memory (chunk_size ≤ 0) and tiled processing modes
 - For large datasets, use tiled processing with an appropriate chunk_size
-- GPU acceleration available for breach path calculations with `--cuda` flag
 - Most operations output GeoTIFF format except streams/watersheds which also output GeoPackage vector files
 
 ## Python API
@@ -273,7 +252,7 @@ python overflow_cli.py label-watersheds \
 #### DEM Pit Processing
 
 ```python
-from overflow import breach_single_cell_pits, breach_paths_least_cost, breach_paths_least_cost_cuda
+from overflow import breach_single_cell_pits, breach_paths_least_cost
 
 # Breach single cell pits
 breach_single_cell_pits(
@@ -282,23 +261,13 @@ breach_single_cell_pits(
     chunk_size=2000
 )
 
-# Breach paths using least cost algorithm (CPU)
+# Breach paths using least cost algorithm
 breach_paths_least_cost(
     input_path="dem.tif",
     output_path="breached_paths.tif",
     chunk_size=2000,
     search_radius=200,  # cells to search for breach path
     max_cost=100       # maximum elevation that can be removed
-)
-
-# Breach paths using CUDA acceleration
-breach_paths_least_cost_cuda(
-    input_path="dem.tif",
-    output_path="breached_cuda.tif",
-    chunk_size=2000,
-    search_radius=200,
-    max_pits=10000,    # maximum pits to process per chunk
-    max_cost=100
 )
 ```
 
@@ -433,7 +402,6 @@ label_watersheds_tiled(
 
 - All major operations support both in-memory and tiled processing
 - Tiled mode: Use functions with `_tiled` suffix and specify `chunk_size > 0`
-- CUDA acceleration available only for breach paths calculation
 
 ### Memory Considerations
 
@@ -441,7 +409,6 @@ label_watersheds_tiled(
 - Tiled mode processes data in chunks, using less memory
 - Larger chunk sizes generally improve performance but require more memory
 - Working directory required for temporary files in tiled mode
-- CUDA implementation requires additional GPU memory
 
 ### Output Formats
 

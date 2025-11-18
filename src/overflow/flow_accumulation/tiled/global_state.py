@@ -1,18 +1,19 @@
 import numpy as np
 from numba.experimental import jitclass
-from numba.typed import List  # pylint: disable=no-name-in-module
-from overflow.util.perimeter import (
-    Int64Perimeter,
-    UInt8Perimeter,
-    UInt8PerimeterList,
-    Int64PerimeterList,
-)
-from overflow.util.queue import Int64PairQueue as Queue
+from numba.typed import List  # type: ignore[attr-defined]
+
 from overflow.util.constants import (
     FLOW_DIRECTION_NODATA,
-    NEIGHBOR_OFFSETS,
     FLOW_EXTERNAL,
+    NEIGHBOR_OFFSETS,
 )
+from overflow.util.perimeter import (
+    Int64Perimeter,
+    Int64PerimeterList,
+    UInt8Perimeter,
+    UInt8PerimeterList,
+)
+from overflow.util.queue import Int64PairQueue as Queue
 
 
 @jitclass
@@ -215,7 +216,7 @@ class GlobalState:
             dict: The constructed global graph.
         """
         global_graph = {}
-        # pylint: disable=consider-using-enumerate
+
         for tile_index in range(len(self.flow_acc_perimeters)):
             tile_row = tile_index // self.num_cols
             tile_col = tile_index % self.num_cols

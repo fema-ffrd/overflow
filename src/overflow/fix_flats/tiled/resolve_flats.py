@@ -1,10 +1,11 @@
-from numba import njit
-from numba.typed import List  # pylint: disable=no-name-in-module
 import numpy as np
-from overflow.util.constants import FLOW_DIRECTION_UNDEFINED, FLOW_DIRECTION_NODATA
-from overflow.util.raster import neighbor_generator
+from numba import njit  # type: ignore[attr-defined]
+from numba.typed import List  # type: ignore[attr-defined]
+
 from overflow.fix_flats.core.fix_flats import label_flats
+from overflow.util.constants import FLOW_DIRECTION_NODATA, FLOW_DIRECTION_UNDEFINED
 from overflow.util.queue import Int64PairQueue as Queue
+from overflow.util.raster import neighbor_generator
 
 
 @njit
@@ -41,13 +42,13 @@ def compute_gradient(
     edges_cells = Queue(edges_cells)
     loops = 1
     marker = (-1, -1)
-    edges_cells.push(marker)
+    edges_cells.push(marker)  # type: ignore[attr-defined]
     while len(edges_cells) > 1:
         row, col = edges_cells.pop()
         # Check if the marker is encountered, indicating the end of a loop
         if row == marker[0] and col == marker[1]:
             loops += 1
-            edges_cells.push(marker)
+            edges_cells.push(marker)  # type: ignore[attr-defined]
             continue
         # Skip cells that have already been assigned a gradient value
         if graident[row, col] > 0:
@@ -62,7 +63,7 @@ def compute_gradient(
                 labels[neighbor_row, neighbor_col] == labels[row, col]
                 and fdr[neighbor_row, neighbor_col] == FLOW_DIRECTION_UNDEFINED
             ):
-                edges_cells.push((neighbor_row, neighbor_col))
+                edges_cells.push((neighbor_row, neighbor_col))  # type: ignore[attr-defined]
     return graident
 
 
@@ -95,8 +96,8 @@ def flat_edges_tile(dem: np.ndarray, fdr: np.ndarray) -> tuple[list, list]:
                 if (
                     fdr_current != FLOW_DIRECTION_UNDEFINED
                     and (
-                        fdr_neighbor == FLOW_DIRECTION_UNDEFINED
-                        or fdr_neighbor == FLOW_DIRECTION_NODATA
+                        fdr_neighbor
+                        in (FLOW_DIRECTION_UNDEFINED, FLOW_DIRECTION_NODATA)
                     )
                     and dem[row, col] == dem[neighbor_row, neighbor_col]
                 ):

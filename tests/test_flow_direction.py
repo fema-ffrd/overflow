@@ -1,20 +1,21 @@
-import pytest
-import numpy as np
-from osgeo import gdal
 import click.testing
+import numpy as np
+import pytest
+from osgeo import gdal
+
+from overflow.cli import flow_direction_cli
 from overflow.flow_direction import flow_direction, flow_direction_for_tile
 from overflow.util.constants import (
     FLOW_DIRECTION_EAST,
-    FLOW_DIRECTION_NORTH_EAST,
     FLOW_DIRECTION_NORTH,
+    FLOW_DIRECTION_NORTH_EAST,
     FLOW_DIRECTION_NORTH_WEST,
-    FLOW_DIRECTION_WEST,
-    FLOW_DIRECTION_SOUTH_WEST,
     FLOW_DIRECTION_SOUTH,
     FLOW_DIRECTION_SOUTH_EAST,
+    FLOW_DIRECTION_SOUTH_WEST,
     FLOW_DIRECTION_UNDEFINED,
+    FLOW_DIRECTION_WEST,
 )
-from overflow_cli import flow_direction_cli
 
 
 @pytest.fixture(name="raster_file_path")

@@ -1,12 +1,14 @@
 import heapq
-from numba.experimental import jitclass
-from numba.typed import List  # pylint: disable=no-name-in-module
-from numba.types import Array
-from numba import int64
+
 import numpy as np
-from overflow.util.numba_types import Int64PairListList, Int64PairList, Int64Pair
-from overflow.util.raster import Corner, Side
+from numba import int64  # type: ignore[attr-defined]
+from numba.experimental import jitclass
+from numba.typed import List  # type: ignore[attr-defined]
+from numba.types import Array
+
+from overflow.util.numba_types import Int64Pair, Int64PairList, Int64PairListList
 from overflow.util.perimeter import Float32Perimeter
+from overflow.util.raster import Corner, Side
 
 
 @jitclass
@@ -127,8 +129,8 @@ class GlobalGraph:
     flat_edges: Int64PairListList
     high_edges: Int64PairList
     low_edges: Int64PairList
-    solved_high_edges: Array(int64, 1, "C")
-    solved_low_edges: Array(int64, 1, "C")
+    solved_high_edges: Array(int64, 1, "C")  # type: ignore[valid-type]
+    solved_low_edges: Array(int64, 1, "C")  # type: ignore[valid-type]
     tile_rows: int
     tile_cols: int
     perimeter_cells_per_tile: int
@@ -293,7 +295,7 @@ class GlobalGraph:
                 continue
             solved_edges[neighbor] = weight
             heapq.heappush(pq, (weight, neighbor))
-        return pq
+        return pq  # type: ignore[no-any-return]
 
     def _djikstra_dist_to_edge(self, edge_type: str):
         """

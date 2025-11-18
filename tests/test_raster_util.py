@@ -1,11 +1,10 @@
 import math
+
 import numpy as np
 import pytest
 from osgeo import gdal
-from overflow.util.raster import raster_chunker, read_raster_with_bounds_handling
 
-# we're testing protected methods, so we need to disable the pylint warning
-# pylint: disable=protected-access
+from overflow.util.raster import raster_chunker, read_raster_with_bounds_handling
 
 band_fixtures = ["square_raster_band", "tall_raster_band", "wide_raster_band"]
 

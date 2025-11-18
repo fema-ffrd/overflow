@@ -1,4 +1,14 @@
-from .extract_streams import *
+from .extract_streams import (
+    add_downstream_junctions,
+    extract_streams,
+    find_node_cells,
+    get_downstream_cell,
+    get_stream_raster,
+    nodes_to_points,
+    setup_datasource,
+    write_lines,
+    write_points,
+)
 
 __all__ = [
     "extract_streams",
@@ -9,4 +19,5 @@ __all__ = [
     "write_points",
     "write_lines",
     "nodes_to_points",
+    "add_downstream_junctions",
 ]

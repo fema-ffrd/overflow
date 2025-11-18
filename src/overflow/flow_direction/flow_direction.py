@@ -1,14 +1,16 @@
 import math
+
 import numpy as np
-from numba import njit, prange
+from numba import njit, prange  # type: ignore[attr-defined]
 from osgeo import gdal
-from overflow.util.raster import raster_chunker, create_dataset
+
 from overflow.util.constants import (
     FLOW_DIRECTION_NODATA,
     FLOW_DIRECTION_UNDEFINED,
     FLOW_DIRECTIONS,
     NEIGHBOR_OFFSETS,
 )
+from overflow.util.raster import create_dataset, raster_chunker
 
 
 @njit(parallel=True)
@@ -43,7 +45,6 @@ def flow_direction_for_tile(dem: np.ndarray, nodata_value: float) -> np.ndarray:
 
     # Loop through each cell in the chunk
 
-    # pylint: disable=not-an-iterable
     for row in prange(1, rows - 1):
         for col in range(1, cols - 1):
             if dem[row, col] != nodata_value and not np.isnan(dem[row, col]):
@@ -91,14 +92,27 @@ def calculate_slope(
     if dem[row + dy, col + dx] == nodata_value or np.isnan(dem[row + dy, col + dx]):
         return np.inf
 
-    return (dem[row, col] - dem[row + dy, col + dx]) / (
+    return (dem[row, col] - dem[row + dy, col + dx]) / (  # type: ignore[no-any-return]
         math.sqrt(2) if dx != 0 and dy != 0 else 1
     )
 
 
-def flow_direction(input_path, output_path, chunk_size=4000):
+def flow_direction(input_path: str, output_path: str, chunk_size: int = 4000) -> None:
     """
     Generates a flow direction raster from a DEM chunks of a given size.
+
+    Parameters
+    ----------
+    input_path : str
+        Path to the input DEM file (GDAL supported raster format).
+    output_path : str
+        Path to the output flow direction raster file (must be GeoTIFF).
+    chunk_size : int, optional
+        Size of chunks to process at a time, by default 4000.
+
+    Returns
+    -------
+    None
     """
     input_raster = gdal.Open(input_path)
     projection = input_raster.GetProjection()

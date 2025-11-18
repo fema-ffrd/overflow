@@ -1,26 +1,30 @@
-import math
 import concurrent.futures
-import time
-import queue
-from threading import Lock
 import heapq
-from numba import njit, int64
+import math
+import queue
+import time
+from threading import Lock
+
 import numba
-from osgeo import gdal
 import numpy as np
-from overflow.util.raster import create_dataset
-from overflow.util.raster import (
-    GridCellFloat32 as GridCell,
-    raster_chunker,
-    RasterChunk,
-)
+from numba import int64, njit  # type: ignore[attr-defined]
+from osgeo import gdal
+
 from overflow.breach_single_cell_pits import breach_single_cell_pits_in_chunk
 from overflow.util.constants import (
     DEFAULT_CHUNK_SIZE,
     DEFAULT_SEARCH_RADIUS,
-    UNVISITED_INDEX,
     EPSILON_GRADIENT,
     NEIGHBOR_OFFSETS,
+    UNVISITED_INDEX,
+)
+from overflow.util.raster import (
+    GridCellFloat32 as GridCell,
+)
+from overflow.util.raster import (
+    RasterChunk,
+    create_dataset,
+    raster_chunker,
 )
 
 
@@ -338,15 +342,32 @@ def breach_all_pits_in_chunk_least_cost(
 
 
 def breach_paths_least_cost(
-    input_path,
-    output_path,
-    chunk_size=DEFAULT_CHUNK_SIZE,
-    search_radius=DEFAULT_SEARCH_RADIUS,
-    max_cost=np.inf,
-):
+    input_path: str,
+    output_path: str,
+    chunk_size: int = DEFAULT_CHUNK_SIZE,
+    search_radius: int = DEFAULT_SEARCH_RADIUS,
+    max_cost: float = np.inf,
+) -> None:
     """Main function to breach paths in a DEM using least cost algorithm.
     This function will tile the input DEM into chunks and breach the paths in
     each chunk in parallel using the least cost algorithm.
+
+    Parameters
+    ----------
+    input_path : str
+        Path to the input DEM file.
+    output_path : str
+        Path to the output breached DEM file.
+    chunk_size : int, optional
+        Size of chunks to process, by default DEFAULT_CHUNK_SIZE.
+    search_radius : int, optional
+        Search radius in cells for finding breach paths, by default DEFAULT_SEARCH_RADIUS.
+    max_cost : float, optional
+        Maximum cost (elevation removed) allowed for breaching, by default np.inf.
+
+    Returns
+    -------
+    None
     """
     input_ds = gdal.Open(input_path)
     projection = input_ds.GetProjection()
@@ -365,8 +386,8 @@ def breach_paths_least_cost(
     output_band = output_ds.GetRasterBand(1)
 
     # Threading setup
-    max_workers = numba.config.NUMBA_NUM_THREADS  # pylint: disable=no-member
-    task_queue = queue.Queue(max_workers)
+    max_workers = numba.config.NUMBA_NUM_THREADS  # type: ignore[attr-defined]
+    task_queue: queue.Queue[int] = queue.Queue(max_workers)
     lock = Lock()
 
     search_window_size = 2 * search_radius + 1

@@ -1,9 +1,10 @@
-from numba import int64
-from numba.types import ListType
-from numba.typed import List  # pylint: disable=no-name-in-module
+from numba import int64  # type: ignore[attr-defined]
 from numba.experimental import jitclass
-from overflow.util.raster import GridCellFloat32, GridCellInt64
+from numba.typed import List  # type: ignore[attr-defined]
+from numba.types import ListType
+
 from overflow.util.numba_types import Int64Pair
+from overflow.util.raster import GridCellFloat32, GridCellInt64
 
 
 def create_queue_class(numba_type):
@@ -124,9 +125,8 @@ def create_queue_class(numba_type):
     return Queue
 
 
-# pylint: disable=no-member
 Int64PairQueue = create_queue_class(Int64Pair)
-# pylint: disable=no-member
+
 GridCellInt64Queue = create_queue_class(GridCellInt64.class_type.instance_type)
-# pylint: disable=no-member
+
 GridCellFloat32Queue = create_queue_class(GridCellFloat32.class_type.instance_type)

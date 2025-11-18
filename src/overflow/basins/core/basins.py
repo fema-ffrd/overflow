@@ -1,16 +1,18 @@
-from osgeo import gdal, ogr, osr
 import numpy as np
-from numba import njit, prange, int64
-from numba.typed import Dict  # pylint: disable=no-name-in-module
+from numba import int64, njit, prange  # type: ignore[attr-defined]
+from numba.typed import Dict  # type: ignore[attr-defined]
 from numba.types import UniTuple
+from osgeo import gdal, ogr, osr
+
 from overflow.util.constants import (
-    NEIGHBOR_OFFSETS,
-    FLOW_DIRECTION_UNDEFINED,
     FLOW_DIRECTION_NODATA,
+    FLOW_DIRECTION_UNDEFINED,
+    NEIGHBOR_OFFSETS,
 )
 from overflow.util.queue import GridCellInt64Queue as Queue
 from overflow.util.raster import GridCellInt64 as GridCell
 from overflow.util.raster import create_dataset
+
 from .basin_polygons import create_basin_polygons
 
 gdal.UseExceptions()
@@ -50,10 +52,7 @@ def drainage_points_from_file(
         raise ValueError("Could not open drainage points file")
 
     # Get the layer
-    if layer_name is None:
-        layer = ds.GetLayer()
-    else:
-        layer = ds.GetLayerByName(layer_name)
+    layer = ds.GetLayer() if layer_name is None else ds.GetLayerByName(layer_name)
     if layer is None:
         raise ValueError("Could not open layer in drainage points file")
 
@@ -97,7 +96,7 @@ def drainage_points_from_file(
         # Add the drainage point to the dictionary
         drainage_points[(row, col)] = 0
 
-    return drainage_points
+    return drainage_points  # type: ignore[no-any-return]
 
 
 @njit
@@ -256,7 +255,7 @@ def label_watersheds(
     # since dictionary appends are not thread-safe
     downstream_watersheds = np.zeros_like(fdr, dtype=np.int64)
     num_cells = rows * cols
-    for index in prange(num_cells):  # pylint: disable=not-an-iterable
+    for index in prange(num_cells):
         row = index // cols
         col = index % cols
         if is_outlet(fdr, row, col):
@@ -302,9 +301,9 @@ def label_watersheds_from_file(
     fdr_filepath: str,
     drainage_points_file: str,
     output_file: str,
-    all_basins=True,
-    layer_name=None,
-):
+    all_basins: bool = True,
+    layer_name: str | None = None,
+) -> None:
     """
     Label watersheds in a flow direction raster based on drainage points from an OGR compatible file.
 
@@ -315,7 +314,7 @@ def label_watersheds_from_file(
     - output_file (str): The path to save the labeled watersheds raster.
     - all_basins (bool): If True, label all basins. If False, only label basins connected to drainage points.
         Default is True.
-    - layer_name (str): The name of the layer in the drainage points file to read.
+    - layer_name (str | None): The name of the layer in the drainage points file to read.
                         If None, the first layer in the file will be used. Default is None
 
     Returns:

@@ -1,9 +1,10 @@
-import pytest
 import numpy as np
-from osgeo import gdal, osr, ogr
-from numba.typed import Dict  # pylint: disable=no-name-in-module
+import pytest
+from numba import int64  # type: ignore[attr-defined]
+from numba.typed import Dict  # type: ignore[attr-defined]
 from numba.types import UniTuple
-from numba import int64
+from osgeo import gdal, ogr, osr
+
 from overflow.basins.core import label_watersheds
 from overflow.basins.tiled import label_watersheds_tiled
 from overflow.util.constants import FLOW_DIRECTION_NODATA

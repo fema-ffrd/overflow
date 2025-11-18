@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "overflow-hydro"
-version = "0.1.4"
+version = "0.1.5"
 description = "High-performance Python library for hydrological terrain analysis with parallel, tiled algorithms"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -47,14 +47,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-cuda = [
-    # CUDA dependencies are system-level and must be installed separately
-    # This extra is provided for documentation purposes
-]
 dev = [
     "pytest>=8.0.0",
-    "black>=24.0.0",
-    "pylint>=3.1.0",
+    "mypy>=1.13.0",
+    "ruff>=0.8.0",
 ]
 
 [project.urls]
@@ -74,20 +70,53 @@ where = ["src"]
 include = ["overflow*"]
 exclude = ["tests*"]
 
-[tool.black]
-line-length = 88
-target-version = ["py311"]
-
-[tool.pylint.messages_control]
-max-line-length = 100
-disable = [
-    "C0103",  # Invalid name
-    "R0913",  # Too many arguments
-    "R0914",  # Too many local variables
-]
-
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true
+exclude = ["build/", "dist/"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+exclude = [
+    ".git",
+    ".venv",
+    "__pycache__",
+    "build",
+    "dist",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "SIM", # flake8-simplify
+    "C4",  # flake8-comprehensions
+]
+ignore = [
+    "E501",  # line too long (handled by formatter)
+    "B008",  # do not perform function calls in argument defaults
+    "B905",  # zip without explicit strict parameter
+    "B904",  # raise without from inside except (intentional in CLI)
+    "B007",  # unused loop variable (sometimes needed for iteration)
+    "SIM102",  # nested if statements (readability preference)
+    "SIM117",  # nested with statements (readability preference)
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"

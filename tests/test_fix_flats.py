@@ -1,26 +1,25 @@
-import pytest
 import numpy as np
-from osgeo import gdal
+import pytest
+
 from overflow.fix_flats.core import (
-    flat_edges,
-    label_flats,
     away_from_higher,
-    towards_lower,
-    resolve_flats,
     d8_masked_flow_dirs,
     fix_flats,
+    flat_edges,
+    label_flats,
+    resolve_flats,
+    towards_lower,
 )
 from overflow.util.constants import (
-    FLOW_DIRECTION_UNDEFINED,
-    FLOW_DIRECTION_NODATA,
     FLOW_DIRECTION_EAST,
-    FLOW_DIRECTION_WEST,
-    FLOW_DIRECTION_SOUTH_EAST,
-    FLOW_DIRECTION_SOUTH_WEST,
-    FLOW_DIRECTION_SOUTH,
+    FLOW_DIRECTION_NORTH,
     FLOW_DIRECTION_NORTH_EAST,
     FLOW_DIRECTION_NORTH_WEST,
-    FLOW_DIRECTION_NORTH,
+    FLOW_DIRECTION_SOUTH,
+    FLOW_DIRECTION_SOUTH_EAST,
+    FLOW_DIRECTION_SOUTH_WEST,
+    FLOW_DIRECTION_UNDEFINED,
+    FLOW_DIRECTION_WEST,
 )
 
 

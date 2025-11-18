@@ -1,16 +1,18 @@
 import concurrent.futures
-import sys
 import queue
+import sys
 import time
 from threading import Lock
-import numpy as np
-from numba import njit, prange
+
 import numba
-from rich.console import Console
+import numpy as np
+from numba import njit, prange  # type: ignore[attr-defined]
 from osgeo import gdal, ogr
+from rich.console import Console
 from shapely.geometry import Polygon
-from overflow.util.raster import raster_chunker, cell_to_coords
-from overflow.util.constants import NEIGHBOR_OFFSETS_8, NEIGHBOR_OFFSETS_4
+
+from overflow.util.constants import NEIGHBOR_OFFSETS_4, NEIGHBOR_OFFSETS_8
+from overflow.util.raster import cell_to_coords, raster_chunker
 
 
 @njit
@@ -88,10 +90,10 @@ def trace_boundary_polygons(
     return boundary_cells
 
 
-@njit
+@njit  # type: ignore[misc]
 def find_boundary_cells_watershed(
     watersheds: np.ndarray, ids: set, row_offset: int, col_offset: int
-) -> set:
+) -> tuple[list[set[tuple[int, int]]], dict[int, int]]:
     """
     Find all boundary cells for a given watershed value.
 
@@ -105,7 +107,7 @@ def find_boundary_cells_watershed(
     # since numba does not support dictionaries of sets, we need to roll our own using a list of sets and a dictionary
     # mapping watershed values to their index in the list
     cells = []
-    id_to_index = dict()
+    id_to_index = {}
     # initialize the list of sets
     for i, basin_id in enumerate(ids):
         empty_set = set()
@@ -221,7 +223,7 @@ def process_chunk(watersheds: np.ndarray, row_offset: int, col_offset: int):
 @njit(parallel=True)
 def boundary_cells_to_coords(boundary_cells, gt):
     boundary_cells_coords = np.empty((len(boundary_cells), 2), dtype=np.float64)
-    for index in prange(len(boundary_cells)):  # pylint: disable=not-an-iterable
+    for index in prange(len(boundary_cells)):
         row, col = boundary_cells[index]
         boundary_cells_coords[index] = cell_to_coords(row, col, gt)
     return boundary_cells_coords
@@ -303,10 +305,10 @@ def create_basin_polygons(
     Returns:
     - None
     """
-    max_workers = numba.config.NUMBA_NUM_THREADS  # pylint: disable=no-member
-    task_queue = queue.Queue(max_workers)
+    max_workers = numba.config.NUMBA_NUM_THREADS  # type: ignore[attr-defined]
+    task_queue: queue.Queue[int] = queue.Queue(max_workers)
     lock = Lock()
-    boundary_cells = dict()
+    boundary_cells: dict[int, set[tuple[int, int]]] = {}
 
     def handle_chunk_result(future):
         with lock:
@@ -369,7 +371,7 @@ def create_basin_polygons(
     num_basins = len(boundary_cells)
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         with console.status("[bold green]Processing Basins: ") as status:
-            for basin_id in boundary_cells.keys():
+            for basin_id in boundary_cells:
                 index += 1
                 if is_a_tty:
                     status.update(

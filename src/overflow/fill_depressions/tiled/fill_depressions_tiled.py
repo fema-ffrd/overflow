@@ -1,27 +1,34 @@
-import tempfile
-import os
 import concurrent.futures
-import time
-from threading import Lock
+import math
+import os
 import queue
 import shutil
-import math
-import numpy as np
-from rich.console import Console
-from numba import njit, prange
+import tempfile
+import time
+from threading import Lock
+
 import numba
+import numpy as np
+from numba import njit, prange  # type: ignore[attr-defined]
 from osgeo import gdal
-from overflow.util.raster import open_dataset, create_dataset
-from overflow.fill_depressions.core import priority_flood_tile, make_sides
-from overflow.util.raster import RasterChunk, raster_chunker
+from rich.console import Console
+
+from overflow.fill_depressions.core import make_sides, priority_flood_tile
 from overflow.util.perimeter import get_tile_perimeter
+from overflow.util.raster import (
+    RasterChunk,
+    create_dataset,
+    open_dataset,
+    raster_chunker,
+)
+
 from .global_state import GlobalState
 
 # temporary file for storing labels
 LABELS_FILENAME = "labels.tif"
 
 
-def setup_working_dir(working_dir: str | None):
+def setup_working_dir(working_dir: str | None) -> tuple[str, bool]:
     """
     Setup working directory for filling depressions in a digital elevation model (DEM).
     """
@@ -33,7 +40,7 @@ def setup_working_dir(working_dir: str | None):
 
 
 def setup_datasets(
-    input_path: str, output_path: str, working_dir: str
+    input_path: str, output_path: str | None, working_dir: str
 ) -> tuple[gdal.Dataset, gdal.Dataset, gdal.Dataset, float]:
     """
     Setup input and output datasets for filling depressions in a digital elevation model (DEM).
@@ -137,7 +144,7 @@ def raise_tile(
     This will be called in parallel for each tile.
     """
     n_row, n_col = dem.shape
-    for row in prange(n_row):  # pylint: disable=not-an-iterable
+    for row in prange(n_row):
         for col in range(n_col):
             height = dem[row, col]
             label = labels[row, col]
@@ -151,8 +158,12 @@ def raise_tile(
 
 
 def fill_depressions_tiled(
-    input_path, output_path, chunk_size, working_dir, fill_holes=False
-):
+    input_path: str,
+    output_path: str | None,
+    chunk_size: int,
+    working_dir: str | None,
+    fill_holes: bool = False,
+) -> None:
     """
     Fill depressions in a digital elevation model (DEM) using a parallel tiled approach.
 
@@ -220,8 +231,8 @@ def fill_depressions_tiled(
     )
 
     # Threading setup
-    max_workers = numba.config.NUMBA_NUM_THREADS  # pylint: disable=no-member
-    task_queue = queue.Queue(max_workers)
+    max_workers = numba.config.NUMBA_NUM_THREADS  # type: ignore[attr-defined]
+    task_queue: queue.Queue[int] = queue.Queue(max_workers)
     lock = Lock()
 
     # Fill depressions in each tile

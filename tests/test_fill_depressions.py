@@ -1,8 +1,9 @@
 import numpy as np
-from osgeo import gdal
 import pytest
-from numba import types, typed
-from overflow.fill_depressions.core import priority_flood_tile, make_sides
+from numba import typed, types
+from osgeo import gdal
+
+from overflow.fill_depressions.core import make_sides, priority_flood_tile
 from overflow.fill_depressions.tiled import fill_depressions_tiled
 from overflow.fill_depressions.tiled.global_state import handle_corner, handle_edge
 

@@ -1,16 +1,16 @@
+import click.testing
 import numpy as np
 import pytest
 from osgeo import gdal
-import click.testing
+
 from overflow.breach_paths_least_cost import (
+    DEFAULT_SEARCH_RADIUS,
+    EPSILON_GRADIENT,
+    UNVISITED_INDEX,
     breach_all_pits_in_chunk_least_cost,
     breach_paths_least_cost,
-    EPSILON_GRADIENT,
-    DEFAULT_SEARCH_RADIUS,
-    UNVISITED_INDEX,
 )
-import numba
-from overflow_cli import breach_paths_least_cost_cli
+from overflow.cli import breach_paths_least_cost_cli
 
 
 @pytest.fixture(name="dem_with_pit")

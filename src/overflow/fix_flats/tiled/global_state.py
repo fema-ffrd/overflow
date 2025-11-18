@@ -1,25 +1,28 @@
-import math
 import concurrent.futures
+import math
+import queue
 import time
 from threading import Lock
-import queue
-import numpy as np
-from osgeo import gdal
-from numba.experimental import jitclass
+
 import numba
-from numba import njit
-from numba.typed import List  # pylint: disable=no-name-in-module
+import numpy as np
+from numba import njit  # type: ignore[attr-defined]
+from numba.experimental import jitclass
+from numba.typed import List  # type: ignore[attr-defined]
+from osgeo import gdal
+
 from overflow.fix_flats.tiled.graphs import GlobalGraph
-from overflow.util.numba_types import Int64PairListList, Int64Pair
+from overflow.util.numba_types import Int64Pair, Int64PairListList
 from overflow.util.perimeter import (
-    get_tile_perimeter,
     Float32Perimeter,
     Float32PerimeterList,
+    get_tile_perimeter,
 )
-from overflow.util.raster import raster_chunker, RasterChunk
-from .resolve_flats import compute_labels_and_gradients
-from .flat_distance import compute_min_dist_bfs, compute_min_dist_flood
+from overflow.util.raster import RasterChunk, raster_chunker
+
+from .flat_distance import compute_min_dist_flood
 from .graphs import LocalGraph
+from .resolve_flats import compute_labels_and_gradients
 
 
 @jitclass
@@ -167,10 +170,10 @@ def create_global_state(
     perimeter_cells_per_tile = 4 * (chunk_size - 2) + 4
     global_state = GlobalState(tile_rows, tile_cols, perimeter_cells_per_tile)
     tile_index = 0
-    tile_index_map = {}
+    tile_index_map: dict[int, tuple[int, int]] = {}
 
-    max_workers = numba.config.NUMBA_NUM_THREADS  # pylint: disable=no-member
-    task_queue = queue.Queue(max_workers)
+    max_workers = numba.config.NUMBA_NUM_THREADS  # type: ignore[attr-defined]
+    task_queue: queue.Queue[int] = queue.Queue(max_workers)
     lock = Lock()
 
     def handle_result(future):
@@ -192,6 +195,7 @@ def create_global_state(
             task_queue.put(tile_index)
             fdr_tile = RasterChunk(dem_tile.row, dem_tile.col, chunk_size, 1)
             fdr_tile.read(fdr_band)
+            assert dem_tile.data is not None
             dem_unbuffered = dem_tile.data[1:-1, 1:-1]
             perimeter_elevations = get_tile_perimeter(dem_unbuffered)
             global_state.elevations[tile_index] = Float32Perimeter(

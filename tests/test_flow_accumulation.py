@@ -1,14 +1,16 @@
-import uuid
 import contextlib
-import pytest
+import uuid
+
 import numpy as np
+import pytest
 from osgeo import gdal
+
 from overflow.flow_accumulation.core import single_tile_flow_accumulation
 from overflow.flow_accumulation.tiled import flow_accumulation_tiled
 from overflow.util.constants import (
-    FLOW_EXTERNAL,
-    FLOW_DIRECTION_NODATA,
     FLOW_ACCUMULATION_NODATA,
+    FLOW_DIRECTION_NODATA,
+    FLOW_EXTERNAL,
 )
 
 # Fixtures

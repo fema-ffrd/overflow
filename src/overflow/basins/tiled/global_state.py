@@ -1,20 +1,21 @@
 import numpy as np
-from numba import int64, uint8
-from numba.typed import Dict  # pylint: disable=no-name-in-module
-from numba.types import DictType
+from numba import int64, uint8  # type: ignore[attr-defined]
 from numba.experimental import jitclass
-from overflow.util.raster import Side, Corner
-from overflow.util.perimeter import UInt8Perimeter, Int64Perimeter
+from numba.typed import Dict  # type: ignore[attr-defined]
+from numba.types import DictType
+
 from overflow.util.constants import (
-    FLOW_DIRECTION_SOUTH_EAST,
-    FLOW_DIRECTION_NORTH_WEST,
-    FLOW_DIRECTION_SOUTH_WEST,
-    FLOW_DIRECTION_NORTH_EAST,
     FLOW_DIRECTION_EAST,
     FLOW_DIRECTION_NORTH,
-    FLOW_DIRECTION_WEST,
+    FLOW_DIRECTION_NORTH_EAST,
+    FLOW_DIRECTION_NORTH_WEST,
     FLOW_DIRECTION_SOUTH,
+    FLOW_DIRECTION_SOUTH_EAST,
+    FLOW_DIRECTION_SOUTH_WEST,
+    FLOW_DIRECTION_WEST,
 )
+from overflow.util.perimeter import Int64Perimeter, UInt8Perimeter
+from overflow.util.raster import Corner, Side
 
 
 @jitclass
@@ -188,11 +189,10 @@ class GlobalState:
                     self.graph[tile_a.watershed.get_side(side_a)[i]] = (
                         tile_b.watershed.get_side(side_b)[i + 1]
                     )
-            if i > 0:
-                if direction == flow_up:
-                    self.graph[tile_a.watershed.get_side(side_a)[i]] = (
-                        tile_b.watershed.get_side(side_b)[i - 1]
-                    )
+            if i > 0 and direction == flow_up:
+                self.graph[tile_a.watershed.get_side(side_a)[i]] = (
+                    tile_b.watershed.get_side(side_b)[i - 1]
+                )
 
     def _join_adjacent_tiles(
         self,

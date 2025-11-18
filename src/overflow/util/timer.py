@@ -1,11 +1,12 @@
-from contextlib import contextmanager
-import time
-import psutil
 import threading
+import time
+from contextlib import contextmanager
+
+import psutil
 from rich.console import Console
 from rich.panel import Panel
-from rich.text import Text
 from rich.progress import Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
+from rich.text import Text
 
 console = Console()
 
@@ -77,9 +78,9 @@ class ResourceStats:
             (op, chart_data[op]) for op in self.operation_order if op in chart_data
         ]
 
-        output = []
+        output: list[Text] = []
         output.append(Text("\nOperation Timing and Memory Usage", style="bold cyan"))
-        output.append("")
+        output.append(Text(""))
 
         max_label_len = max(len(item[0]) for item in sorted_items)
         max_label_len = min(max_label_len, 25)
@@ -90,7 +91,7 @@ class ResourceStats:
         headers.append(f"{'Memory':<10} ", style="bold blue")
         headers.append("Usage", style="bold blue")
         output.append(headers)
-        output.append("")
+        output.append(Text(""))
 
         max_duration = max(v[0] for v in chart_data.values())
         chart_width = 30
@@ -114,7 +115,7 @@ class ResourceStats:
 
         if "Total processing" in self.stats:
             total_duration = self.stats["Total processing"][0]
-            output.append("")
+            output.append(Text(""))
             total_line = Text()
             total_line.append(
                 f"Total time: {self.format_compact_duration(total_duration)}",
@@ -188,16 +189,13 @@ def timer(
             console=console,
             transient=True,
         ) as progress:
-            task = progress.add_task(description, total=None)
+            progress.add_task(description, total=None)
             try:
                 yield
             finally:
                 duration = time.time() - start_time
 
-                if track_memory:
-                    memory_used = monitor.stop()
-                else:
-                    memory_used = 0
+                memory_used = monitor.stop() if track_memory else 0
 
                 resource_stats.add_stats(description, duration, memory_used)
                 progress.stop()
@@ -221,10 +219,7 @@ def timer(
         finally:
             duration = time.time() - start_time
 
-            if track_memory:
-                memory_used = monitor.stop()
-            else:
-                memory_used = 0
+            memory_used = monitor.stop() if track_memory else 0
 
             resource_stats.add_stats(description, duration, memory_used)
 

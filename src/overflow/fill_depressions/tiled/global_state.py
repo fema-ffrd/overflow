@@ -1,15 +1,17 @@
 from heapq import heappop, heappush
+
 import numpy as np
-from numba import njit
-from numba.types import int64, float32
-from numba.typed import Dict  # pylint: disable=no-name-in-module
+from numba import njit  # type: ignore[attr-defined]
 from numba.experimental import jitclass
-from overflow.util.raster import Side, Corner
-from overflow.util.perimeter import (
-    Int64Perimeter,
-    Float32Perimeter,
-)
+from numba.typed import Dict  # type: ignore[attr-defined]
+from numba.types import float32, int64
+
 from overflow.fill_depressions.core.watershed_graph import WatershedGraph
+from overflow.util.perimeter import (
+    Float32Perimeter,
+    Int64Perimeter,
+)
+from overflow.util.raster import Corner, Side
 
 
 @njit

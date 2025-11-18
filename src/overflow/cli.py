@@ -1,29 +1,25 @@
 import os
-import subprocess
+
 import click
 import numpy as np
 from osgeo import gdal
 
-from overflow.breach_single_cell_pits import breach_single_cell_pits
-from overflow.flow_direction import flow_direction
-from overflow.breach_paths_least_cost import (
-    breach_paths_least_cost,
-    breach_paths_least_cost_cuda,
-)
-from overflow.fix_flats.tiled import fix_flats_tiled
-from overflow.fix_flats.core import fix_flats_from_file
-from overflow.fill_depressions.core import fill_depressions
-from overflow.fill_depressions.tiled import fill_depressions_tiled
-from overflow.flow_accumulation.core import flow_accumulation
-from overflow.flow_accumulation.tiled import flow_accumulation_tiled
-from overflow.basins.core import label_watersheds_from_file, drainage_points_from_file
+from overflow.basins.core import drainage_points_from_file, label_watersheds_from_file
 from overflow.basins.tiled import label_watersheds_tiled
+from overflow.breach_paths_least_cost import breach_paths_least_cost
+from overflow.breach_single_cell_pits import breach_single_cell_pits
 from overflow.extract_streams.core import extract_streams
 from overflow.extract_streams.tiled import extract_streams_tiled
+from overflow.fill_depressions.core import fill_depressions
+from overflow.fill_depressions.tiled import fill_depressions_tiled
+from overflow.fix_flats.core import fix_flats_from_file
+from overflow.fix_flats.tiled import fix_flats_tiled
+from overflow.flow_accumulation.core import flow_accumulation
+from overflow.flow_accumulation.tiled import flow_accumulation_tiled
+from overflow.flow_direction import flow_direction
 from overflow.util.constants import DEFAULT_CHUNK_SIZE, DEFAULT_SEARCH_RADIUS
-from overflow.util.raster import sqmi_to_cell_count, feet_to_cell_count
-from overflow.util.timer import timer, console, resource_stats
-
+from overflow.util.raster import feet_to_cell_count, sqmi_to_cell_count
+from overflow.util.timer import console, resource_stats, timer
 
 # set gdal configuration
 gdal.UseExceptions()
@@ -118,24 +114,12 @@ def flow_direction_cli(input_file: str, output_file: str, chunk_size: int):
     help="maximum cost of breach paths (total sum of elevation removed from each cell in path)",
     default=np.inf,
 )
-@click.option(
-    "--cuda",
-    help="use experimental CUDA implementation",
-    is_flag=True,
-)
-@click.option(
-    "--max_pits",
-    help="maximum number of pits to process in each chunk for cuda implementation",
-    default=10000,
-)
 def breach_paths_least_cost_cli(
     input_file: str,
     output_file: str,
     chunk_size: int,
     search_radius: int,
     max_cost: float,
-    cuda: bool,
-    max_pits: int,
 ):
     """
     This function is used to breach paths of least cost for pits in a DEM.
@@ -159,14 +143,9 @@ def breach_paths_least_cost_cli(
     None
     """
     try:
-        if cuda:
-            breach_paths_least_cost_cuda(
-                input_file, output_file, chunk_size, search_radius, max_pits, max_cost
-            )
-        else:
-            breach_paths_least_cost(
-                input_file, output_file, chunk_size, search_radius, max_cost
-            )
+        breach_paths_least_cost(
+            input_file, output_file, chunk_size, search_radius, max_cost
+        )
     except Exception as exc:
         print(
             f"breach_paths_least_cost failed with the following exception: {str(exc)}"
@@ -740,53 +719,7 @@ def process_dem_cli(
         raise click.Abort()
 
 
-@main.command(name="test")
-@click.option(
-    "--all",
-    "run_all",
-    help="Run all tests including CUDA tests",
-    is_flag=True,
-)
-@click.argument("pytest_args", nargs=-1, type=click.UNPROCESSED)
-def test_cli(run_all: bool, pytest_args: tuple):
-    """
-    Run pytest tests. By default, excludes CUDA tests with -k "not cuda".
-    Use --all to run all tests including CUDA tests.
-    Additional pytest arguments can be passed after the command options.
-
-    Examples:
-        overflow test                    # Run tests excluding CUDA
-        overflow test --all              # Run all tests including CUDA
-        overflow test tests/             # Run specific test directory
-        overflow test -v                 # Run with verbose output
-    """
-    try:
-        cmd = ["pytest"]
-
-        # Add -k "not cuda" flag by default unless --all is specified
-        if not run_all:
-            cmd.extend(["-k", "not cuda"])
-
-        # Add any additional pytest arguments
-        if pytest_args:
-            cmd.extend(pytest_args)
-
-        # Run pytest
-        result = subprocess.run(cmd, cwd=os.getcwd())
-
-        # Exit with the same code as pytest
-        raise SystemExit(result.returncode)
-
-    except FileNotFoundError:
-        print("Error: pytest not found. Make sure pytest is installed.")
-        raise click.Abort()
-    except Exception as exc:
-        print(f"test command failed with the following exception: {str(exc)}")
-        raise click.Abort()
-
-
 if __name__ == "__main__":
     # run the function
-    # pylint does not understand click decorators
-    # pylint: disable=no-value-for-parameter
+
     main()

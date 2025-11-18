@@ -1,8 +1,8 @@
-from numba.experimental import jitclass
-from numba import njit, float32, int64
-from numba.types import ListType
-from numba import int64, uint8
 import numpy as np
+from numba import float32, int64, njit, uint8  # type: ignore[attr-defined]
+from numba.experimental import jitclass
+from numba.types import ListType
+
 from overflow.util.raster import Corner, Side
 
 
@@ -39,10 +39,10 @@ def create_perimeter_class(numba_type):
             perimeter (np.ndarray): A 1D contiguous array containing the flattened perimeter cells.
         """
 
-        rows: int
-        cols: int
-        index_offset: int
-        data: np.ndarray
+        rows: int  # type: ignore[annotation-unchecked]
+        cols: int  # type: ignore[annotation-unchecked]
+        index_offset: int  # type: ignore[annotation-unchecked]
+        data: np.ndarray  # type: ignore[annotation-unchecked]
 
         def __init__(self, data: np.ndarray, rows: int, cols: int, tile_index: int):
             self.rows = rows
@@ -153,7 +153,7 @@ Float32Perimeter = create_perimeter_class(float32)
 Int64Perimeter = create_perimeter_class(int64)
 UInt8Perimeter = create_perimeter_class(uint8)
 
-# pylint: disable=no-member
+
 Float32PerimeterList = ListType(Float32Perimeter.class_type.instance_type)
 Int64PerimeterList = ListType(Int64Perimeter.class_type.instance_type)
 UInt8PerimeterList = ListType(UInt8Perimeter.class_type.instance_type)

@@ -1,9 +1,9 @@
 import numpy as np
-from numba import njit, prange
+from numba import njit, prange  # type: ignore[attr-defined]
 from osgeo import gdal
 
-from overflow.util.raster import raster_chunker, create_dataset
 from overflow.util.constants import DEFAULT_CHUNK_SIZE, EPSILON_GRADIENT
+from overflow.util.raster import create_dataset, raster_chunker
 
 
 @njit(parallel=True)
@@ -34,7 +34,7 @@ def breach_single_cell_pits_in_chunk(
     rows, cols = chunk.shape
     # Loop through each cell in the chunk
     unsolved_pits_raster = np.zeros(chunk.shape, dtype=np.int8)
-    # pylint: disable=not-an-iterable
+
     for row in prange(2, rows - 2):
         for col in range(2, cols - 2):
             z = chunk[row, col]
@@ -87,7 +87,7 @@ def breach_single_cell_pits_in_chunk(
 
 def breach_single_cell_pits(
     input_path: str, output_path: str, chunk_size: int = DEFAULT_CHUNK_SIZE
-):
+) -> None:
     """
     This function is used to breach single cell pits in a DEM raster.
 
@@ -99,6 +99,10 @@ def breach_single_cell_pits(
         The path to save the output DEM raster with breached single cell pits.
     chunk_size : int, optional
         The size of the chunks in which the DEM is processed, by default DEFAULT_CHUNK_SIZE.
+
+    Returns
+    -------
+    None
     """
 
     input_raster = gdal.Open(input_path)

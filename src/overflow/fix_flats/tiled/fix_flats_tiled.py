@@ -1,13 +1,15 @@
-import tempfile
-import shutil
 import os
-from rich.console import Console
+import shutil
+import tempfile
+
 from osgeo import gdal
-from overflow.util.constants import DEFAULT_CHUNK_SIZE, FLOW_DIRECTION_NODATA
-from overflow.util.raster import open_dataset, create_dataset
-from overflow.fix_flats.tiled.global_state import create_global_state
+from rich.console import Console
+
 from overflow.fix_flats.tiled.flat_mask import create_flat_mask
+from overflow.fix_flats.tiled.global_state import create_global_state
 from overflow.fix_flats.tiled.update_fdr import update_fdr
+from overflow.util.constants import DEFAULT_CHUNK_SIZE, FLOW_DIRECTION_NODATA
+from overflow.util.raster import create_dataset, open_dataset
 
 LABELS_FILENAME = "labels.tif"
 FLAT_MASK_FILENAME = "flat_mask.tif"
@@ -16,7 +18,7 @@ FLAT_MASK_FILENAME = "flat_mask.tif"
 def setup_datasets(
     dem_filepath: str,
     fdr_filepath: str,
-    fixed_fdr_filepath: str,
+    fixed_fdr_filepath: str | None,
     working_dir: str,
 ) -> tuple[gdal.Dataset, gdal.Dataset, gdal.Dataset, gdal.Dataset, gdal.Dataset]:
     """
@@ -84,10 +86,10 @@ def setup_datasets(
 def fix_flats_tiled(
     dem_filepath: str,
     fdr_filepath: str,
-    output_filepath: str,
+    output_filepath: str | None,
     chunk_size: int = DEFAULT_CHUNK_SIZE,
-    working_dir: str = None,
-):
+    working_dir: str | None = None,
+) -> None:
     """
     Fix flats in a DEM using a tiled approach.
 
@@ -102,7 +104,7 @@ def fix_flats_tiled(
         output_filepath (str): The file path of the output fixed flow direction dataset.
         chunk_size (int, optional): The size of each chunk (tile) to process the DEM.
             Default is DEFAULT_CHUNK_SIZE.
-        working_dir (str, optional): The directory where the temporary datasets will be created.
+        working_dir (str | None, optional): The directory where the temporary datasets will be created.
             If not provided, a temporary directory will be created and cleaned up after processing.
 
     Returns:

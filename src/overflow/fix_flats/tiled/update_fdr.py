@@ -1,6 +1,7 @@
 from osgeo import gdal
+
 from overflow.fix_flats.core.fix_flats import d8_masked_flow_dirs
-from overflow.util.raster import raster_chunker, RasterChunk
+from overflow.util.raster import RasterChunk, raster_chunker
 
 
 def update_fdr(

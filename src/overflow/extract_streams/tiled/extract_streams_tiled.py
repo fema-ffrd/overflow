@@ -1,38 +1,39 @@
-import os
 import concurrent.futures
-import time
-import sys
-from threading import Lock
+import os
 import queue
-from shapely.geometry import LineString
-from shapely.ops import linemerge
-from shapely.wkt import loads, dumps
-from rich.console import Console
-import numpy as np
-from numba import njit, types
-from numba.typed import Dict, List  # pylint: disable=no-name-in-module
-from numba.types import int64, float64
+import sys
+import time
+from threading import Lock
+
 import numba
+import numpy as np
+from numba import njit, types  # type: ignore[attr-defined]
+from numba.typed import Dict, List  # type: ignore[attr-defined]
+from numba.types import float64, int64
 from osgeo import gdal, ogr
+from rich.console import Console
+from shapely.geometry import LineString
+from shapely.wkt import dumps, loads
+
+from overflow.extract_streams.core import (
+    add_downstream_junctions,
+    find_node_cells,
+    get_downstream_cell,
+    get_stream_raster,
+    nodes_to_points,
+    setup_datasource,
+    write_lines,
+    write_points,
+)
 from overflow.util.constants import NEIGHBOR_OFFSETS
 from overflow.util.raster import (
-    create_dataset,
-    open_dataset,
-    raster_chunker,
     RasterChunk,
     cell_to_coords,
     coords_to_cell,
+    create_dataset,
     grid_hash,
-)
-from overflow.extract_streams.core import (
-    get_downstream_cell,
-    find_node_cells,
-    get_stream_raster,
-    setup_datasource,
-    write_points,
-    write_lines,
-    nodes_to_points,
-    add_downstream_junctions,
+    open_dataset,
+    raster_chunker,
 )
 
 # Define custom types for numba
@@ -359,25 +360,25 @@ def remove_tile_edge_junctions(
     junction_points = []
     junction_fids = []
     for feature in junctions_layer:
-        geom = feature.GetGeometryRef()
+        geom = feature.GetGeometryRef()  # type: ignore[attr-defined]
         junction_points.append((geom.GetX(), geom.GetY()))
-        junction_fids.append(feature.GetFID())
+        junction_fids.append(feature.GetFID())  # type: ignore[attr-defined]
 
-    junction_points = np.array(junction_points, dtype=np.float64)
-    junction_fids = np.array(junction_fids, dtype=np.int64)
+    junction_points = np.array(junction_points, dtype=np.float64)  # type: ignore[assignment]
+    junction_fids = np.array(junction_fids, dtype=np.int64)  # type: ignore[assignment]
 
     # Collect all stream endpoints
     stream_endpoints = []
     for feature in streams_layer:
-        fid = feature.GetFID()
-        geom = feature.GetGeometryRef()
+        fid = feature.GetFID()  # type: ignore[attr-defined]
+        geom = feature.GetGeometryRef()  # type: ignore[attr-defined]
         upstream = geom.GetPoint(0)
         downstream = geom.GetPoint(geom.GetPointCount() - 1)
         # Store both endpoints with flag indicating if it's upstream
         stream_endpoints.append((fid, upstream[0], upstream[1], 1))
         stream_endpoints.append((fid, downstream[0], downstream[1], 0))
 
-    stream_endpoints = np.array(stream_endpoints, dtype=np.float64)
+    stream_endpoints = np.array(stream_endpoints, dtype=np.float64)  # type: ignore[assignment]
 
     # Get lists of what needs to be merged/deleted
     with console.status("[bold green]Finding streams to merge...") as status:
@@ -391,12 +392,13 @@ def remove_tile_edge_junctions(
     total = len(junction_fids_to_remove)
 
     # Keep track of stream replacements
-    stream_replacements = {}  # old_fid -> new_fid
+    stream_replacements: dict[int, int] = {}  # old_fid -> new_fid
 
     with console.status("[bold green]Merging streams...") as status:
-        for i, ((fid1, fid2, merge_type), (up_x, up_y, down_x, down_y)) in enumerate(
-            zip(stream_pairs_to_merge, new_endpoints), 1
-        ):
+        for i, (
+            (fid1, fid2, merge_type),
+            (_up_x, _up_y, _down_x, _down_y),
+        ) in enumerate(zip(stream_pairs_to_merge, new_endpoints), 1):
             if is_a_tty:
                 status.update(f"[bold green]Merging streams: {i}/{total}")
 
@@ -405,8 +407,8 @@ def remove_tile_edge_junctions(
             current_fid2 = stream_replacements.get(fid2, fid2)
 
             # Get and merge the streams
-            stream1 = streams_layer.GetFeature(current_fid1)
-            stream2 = streams_layer.GetFeature(current_fid2)
+            stream1 = streams_layer.GetFeature(current_fid1)  # type: ignore[attr-defined]
+            stream2 = streams_layer.GetFeature(current_fid2)  # type: ignore[attr-defined]
 
             if stream1 is None or stream2 is None:
                 console.print(
@@ -420,9 +422,9 @@ def remove_tile_edge_junctions(
             merged_geom = merge_stream_geometries(geom1, geom2, merge_type)
 
             # Create new feature
-            new_feature = ogr.Feature(streams_layer.GetLayerDefn())
+            new_feature = ogr.Feature(streams_layer.GetLayerDefn())  # type: ignore[attr-defined]
             new_feature.SetGeometry(merged_geom)
-            streams_layer.CreateFeature(new_feature)
+            streams_layer.CreateFeature(new_feature)  # type: ignore[attr-defined]
             new_fid = new_feature.GetFID()
 
             # Update stream replacements
@@ -436,8 +438,8 @@ def remove_tile_edge_junctions(
                     stream_replacements[old_fid] = new_fid
 
             # Delete original features
-            streams_layer.DeleteFeature(current_fid1)
-            streams_layer.DeleteFeature(current_fid2)
+            streams_layer.DeleteFeature(current_fid1)  # type: ignore[attr-defined]
+            streams_layer.DeleteFeature(current_fid2)  # type: ignore[attr-defined]
 
             # Cleanup
             stream1 = None
@@ -449,7 +451,7 @@ def remove_tile_edge_junctions(
         for i, junction_fid in enumerate(junction_fids_to_remove, 1):
             if is_a_tty:
                 status.update(f"[bold green]Removing junctions: {i}/{total}")
-            junctions_layer.DeleteFeature(junction_fid)
+            junctions_layer.DeleteFeature(junction_fid)  # type: ignore[attr-defined]
 
     # Cleanup
     ds = None
@@ -461,7 +463,7 @@ def extract_streams_tiled(
     output_dir: str,
     cell_count_threshold: int,
     chunk_size: int,
-):
+) -> None:
     """
     Extract stream networks from flow accumulation and flow direction rasters using a tiled approach.
 
@@ -479,6 +481,9 @@ def extract_streams_tiled(
         output_dir (str): Directory to save output files.
         cell_count_threshold (int): Minimum flow accumulation to be considered a stream.
         chunk_size (int): Size of each tile for processing.
+
+    Returns:
+        None
     """
     # Open input datasets
     fac_ds = open_dataset(fac_path)
@@ -508,8 +513,8 @@ def extract_streams_tiled(
     )
 
     # Set up parallel processing
-    max_workers = numba.config.NUMBA_NUM_THREADS  # pylint: disable=no-member
-    task_queue = queue.Queue(max_workers)
+    max_workers = numba.config.NUMBA_NUM_THREADS  # type: ignore[attr-defined]
+    task_queue: queue.Queue[int] = queue.Queue(max_workers)
     lock = Lock()
 
     def handle_tile_result(future):
