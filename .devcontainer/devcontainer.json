@@ -1,10 +1,12 @@
 {
 	"name": "overflow-devcontainer",
-	"image": "mcr.microsoft.com/devcontainers/python:2-3.11-bookworm",
-	"features": {
-		"ghcr.io/jsburckhardt/devcontainer-features/uv:1": {},
-		"ghcr.io/code-fabrik/features/gdal:1": {}
+	"build": {
+		"dockerfile": "Dockerfile",
+		"context": ".."
 	},
+    "mounts": [
+      "source=overflow-fishhistory,target=/commandhistory,type=volume"
+    ],
 	"customizations": {
 		"vscode": {
 			"extensions": [
@@ -14,7 +16,7 @@
 				"GitHub.copilot"
 			],
 			"settings": {
-				"python.defaultInterpreterPath": "/usr/local/bin/python",
+				"python.defaultInterpreterPath": "/opt/venv/bin/python",
 				"python.linting.enabled": false,
 				"[python]": {
 					"editor.defaultFormatter": "charliermarsh.ruff",
@@ -27,7 +29,7 @@
 			}
 		}
 	},
-	"postCreateCommand": "sudo chown -R vscode:vscode ${containerWorkspaceFolder} && sudo uv pip install --system -r requirements.txt -r requirements-dev.txt && sudo pip install --no-cache --force-reinstall gdal[numpy]==\"$(gdal-config --version).*\"",
+	"postCreateCommand": "sudo chown -R ubuntu:ubuntu ${containerWorkspaceFolder} && uv pip install -r requirements.txt -r requirements-dev.txt",
 	// avoid dubious ownership of the workspace folder https://www.kenmuse.com/blog/avoiding-dubious-ownership-in-dev-containers/
 	"postStartCommand": "git config --global --add safe.directory ${containerWorkspaceFolder}"
 }

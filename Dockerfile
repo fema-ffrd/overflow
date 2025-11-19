@@ -1,18 +1,19 @@
-FROM python:3.11-slim
+FROM ghcr.io/osgeo/gdal:ubuntu-small-3.12.0
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+ENV UV_PROJECT_ENVIRONMENT="/opt/venv"
+ENV PATH="$UV_PROJECT_ENVIRONMENT/bin:$PATH"
+
+RUN uv venv $UV_PROJECT_ENVIRONMENT --system-site-packages
+
 WORKDIR /app
-RUN pip install uv
-RUN apt-get update && \
-    apt-get install -y gdal-bin libgdal-dev build-essential && \
-    rm -rf /var/lib/apt/lists/*
-COPY requirements.txt .
-RUN uv pip install --system -r requirements.txt
-RUN uv pip install --system --no-cache --force-reinstall gdal[numpy]=="$(gdal-config --version).*"
 
 COPY src /app/src
 COPY pyproject.toml /app/pyproject.toml
 COPY README.md /app/README.md
 
-RUN uv pip install --system .
+RUN uv pip install .
 
 # Set the entrypoint
 ENTRYPOINT ["overflow"]

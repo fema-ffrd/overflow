@@ -14,36 +14,40 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.11"]
+        python-version: ["3.11", "3.12"]
 
     steps:
       - name: Check out code
         uses: actions/checkout@v3
 
-      - name: Install GDAL
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gdal-bin libgdal-dev build-essential
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Setup micromamba with GDAL
+        uses: mamba-org/setup-micromamba@v2
         with:
-          python-version: ${{ matrix.python-version }}
+          environment-name: gdal-env
+          create-args: >-
+            python=${{ matrix.python-version }}
+            gdal
+            libgdal
+          init-shell: bash
+          cache-environment: true
 
       - name: Install uv
         run: pip install uv
+        shell: bash -el {0}
 
       - name: Install dependencies
         run: |
-          uv pip install --system -r requirements.txt
-          uv pip install --system -r requirements-dev.txt
-          uv pip install --system --no-cache --force-reinstall gdal[numpy]=="$(gdal-config --version).*"
+          uv pip install -r requirements.txt -r requirements-dev.txt
+        shell: bash -el {0}
 
       - name: Run ruff linting
         run: ruff check src/ tests/
+        shell: bash -el {0}
 
       - name: Run mypy type checking
         run: mypy src/ tests/
+        shell: bash -el {0}
 
       - name: Run pytest
         run: pytest
+        shell: bash -el {0}

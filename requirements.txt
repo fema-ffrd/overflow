@@ -1,4 +1,4 @@
-numpy>=1.26.4
+numpy>=1.26.4,<2
 numba>=0.59.0
 shapely>=2.0.6
 rich>=13.9.4
