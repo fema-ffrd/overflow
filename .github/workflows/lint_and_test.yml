@@ -20,24 +20,24 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v3
 
-      - uses: mamba-org/setup-micromamba@v1
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          environment-file: ./env.yaml
-          cache-environment-key: environment-dev
-          cache-downloads-key: downloads-dev
-          environment-name: ci
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install dependencies
+        run: |
+          uv pip install -r requirements.txt
+          uv pip install -r requirements-dev.txt
 
       - name: Run ruff linting
-        shell: bash -el {0}
-        run: |
-          ruff check src/ tests/
+        run: ruff check src/ tests/
 
       - name: Run mypy type checking
-        shell: bash -el {0}
-        run: |
-          mypy src/ tests/
+        run: mypy src/ tests/
 
       - name: Run pytest
-        shell: bash -el {0}
-        run: |
-          pytest
+        run: pytest

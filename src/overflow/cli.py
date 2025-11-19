@@ -46,19 +46,6 @@ def breach_single_cell_pits_cli(input_file: str, output_file: str, chunk_size: i
     This function is used to breach single cell pits in a DEM.
     The function takes filepath to a GDAL supported raster dataset as
     input and prodeces an output DEM with breached single cell pits.
-
-    Parameters
-    ----------
-    input_file : str
-        Path to the input dem file
-    output_file : str
-        Path to the output file
-    chunk_size : int
-        Size of the chunk to be used for processing
-
-    Returns
-    -------
-    None
     """
     success = False
     try:
@@ -92,19 +79,6 @@ def flow_direction_cli(input_file: str, output_file: str, chunk_size: int):
     """
     This function is used to generate flow direction rasters from chunks of a DEM.
     The function takes a chunk of a DEM as input and returns a chunk of DEM with delineated flow direction.
-
-    Parameters
-    ----------
-    input_file : str
-        Path to the input dem file
-    output_file : str
-        Path to the output file
-    chunk_size : int
-        Size of the chunk to be used for processing
-
-    Returns
-    -------
-    None
     """
     success = False
     try:
@@ -152,21 +126,6 @@ def breach_paths_least_cost_cli(
     The function takes filepath to a GDAL supported raster dataset as
     input and prodeces an output DEM with breached paths of least cost.
     Only pits that can be solved within the search radius are solved.
-
-    Parameters
-    ----------
-    input_file : str
-        Path to the input dem file
-    output_file : str
-        Path to the output file
-    chunk_size : int
-        Size of the chunk to be used for processing. Larger chunk sizes will use more memory.
-    search_radius : int
-        Search radius in cells to look for solution paths. Larger search radius will use more memory.
-
-    Returns
-    -------
-    None
     """
     success = False
     try:
@@ -230,21 +189,6 @@ def fix_flats_cli(
     This function is used to fix flats in a DEM.
     The function takes filepath to a GDAL supported raster dataset as
     input and prodeces an output DEM with fixed flats.
-
-    Parameters
-    ----------
-    dem_file : str
-        Path to the input dem file
-    fdr_file : str
-        Path to the input flow direction file
-    output_file : str
-        Path to the output file
-    chunk_size : int
-        Size of the chunk to be used for processing
-
-    Returns
-    -------
-    None
     """
     success = False
     try:
@@ -311,25 +255,6 @@ def fill_depressions_cli(
     This function is used to fill depressions in a DEM.
     The function takes filepath to a GDAL supported raster dataset as
     input and prodeces an output DEM with filled depressions.
-
-    Parameters
-    ----------
-    dem_file : str
-        Path to the input dem file
-    output_file : str
-        Path to the output file
-    chunk_size : int
-        Size of the chunk to be used for processing. Larger chunk sizes will use more memory.
-        If chunk_size is less than or equal to 1, the fill_depressions function is called
-        which fills depressions with an all in RAM algorithm.
-    working_dir : str
-        Working directory to store temporary files
-    fill_holes : bool
-        If set, fills holes in the DEM
-
-    Returns
-    -------
-    None
     """
     success = False
     try:
@@ -384,21 +309,6 @@ def flow_accumulation_cli(
     """
     This function is used to calculate flow accumulation from a flow direction raster.
     The function takes a flow direction raster as input and returns a flow accumulation raster.
-
-    Parameters
-    ----------
-    fdr_file : str
-        Path to the input flow direction file
-    output_file : str
-        Path to the output file
-    chunk_size : int
-        Size of the chunk to be used for processing. Larger chunk sizes will use more memory.
-        If chunk_size is less than or equal to 1, the flow_accumulation function is called
-        which calculates flow accumulation with an all in RAM algorithm.
-
-    Returns
-    -------
-    None
     """
     success = False
     try:
@@ -467,23 +377,6 @@ def label_watersheds_cli(
     """
     This function is used to label watersheds from a flow direction raster.
     The function takes a flow direction raster and drainage points as input and returns a watersheds raster.
-
-    Parameters
-    ----------
-    fdr_file : str
-        Path to the input flow direction file
-    dp_file : str
-        Path to the drainage points file
-    output_file : str
-        Path to the output file
-    chunk_size : int
-        Size of the chunk to be used for processing. Larger chunk sizes will use more memory.
-        If chunk_size is less than or equal to 1, the label_watersheds function is called
-        which calculates watersheds with an all in RAM algorithm.
-
-    Returns
-    -------
-    None
     """
     success = False
     try:
@@ -556,25 +449,6 @@ def extract_streams_cli(
     """
     This function is used to extract streams from a flow accumulation and flow direction raster.
     The function takes a flow accumulation and flow direction raster as input and returns a streams raster.
-
-    Parameters
-    ----------
-    fac_file : str
-        Path to the input flow accumulation file
-    fdr_file : str
-        Path to the input flow direction file
-    output_dir : str
-        Path to the output directory
-    cell_count_threshold : int
-        Cell count threshold
-    chunk_size : int
-        Size of the chunk to be used for processing. Larger chunk sizes will use more memory.
-        If chunk_size is less than or equal to 1, the extract_streams function is called
-        which extracts streams with an all in RAM algorithm.
-
-    Returns
-    -------
-    None
     """
     success = False
     try:
@@ -666,31 +540,6 @@ def process_dem_cli(
     """
     This function is used to process a DEM.
     The function takes a DEM as input and returns a streams raster.
-
-    Parameters
-    ----------
-    dem_file : str
-        Path to the input dem file
-    output_dir : str
-        Path to the output directory
-    chunk_size : int
-        Size of the chunk to be used for processing. Larger chunk sizes will use more memory.
-        If chunk_size is 0 or negative, core algorithms will be used instead of tiled processing
-        (except for breaching which will use the larger of the raster dimensions as chunk size).
-    search_radius_ft : float
-        Search radius in feet to look for solution paths. Larger search radius will use more memory.
-    max_cost : float
-        Maximum cost of breach paths (total sum of elevation removed from each cell in path)
-    da_sqmi : float
-        Minimum drainage area in square miles for stream extraction
-    basins : bool
-        Flag to enable watershed delineation
-    fill_holes : bool
-        If set, fills holes in the DEM
-
-    Returns
-    -------
-    None
     """
     success = False
     try:

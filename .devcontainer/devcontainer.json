@@ -1,18 +1,8 @@
 {
 	"name": "overflow-devcontainer",
-	"build": {
-		"dockerfile": "Dockerfile",
-		"context": ".."
-	},
+	"image": "mcr.microsoft.com/devcontainers/python:2-3.11-bookworm",
 	"features": {
-		"ghcr.io/devcontainers/features/git:1": {},
-		"ghcr.io/mamba-org/devcontainer-features/micromamba:1": {
-			"envFile": "/tmp/env.yaml",
-			"envName": "overflow",
-			"autoActivate": true,
-			"version": "1.5.6"
-		},
-		"ghcr.io/devcontainers/features/aws-cli:1": {}
+		"ghcr.io/jsburckhardt/devcontainer-features/uv:1": {}
 	},
 	"customizations": {
 		"vscode": {
@@ -23,7 +13,7 @@
 				"GitHub.copilot"
 			],
 			"settings": {
-				"python.defaultInterpreterPath": "/opt/conda/envs/overflow/bin/python",
+				"python.defaultInterpreterPath": "/usr/local/bin/python",
 				"python.linting.enabled": false,
 				"[python]": {
 					"editor.defaultFormatter": "charliermarsh.ruff",
@@ -36,8 +26,7 @@
 			}
 		}
 	},
-	"postCreateCommand": "sudo chown -R vscode:vscode ${containerWorkspaceFolder}",
-	// start the dev container with the overflow environment activated
+	"postCreateCommand": "sudo chown -R vscode:vscode ${containerWorkspaceFolder} && sudo uv pip install --system -r requirements.txt -r requirements-dev.txt",
 	// avoid dubious ownership of the workspace folder https://www.kenmuse.com/blog/avoiding-dubious-ownership-in-dev-containers/
-	"postStartCommand": "micromamba shell init --shell=bash && echo 'micromamba activate overflow' >> ~/.bashrc && git config --global --add safe.directory ${containerWorkspaceFolder}"
+	"postStartCommand": "git config --global --add safe.directory ${containerWorkspaceFolder}"
 }
