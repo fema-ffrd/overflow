@@ -24,7 +24,7 @@ jobs:
 
       - name: Append boathouse-json
         run: |
-          echo >> "${{ github.workspace }}//Dockerfile"; LABEL=$(jq -c . "${{ github.workspace }}/boathouse.json" | tr -d '\r\n' | sed 's/"/\\"/g'); echo -n LABEL interface=\"$LABEL\"" >> "${{ github.workspace }}/Dockerfile"
+          echo >> "${{ github.workspace }}/Dockerfile"; LABEL=$(jq -c . "${{ github.workspace }}/boathouse.json" | tr -d '\r\n' | sed 's/"/\\"/g'); echo -n "LABEL interface=\"$LABEL\"" >> "${{ github.workspace }}/Dockerfile"
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
