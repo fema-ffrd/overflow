@@ -1,0 +1,93 @@
+{
+    "cli": [
+        {
+            "name": "Process DEM",
+            "path": "overflow",
+            "cmd": [
+                "process-dem"
+            ],
+            "readme": "docs/user-guide/cli.md",
+            "description": "This process takes a DEM as input and returns delineated streams and optionally basins.",
+            "category": "Hydrology",
+            "keywords": [
+                "dem",
+                "stream",
+                "delineation",
+                "watershed",
+                "hydrology",
+                "drainage",
+                "basin",
+                "terrain",
+                "hydrologic",
+                "catchment",
+                "flow",
+                "direction",
+                "accumulation",
+                "breach",
+                "depression",
+                "filling",
+                "raster",
+                "geospatial",
+                "processing",
+                "d8",
+                "pour",
+                "points",
+                "surface"
+            ],
+            "args": [
+                {
+                    "displayName": "DEM File",
+                    "name": "dem_file",
+                    "type": "file",
+                    "description": "path to the GDAL supported raster dataset for the DEM"
+                },
+                {
+                    "displayName": "Output Directory",
+                    "name": "output_dir",
+                    "type": "directory",
+                    "description": "path to the output directory"
+                },
+                {
+                    "displayName": "Chunk Size",
+                    "name": "chunk_size",
+                    "type": "integer",
+                    "description": "chunk size for tiled operations",
+                    "defaultValue": 2000
+                },
+                {
+                    "displayName": "Search Radius (feet)",
+                    "name": "--search_radius_ft",
+                    "type": "integer",
+                    "defaultValue": 200,
+                    "description": "max search radius in feet to look for solution paths during breaching"
+                },
+                {
+                    "displayName": "Max Cost",
+                    "name": "--max_cost",
+                    "type": "float",
+                    "description": "maximum cost of breach paths (total sum of elevation removed from each cell in path)",
+                    "optional": true
+                },
+                {
+                    "displayName": "Drainage Area (square miles)",
+                    "name": "--da_sqmi",
+                    "type": "float",
+                    "defaultValue": 1,
+                    "description": "minimum drainage area in square miles for stream extraction"
+                },
+                {
+                    "displayName": "Generate Basins?",
+                    "name": "--basins",
+                    "type": "bool",
+                    "description": "flag to enable watershed delineation"
+                },
+                {
+                    "displayName": "Fill Holes?",
+                    "name": "--fill_holes",
+                    "type": "bool",
+                    "description": "If set, fills no-data holes in the DEM"
+                }
+            ]
+        }
+    ]
+}
