@@ -2,7 +2,8 @@
 	"name": "overflow-devcontainer",
 	"image": "mcr.microsoft.com/devcontainers/python:2-3.11-bookworm",
 	"features": {
-		"ghcr.io/jsburckhardt/devcontainer-features/uv:1": {}
+		"ghcr.io/jsburckhardt/devcontainer-features/uv:1": {},
+		"ghcr.io/code-fabrik/features/gdal:1": {}
 	},
 	"customizations": {
 		"vscode": {
@@ -26,7 +27,7 @@
 			}
 		}
 	},
-	"postCreateCommand": "sudo chown -R vscode:vscode ${containerWorkspaceFolder} && sudo uv pip install --system -r requirements.txt -r requirements-dev.txt",
+	"postCreateCommand": "sudo chown -R vscode:vscode ${containerWorkspaceFolder} && sudo uv pip install --system -r requirements.txt -r requirements-dev.txt && sudo pip install --no-cache --force-reinstall gdal[numpy]==\"$(gdal-config --version).*\"",
 	// avoid dubious ownership of the workspace folder https://www.kenmuse.com/blog/avoiding-dubious-ownership-in-dev-containers/
 	"postStartCommand": "git config --global --add safe.directory ${containerWorkspaceFolder}"
 }

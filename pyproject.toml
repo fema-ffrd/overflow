@@ -42,7 +42,6 @@ dependencies = [
     "shapely",
     "rich",
     "click",
-    "gdal",
 ]
 
 [project.optional-dependencies]
