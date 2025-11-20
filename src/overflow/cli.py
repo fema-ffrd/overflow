@@ -1,9 +1,11 @@
 import os
+import sys
 
 import click
 import numpy as np
 from osgeo import gdal
 
+from overflow import __version__
 from overflow.basins.core import drainage_points_from_file, label_watersheds_from_file
 from overflow.basins.tiled import label_watersheds_tiled
 from overflow.breach_paths_least_cost import breach_paths_least_cost
@@ -29,9 +31,35 @@ gdal.SetConfigOption("AWS_SECRET_ACCESS_KEY", os.getenv("AWS_SECRET_ACCESS_KEY",
 gdal.SetConfigOption("CPL_VSIL_USE_TEMP_FILE_FOR_RANDOM_WRITE", "YES")
 
 
-@click.group()
-def main():
+def print_banner():
+    """Display the Overflow banner and version."""
+    if sys.stdout.isatty():
+        banner = f"""[bold cyan]
+╔════════════════════════════════════╗
+║                                    ║
+║     ╔═╗╦  ╦╔═╗╦═╗╔═╗╦  ╔═╗╦ ╦      ║
+║  [dim]░[/dim][cyan]▒[/cyan][bold blue]▓[/bold blue]║ ║╚╗╔╝║╣ ╠╦╝╠╣ ║  ║ ║║║║[bold blue]▓[/bold blue][cyan]▒[/cyan][dim]░[/dim]   ║
+║     ╚═╝ ╚╝ ╚═╝╩╚═╚  ╩═╝╚═╝╚╩╝      ║
+║                                    ║
+║   Hydrological Terrain Analysis    ║
+╚════════════════════════════════════╝[/bold cyan]
+[dim]Version {__version__}[/dim]
+"""
+        console.print(banner)
+    else:
+        # Non-TTY output (plain text)
+        print(f"OVERFLOW v{__version__} - Hydrological Terrain Analysis\n")
+
+
+@click.group(invoke_without_command=True)
+@click.pass_context
+def main(ctx):
     """The main entry point for the command line interface."""
+    print_banner()
+
+    # If no subcommand was provided, show help
+    if ctx.invoked_subcommand is None:
+        click.echo(ctx.get_help())
 
 
 @main.command(name="breach-single-cell-pits")
