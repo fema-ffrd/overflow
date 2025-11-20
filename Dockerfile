@@ -17,6 +17,3 @@ RUN uv pip install .
 
 # Set the entrypoint
 ENTRYPOINT ["overflow"]
-
-LABEL description="High-performance hydrological terrain analysis"
-LABEL displayName="Overflow"
