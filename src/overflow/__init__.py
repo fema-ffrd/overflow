@@ -19,7 +19,7 @@ from overflow.flow_direction import flow_direction
 from overflow.util.constants import DEFAULT_CHUNK_SIZE, DEFAULT_SEARCH_RADIUS
 from overflow.util.raster import feet_to_cell_count, sqmi_to_cell_count
 
-__version__ = "0.1.6"
+__version__ = "0.1.7"
 
 __all__ = [
     # Breaching
