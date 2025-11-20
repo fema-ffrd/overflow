@@ -22,16 +22,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Append boathouse-json
-        run: |
-          echo >> "${{ github.workspace }}/Dockerfile"; LABEL=$(jq -c . "${{ github.workspace }}/boathouse.json" | tr -d '\r\n' | sed 's/"/\\"/g'); echo -n "LABEL interface=\"$LABEL\"" >> "${{ github.workspace }}/Dockerfile"
-
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Read boathouse-json
+        id: read-interface
+        run: |
+          INTERFACE_JSON=$(jq -c . "${{ github.workspace }}/boathouse.json" | tr -d '\r\n' | sed 's/"/\\"/g')
+          echo "json=$INTERFACE_JSON" >> $GITHUB_OUTPUT
 
       - name: Extract metadata for Docker
         id: meta
@@ -43,7 +45,8 @@ jobs:
             type=ref,event=tag
           labels: |
             org.opencontainers.image.title=Overflow
-            org.opencontainers.description=High-performance hydrological terrain analysis
+            org.opencontainers.image.description=High-performance hydrological terrain analysis
+            interface=${{ steps.read-interface.outputs.json }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
