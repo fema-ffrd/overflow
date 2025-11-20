@@ -402,6 +402,12 @@
                     "description": "path to the GDAL supported raster dataset for the flow direction (FDR)"
                 },
                 {
+                    "displayName": "FAC File",
+                    "name": "fac_file",
+                    "type": "file",
+                    "description": "path to the GDAL supported raster dataset for the flow accumulation (FAC)"
+                },
+                {
                     "displayName": "Drainage Points File",
                     "name": "dp_file",
                     "type": "file",
@@ -432,6 +438,13 @@
                     "type": "string",
                     "description": "name of the layer in the drainage points file",
                     "defaultValue": null
+                },
+                {
+                    "displayName": "Snap Radius (feet)",
+                    "name": "snap_radius_ft",
+                    "type": "float",
+                    "description": "radius in feet to snap drainage points to maximum flow accumulation",
+                    "defaultValue": 30
                 }
             ]
         },

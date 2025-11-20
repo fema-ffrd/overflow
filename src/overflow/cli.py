@@ -6,7 +6,11 @@ import numpy as np
 from osgeo import gdal
 
 from overflow import __version__
-from overflow.basins.core import drainage_points_from_file, label_watersheds_from_file
+from overflow.basins.core import (
+    drainage_points_from_file,
+    label_watersheds,
+    label_watersheds_from_file,
+)
 from overflow.basins.tiled import label_watersheds_tiled
 from overflow.breach_paths_least_cost import breach_paths_least_cost
 from overflow.breach_single_cell_pits import breach_single_cell_pits
@@ -21,7 +25,12 @@ from overflow.flow_accumulation.tiled import flow_accumulation_tiled
 from overflow.flow_direction import flow_direction
 from overflow.util.cli_progress import RichProgressDisplay
 from overflow.util.constants import DEFAULT_CHUNK_SIZE, DEFAULT_SEARCH_RADIUS
-from overflow.util.raster import feet_to_cell_count, sqmi_to_cell_count
+from overflow.util.raster import (
+    create_dataset,
+    feet_to_cell_count,
+    snap_drainage_points,
+    sqmi_to_cell_count,
+)
 from overflow.util.timer import console, resource_stats, timer
 
 # set gdal configuration
@@ -363,6 +372,12 @@ def flow_accumulation_cli(
     required=True,
 )
 @click.option(
+    "--fac_file",
+    help="path to the GDAL supported raster dataset for the flow accumulation (FAC)",
+    required=False,
+    default=None,
+)
+@click.option(
     "--dp_file",
     help="path to the drainage points file",
     required=True,
@@ -388,13 +403,21 @@ def flow_accumulation_cli(
     required=False,
     default=None,
 )
+@click.option(
+    "--snap_radius_ft",
+    help="radius in feet to snap drainage points to maximum flow accumulation",
+    default=30,
+    type=float,
+)
 def label_watersheds_cli(
     fdr_file: str,
+    fac_file: str | None,
     dp_file: str,
     output_file: str,
     chunk_size: int,
     all_basins: bool,
     dp_layer: str | None,
+    snap_radius_ft: float,
 ):
     """
     This function is used to label watersheds from a flow direction raster.
@@ -405,15 +428,51 @@ def label_watersheds_cli(
         progress_display = RichProgressDisplay()
         with timer("Watershed delineation", spinner=False):
             with progress_display.progress_context("Label Watersheds"):
-                # TODO, snap the drainage points to the flow accumulation grid
+                # Load drainage points
+                drainage_points = drainage_points_from_file(fdr_file, dp_file, dp_layer)
+
+                # Snap drainage points to flow accumulation grid if fac_file is provided
+                if fac_file is not None and snap_radius_ft > 0:
+                    snap_radius_cells = feet_to_cell_count(snap_radius_ft, fdr_file)
+                    drainage_points = snap_drainage_points(
+                        drainage_points, fac_file, snap_radius_cells
+                    )
+
                 if chunk_size <= 1:
-                    label_watersheds_from_file(
-                        fdr_file, dp_file, output_file, all_basins, dp_layer
+                    # Non-tiled processing
+                    fdr_ds = gdal.Open(fdr_file)
+                    if fdr_ds is None:
+                        raise ValueError("Could not open flow direction raster file")
+
+                    fdr = fdr_ds.GetRasterBand(1).ReadAsArray()
+                    watersheds, _ = label_watersheds(fdr, drainage_points)
+
+                    if not all_basins:
+                        # Remove any label not in drainage_points values
+                        unique_labels = np.unique(watersheds)
+                        for label in unique_labels:
+                            if label not in drainage_points.values():
+                                watersheds[watersheds == label] = 0
+
+                    # Create output dataset
+                    out_ds = create_dataset(
+                        output_file,
+                        0,
+                        gdal.GDT_Int64,
+                        fdr.shape[1],
+                        fdr.shape[0],
+                        fdr_ds.GetGeoTransform(),
+                        fdr_ds.GetProjection(),
                     )
+                    out_band = out_ds.GetRasterBand(1)
+                    out_band.WriteArray(watersheds)
+                    out_band.FlushCache()
+                    out_ds.FlushCache()
+                    out_ds = None
+                    out_band = None
+                    fdr_ds = None
                 else:
-                    drainage_points = drainage_points_from_file(
-                        fdr_file, dp_file, dp_layer
-                    )
+                    # Tiled processing
                     label_watersheds_tiled(
                         fdr_file,
                         drainage_points,

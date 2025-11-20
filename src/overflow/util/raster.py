@@ -837,3 +837,73 @@ def sqmi_to_cell_count(sqmi: float, raster_path: str) -> int:
     # convert square meters to cell count
     cell_count = sqm / (cell_size_x * cell_size_y)
     return int(cell_count)
+
+
+def snap_drainage_points(
+    drainage_points: dict, fac_filepath: str, snap_radius: int
+) -> dict:
+    """
+    Snap drainage points to the cell with maximum flow accumulation within a given radius.
+
+    Args:
+        drainage_points (dict): Dictionary with (row, col) tuples as keys and watershed IDs as values.
+        fac_filepath (str): Path to the flow accumulation raster file.
+        snap_radius (int): Radius in cells to search for maximum flow accumulation.
+                          If 1, snaps to the closest cell center (no change).
+
+    Returns:
+        dict: Updated drainage points dictionary with snapped coordinates.
+    """
+    # If radius is 1 or less, no snapping needed (already at cell centers)
+    if snap_radius <= 1:
+        return drainage_points
+
+    # Open the flow accumulation raster
+    fac_ds = gdal.Open(fac_filepath)
+    if fac_ds is None:
+        raise ValueError(f"Could not open flow accumulation raster: {fac_filepath}")
+
+    fac_band = fac_ds.GetRasterBand(1)
+    raster_height = fac_ds.RasterYSize
+    raster_width = fac_ds.RasterXSize
+
+    # Import numba types for the output dictionary
+    from numba.typed import Dict
+    from numba.types import UniTuple
+
+    # Create new dictionary for snapped points
+    snapped_points = Dict.empty(UniTuple(int64, 2), int64)
+
+    # Process each drainage point
+    for (row, col), watershed_id in drainage_points.items():
+        # Define search window bounds
+        row_min = max(0, row - snap_radius)
+        row_max = min(raster_height - 1, row + snap_radius)
+        col_min = max(0, col - snap_radius)
+        col_max = min(raster_width - 1, col + snap_radius)
+
+        # Calculate window size
+        window_height = row_max - row_min + 1
+        window_width = col_max - col_min + 1
+
+        # Read the flow accumulation window
+        fac_window = fac_band.ReadAsArray(col_min, row_min, window_width, window_height)
+
+        if fac_window is None:
+            # If we can't read the window, keep the original point
+            snapped_points[(row, col)] = watershed_id
+            continue
+
+        # Find the cell with maximum flow accumulation
+        max_fac_idx = np.argmax(fac_window)
+        max_row_offset, max_col_offset = np.unravel_index(max_fac_idx, fac_window.shape)
+
+        # Convert to global coordinates
+        snapped_row = row_min + max_row_offset
+        snapped_col = col_min + max_col_offset
+
+        # Add snapped point to dictionary
+        snapped_points[(snapped_row, snapped_col)] = watershed_id
+
+    fac_ds = None  # Close the dataset
+    return snapped_points  # type: ignore[no-any-return]
