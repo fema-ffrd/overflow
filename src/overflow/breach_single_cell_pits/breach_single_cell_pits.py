@@ -131,6 +131,11 @@ def breach_single_cell_pits(
     )
     output_band = output_ds.GetRasterBand(1)
 
+    # Breach pits
+    progress_callback(
+        step_name="Breach pits", step_number=1, total_steps=1, progress=0.0
+    )
+
     for chunk in raster_chunker(
         band,
         chunk_size=chunk_size,

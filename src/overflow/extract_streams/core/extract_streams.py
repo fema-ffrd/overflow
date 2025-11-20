@@ -114,10 +114,10 @@ def setup_datasource(path: str, fac_ds: gdal.Dataset):
     try:
         srs.ImportFromWkt(fac_ds.GetProjection())
         points_layer = output_ds.CreateLayer(
-            "junctions", srs=srs, geom_type=ogr.wkbPoint
+            "junctions", srs=srs, geom_type=ogr.wkbPoint25D
         )
         lines_layer = output_ds.CreateLayer(
-            "streams", srs=srs, geom_type=ogr.wkbLineString
+            "streams", srs=srs, geom_type=ogr.wkbLineString25D
         )
         return output_ds, points_layer, lines_layer
     except RuntimeError as e:
@@ -220,19 +220,9 @@ def add_downstream_junctions(
         junction_hashes.add(hash_key)
 
     # Find streams without downstream junctions
-    total_streams = streams_layer.GetFeatureCount()  # type: ignore[attr-defined]
     junctions_to_add = []
 
     for idx, feature in enumerate(streams_layer, 1):
-        # Report progress
-        progress_callback(
-            phase="Finding streams without downstream junctions",
-            step=idx,
-            total_steps=total_streams,
-            progress=idx / total_streams * 0.5,
-            message=f"Checking stream {idx}/{total_streams}",
-        )
-
         geom = feature.GetGeometryRef()  # type: ignore[attr-defined]
         point_count = geom.GetPointCount()
 
@@ -256,17 +246,7 @@ def add_downstream_junctions(
             )  # Add to set to avoid duplicates at same location
 
     # Add new junctions
-    total_to_add = len(junctions_to_add)
-    for i, point in enumerate(junctions_to_add, 1):
-        # Report progress
-        progress_callback(
-            phase="Adding downstream junctions",
-            step=i,
-            total_steps=total_to_add,
-            progress=0.5 + (i / total_to_add * 0.5),
-            message=f"Adding junction {i}/{total_to_add}",
-        )
-
+    for point in junctions_to_add:
         # Create new junction
         new_junction = ogr.Feature(junctions_layer.GetLayerDefn())  # type: ignore[attr-defined]
         point_geom = ogr.Geometry(ogr.wkbPoint)
@@ -307,8 +287,8 @@ def draw_lines(
     for i in range(total_nodes):
         # Report progress
         progress_callback(
-            phase="Processing Streams",
-            step=i + 1,
+            step_name="Process streams",
+            step_number=i + 1,
             total_steps=total_nodes,
             progress=(i + 1) / total_nodes,
             message=f"Stream {i + 1}/{total_nodes}",
@@ -375,11 +355,11 @@ def extract_streams(
     projection = fac_ds.GetProjection()
 
     progress_callback(
-        phase="Getting Stream Raster",
-        step=1,
+        step_name="Get stream raster",
+        step_number=1,
         total_steps=6,
         progress=0.17,
-        message=f"Extracting streams with threshold {cell_count_threshold}",
+        message=f"Extract streams with threshold {cell_count_threshold}",
     )
     streams_array = get_stream_raster(fac, cell_count_threshold)
 
@@ -398,8 +378,8 @@ def extract_streams(
     streams_band.WriteArray(streams_array)
 
     progress_callback(
-        phase="Finding Node Cells",
-        step=2,
+        step_name="Find node cells",
+        step_number=2,
         total_steps=6,
         progress=0.33,
         message="Identifying stream confluences and sources",
@@ -411,8 +391,8 @@ def extract_streams(
     points = nodes_to_points(node_cell_indices, geotransform)
 
     progress_callback(
-        phase="Creating GeoPackage",
-        step=3,
+        step_name="Create GeoPackage",
+        step_number=3,
         total_steps=6,
         progress=0.5,
         message=f"Found {num_node_cells} node cells",
@@ -423,8 +403,8 @@ def extract_streams(
     )
 
     progress_callback(
-        phase="Writing Points",
-        step=4,
+        step_name="Write points",
+        step_number=4,
         total_steps=6,
         progress=0.67,
         message="Writing node points",
@@ -432,8 +412,8 @@ def extract_streams(
     write_points(points_layer, points)
 
     progress_callback(
-        phase="Drawing Lines",
-        step=5,
+        step_name="Draw lines",
+        step_number=5,
         total_steps=6,
         progress=0.83,
         message="Tracing stream lines",
@@ -450,8 +430,8 @@ def extract_streams(
     fdr_ds = None
 
     progress_callback(
-        phase="Adding Downstream Junctions",
-        step=6,
+        step_name="Add downstream junctions",
+        step_number=6,
         total_steps=6,
         progress=1.0,
         message="Adding junctions",

@@ -407,6 +407,11 @@ def breach_paths_least_cost(
             dem_tile.write(output_band)
             task_queue.get()
 
+    # Breach paths
+    progress_callback(
+        step_name="Breach paths", step_number=1, total_steps=1, progress=0.0
+    )
+
     with concurrent.futures.ThreadPoolExecutor(max_workers) as executor:
         for chunk in raster_chunker(
             input_band,

@@ -381,21 +381,11 @@ def remove_tile_edge_junctions(
     stream_endpoints = np.array(stream_endpoints, dtype=np.float64)  # type: ignore[assignment]
 
     # Get lists of what needs to be merged/deleted
-    progress_callback(
-        phase="Finding streams to merge",
-        step=1,
-        total_steps=3,
-        progress=0.33,
-        message="Analyzing stream connections",
-    )
     junction_fids_to_remove, stream_pairs_to_merge, new_endpoints = (
         find_streams_to_merge(
             junction_points, junction_fids, stream_endpoints, geotransform
         )
     )
-
-    # Process the results with GDAL
-    total = len(junction_fids_to_remove)
 
     # Keep track of stream replacements
     stream_replacements: dict[int, int] = {}  # old_fid -> new_fid
@@ -404,15 +394,6 @@ def remove_tile_edge_junctions(
         (fid1, fid2, merge_type),
         (_up_x, _up_y, _down_x, _down_y),
     ) in enumerate(zip(stream_pairs_to_merge, new_endpoints), 1):
-        # Report progress
-        progress_callback(
-            phase="Merging streams",
-            step=i,
-            total_steps=total,
-            progress=(i / total) * 0.33 + 0.33,
-            message=f"Merging stream {i}/{total}",
-        )
-
         # Get current FIDs accounting for previous merges
         current_fid1 = stream_replacements.get(fid1, fid1)
         current_fid2 = stream_replacements.get(fid2, fid2)
@@ -456,14 +437,7 @@ def remove_tile_edge_junctions(
         new_feature = None
 
     # Remove junctions
-    for i, junction_fid in enumerate(junction_fids_to_remove, 1):
-        progress_callback(
-            phase="Removing junctions",
-            step=i,
-            total_steps=total,
-            progress=(i / total) * 0.33 + 0.67,
-            message=f"Removing junction {i}/{total}",
-        )
+    for junction_fid in junction_fids_to_remove:
         junctions_layer.DeleteFeature(junction_fid)  # type: ignore[attr-defined]
 
     # Cleanup
@@ -560,7 +534,7 @@ def extract_streams_tiled(
             write_lines(lines_layer, lines)
             task_queue.get()
 
-    tracker.update(1, "Extracting stream networks from tiles")
+    tracker.update(1, "Extract streams")
 
     # Process tiles in parallel
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -598,13 +572,13 @@ def extract_streams_tiled(
     fac_ds = None
     fdr_ds = None
 
-    tracker.update(2, "Merging stream segments across tiles")
+    tracker.update(2, "Merge segments")
 
     remove_tile_edge_junctions(
         geotransform, streams_dataset_path, progress_callback=progress_callback
     )
 
-    tracker.update(3, "Adding downstream junctions")
+    tracker.update(3, "Add junctions")
 
     add_downstream_junctions(
         geotransform, streams_dataset_path, progress_callback=progress_callback

@@ -134,7 +134,7 @@ def fix_flats_tiled(
     # Setup progress tracking
     if progress_callback is None:
         progress_callback = silent_callback
-    tracker = ProgressTracker(progress_callback, "Fix Flats", total_steps=4)
+    tracker = ProgressTracker(progress_callback, "Fixing flats", total_steps=4)
 
     cleanup_working_dir = False
     if working_dir is None:
@@ -149,16 +149,16 @@ def fix_flats_tiled(
     labels_band = labels_ds.GetRasterBand(1)
     flat_mask_band = flat_mask_ds.GetRasterBand(1)
 
-    tracker.update(1, "Creating global state")
+    tracker.update(1, step_name="Create global state")
 
     global_state = create_global_state(
         dem_band, fdr_band, labels_band, chunk_size, progress_callback
     )
 
-    tracker.update(2, "Solving graph")
+    tracker.update(2, step_name="Solve graph")
     dist_to_low_edge_tiles, dist_to_high_edge_tiles = global_state.graph.solve_graph()
 
-    tracker.update(3, "Creating flat mask")
+    tracker.update(3, step_name="Create flat mask")
 
     create_flat_mask(
         chunk_size,
@@ -171,7 +171,7 @@ def fix_flats_tiled(
         progress_callback,
     )
 
-    tracker.update(4, "Updating flow direction")
+    tracker.update(4, step_name="Update flow direction")
 
     update_fdr(
         dem_band,

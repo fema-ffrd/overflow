@@ -372,18 +372,9 @@ def create_basin_polygons(
         graph, set(boundary_cells.keys())
     )
     index = 0
-    num_basins = len(boundary_cells)
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         for basin_id in boundary_cells:
             index += 1
-            # Report progress
-            progress_callback(
-                phase="Processing Basins",
-                step=index,
-                total_steps=num_basins,
-                progress=index / num_basins,
-                message=f"Basin {index}/{num_basins}",
-            )
             while task_queue.full():
                 time.sleep(0.1)
             task_queue.put(1)

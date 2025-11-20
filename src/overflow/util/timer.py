@@ -5,8 +5,7 @@ import time
 from contextlib import contextmanager
 from pathlib import Path
 
-from rich.console import Console, Group
-from rich.panel import Panel
+from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
 from rich.table import Table
 from rich.text import Text
@@ -157,54 +156,51 @@ class ResourceStats:
 
         return table
 
-    def get_summary_panel(self, success: bool = True) -> Panel:
-        """Create a comprehensive summary panel.
+    def get_summary_panel(self, success: bool = True) -> Text:
+        """Create a simple summary output.
 
         Args:
             success: Whether the operation completed successfully
 
         Returns:
-            Rich Panel with complete summary
+            Rich Text with summary lines
         """
-        renderables: list = []
+        lines = []
+
+        # Add newline before summary for consistency
+        lines.append(Text(""))
 
         # Status
         if success:
-            renderables.append(
-                Text("✓ Operation completed successfully", style="bold green")
-            )
+            lines.append(Text("✓ Operation completed successfully", style="bold green"))
         else:
-            renderables.append(Text("✗ Operation failed", style="bold red"))
-        renderables.append(Text())
+            lines.append(Text("✗ Operation failed", style="bold red"))
 
         # Total time
         if "Total processing" in self.stats:
             total_duration = self.stats["Total processing"]
-            renderables.append(
-                Text.assemble(
-                    ("Total time: ", "bold yellow"),
-                    (self.format_compact_duration(total_duration), "cyan"),
+            lines.append(
+                Text(
+                    f"Total time: {self.format_compact_duration(total_duration)}",
+                    style="cyan",
                 )
             )
-            renderables.append(Text())
 
-        # Timing breakdown table
-        if self.stats:
-            timing_table = self.get_timing_table()
-            renderables.append(timing_table)
-            renderables.append(Text())
+        # Output files
+        for description, file_path in self.output_files:
+            if file_path.exists():
+                size = os.path.getsize(file_path)
+                lines.append(
+                    Text(
+                        f"Output: {file_path} ({self.format_file_size(size)})",
+                        style="dim",
+                    )
+                )
+            else:
+                lines.append(Text(f"Output: {file_path} (not found)", style="dim red"))
 
-        # Output files table
-        output_table = self.get_output_files_table()
-        if output_table:
-            renderables.append(output_table)
-
-        return Panel(
-            Group(*renderables),
-            title="[bold blue]Summary[/bold blue]",
-            border_style="blue",
-            padding=(1, 2),
-        )
+        # Combine all lines
+        return Text("\n").join(lines)
 
 
 # Global resource stats instance
@@ -256,14 +252,20 @@ def timer(
     Example:
         >>> with timer("Processing data", spinner=True):
         ...     process_data()
-        ✓ Processing data completed in 2 minutes and 34 seconds
+        ✓ Processing data completed in 2s
     """
     start_time = time.time()
 
     if spinner and not silent:
+        # Custom spinner frames - single character
+        spinner_frames = ["■", "≡", "=", "-", "=", "≡"]
+        spinner_col = SpinnerColumn(spinner_name="dots", style="cyan")
+        # Override frames
+        spinner_col.spinner.frames = spinner_frames
+
         with Progress(
-            SpinnerColumn(),
-            TextColumn("[bold blue]{task.description}"),
+            spinner_col,
+            TextColumn("{task.description}"),
             TimeElapsedColumn(),
             console=console,
             transient=True,
@@ -277,12 +279,11 @@ def timer(
                 progress.stop()
 
                 console.print(
-                    f"[green]✓[/green] {description} completed in "
-                    f"[bold cyan]{Timer.format_duration(duration)}[/bold cyan]"
+                    f"[dim cyan]✓[/dim cyan] [white]{description}[/white] "
+                    f"[dim]{ResourceStats.format_compact_duration(duration)}[/dim]"
                 )
     else:
-        if not silent:
-            console.print(f"[bold blue]{description}...[/bold blue]")
+        # Silent mode during execution - only show completion message
         try:
             yield
         finally:
@@ -291,6 +292,6 @@ def timer(
 
             if not silent:
                 console.print(
-                    f"[green]✓[/green] {description} completed in "
-                    f"[bold cyan]{Timer.format_duration(duration)}[/bold cyan]"
+                    f"[dim cyan]✓[/dim cyan] [white]{description}[/white] "
+                    f"[dim]{ResourceStats.format_compact_duration(duration)}[/dim]"
                 )

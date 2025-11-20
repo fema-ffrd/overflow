@@ -1,9 +1,3 @@
-"""Progress reporting utilities for overflow.
-
-This module provides a standardized progress callback system that allows
-API functions to report progress without coupling to specific display mechanisms.
-"""
-
 from typing import Protocol, runtime_checkable
 
 
@@ -11,32 +5,41 @@ from typing import Protocol, runtime_checkable
 class ProgressCallback(Protocol):
     """Protocol for progress reporting callbacks.
 
-    Callbacks receive progress updates with the following parameters:
-    - phase: High-level operation name (e.g., 'Fill Depressions')
-    - step: Current step number (1-indexed)
-    - total_steps: Total number of steps in the operation
-    - progress: Progress as a float between 0.0 and 1.0
+    Hierarchical progress structure:
+    - Phase: High-level operation (e.g., 'Breaching paths')
+      - Step: Named sub-operation within phase (e.g., 'Process chunks')
+        - Message: Detail within step (e.g., 'Chunk 28/36')
+        - Progress: 0.0-1.0 for current step
+
+    Parameters:
+    - phase: Phase name (if None, keeps current phase)
+    - step_name: Step name (if None, keeps current step)
+    - step_number: Current step number (1-indexed)
+    - total_steps: Total steps in the phase
     - message: Detailed message about current activity
+    - progress: Progress of current step (0.0-1.0)
     """
 
     def __call__(
         self,
-        phase: str,
-        step: int,
-        total_steps: int,
-        progress: float,
-        message: str,
+        phase: str | None = None,
+        step_name: str | None = None,
+        step_number: int = 0,
+        total_steps: int = 0,
+        message: str = "",
+        progress: float = 0.0,
     ) -> None:
         """Report progress for an operation."""
         ...
 
 
 def silent_callback(
-    phase: str,
-    step: int,
-    total_steps: int,
-    progress: float,
-    message: str,
+    phase: str | None = None,
+    step_name: str | None = None,
+    step_number: int = 0,
+    total_steps: int = 0,
+    message: str = "",
+    progress: float = 0.0,
 ) -> None:
     """A no-op callback that does nothing.
 
@@ -49,18 +52,13 @@ class ProgressTracker:
     """Helper class to manage progress state and emit callbacks.
 
     This class simplifies progress reporting by maintaining state and
-    calculating progress percentages automatically.
+    calculating progress percentages automatically using the hierarchical structure.
 
     Args:
         callback: The progress callback function to call with updates
-        phase: The name of the operation being tracked
-        total_steps: Total number of steps in the operation
+        phase: The name of the phase being tracked (set once on init)
+        total_steps: Total number of steps in the phase
 
-    Example:
-        >>> tracker = ProgressTracker(my_callback, "Processing Data", total_steps=3)
-        >>> tracker.update(1, "Loading data...")
-        >>> tracker.update(2, "Processing data...")
-        >>> tracker.update(3, "Saving results...")
     """
 
     def __init__(
@@ -74,10 +72,13 @@ class ProgressTracker:
         self.phase = phase
         self.total_steps = max(1, total_steps)
         self.current_step = 0
+        # Set phase once on init
+        self.callback(phase=phase)
 
     def update(
         self,
         step: int | None = None,
+        step_name: str = "",
         message: str = "",
         progress: float | None = None,
     ) -> None:
@@ -85,24 +86,21 @@ class ProgressTracker:
 
         Args:
             step: Current step number (if None, increments from last step)
-            message: Status message to display
-            progress: Manual progress override (0.0-1.0, if None auto-calculates)
+            step_name: Name of the current step
+            message: Optional detailed message
+            progress: Progress within current step (0.0-1.0, defaults to 0.0)
         """
         if step is not None:
             self.current_step = step
         else:
             self.current_step += 1
 
-        if progress is None:
-            # Auto-calculate progress based on step
-            progress = min(1.0, self.current_step / self.total_steps)
-        else:
-            # Clamp manual progress to valid range
-            progress = max(0.0, min(1.0, progress))
+        # Default to 0.0 if None, otherwise clamp to valid range
+        progress = 0.0 if progress is None else max(0.0, min(1.0, progress))
 
         self.callback(
-            phase=self.phase,
-            step=self.current_step,
+            step_name=step_name if step_name else None,
+            step_number=self.current_step,
             total_steps=self.total_steps,
             progress=progress,
             message=message,
@@ -120,12 +118,10 @@ class ProgressTracker:
         """
         # Calculate progress within the current step
         step_progress = step / max(1, total)
-        overall_progress = (self.current_step - 1 + step_progress) / self.total_steps
 
         self.callback(
-            phase=self.phase,
-            step=self.current_step,
+            step_number=self.current_step,
             total_steps=self.total_steps,
-            progress=overall_progress,
+            progress=step_progress,  # Report progress within this step, not overall
             message=message,
         )

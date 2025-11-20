@@ -143,6 +143,11 @@ def flow_direction(
     )
     output_band = output_ds.GetRasterBand(1)
 
+    # Calculate direction
+    progress_callback(
+        step_name="Calculate direction", step_number=1, total_steps=1, progress=0.0
+    )
+
     for chunk in raster_chunker(
         band,
         chunk_size=chunk_size,

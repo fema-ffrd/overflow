@@ -213,13 +213,10 @@ def raster_chunker(
         for chunk_col in range(n_chunks_col):
             chunk_index = chunk_row * n_chunks_col + chunk_col + 1
 
-            # Report progress
+            # Report progress (just message and progress, no phase/step change)
             progress_callback(
-                phase="Processing Chunks",
-                step=chunk_index,
-                total_steps=total_chunks,
-                progress=chunk_index / total_chunks,
                 message=f"Chunk {chunk_index}/{total_chunks}",
+                progress=chunk_index / total_chunks,
             )
 
             # Read the chunk and yield it

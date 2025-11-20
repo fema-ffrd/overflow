@@ -1,66 +1,34 @@
-"""Rich-based CLI progress display for overflow commands.
-
-This module provides a unified progress display system that consumes
-progress callbacks and renders them beautifully using Rich.
-"""
-
+import re
+import sys
+import time
 from contextlib import contextmanager
-from typing import Any
 
 from rich.console import Console
-from rich.progress import (
-    BarColumn,
-    MofNCompleteColumn,
-    Progress,
-    ProgressColumn,
-    SpinnerColumn,
-    TaskID,
-    TextColumn,
-    TimeElapsedColumn,
-)
-from rich.text import Text
 
 
-class PercentageColumn(ProgressColumn):
-    """Renders percentage complete with color coding."""
+def format_duration(seconds: float) -> str:
+    """Convert seconds into compact string like 1h2m32s.
 
-    def render(self, task: Any) -> Text:
-        """Render the percentage."""
-        if task.total is None or task.total == 0:
-            return Text("---%", style="progress.percentage")
+    Args:
+        seconds: Duration in seconds
 
-        percentage = task.completed / task.total * 100
-        if percentage >= 100:
-            style = "green"
-        elif percentage >= 50:
-            style = "yellow"
-        else:
-            style = "cyan"
+    Returns:
+        Compact duration string
+    """
+    hours, remainder = divmod(int(seconds), 3600)
+    minutes, secs = divmod(remainder, 60)
+    parts = []
 
-        return Text(f"{percentage:>3.0f}%", style=style)
+    if hours > 0:
+        parts.append(f"{hours}h")
+    if minutes > 0 or hours > 0:
+        parts.append(f"{minutes}m")
+    parts.append(f"{secs}s")
+
+    return "".join(parts)
 
 
 class RichProgressDisplay:
-    """Rich-based progress display that consumes progress callbacks.
-
-    This class provides a hybrid progress display:
-    - Progress bars for quantifiable operations (tiles, chunks, known steps)
-    - Spinners for indeterminate operations
-
-    The display automatically chooses the appropriate visualization based
-    on the progress updates it receives.
-
-    Args:
-        console: Rich Console instance (if None, creates a new one)
-        show_progress: Whether to show progress (False = silent mode)
-
-    Example:
-        >>> display = RichProgressDisplay()
-        >>> with display.progress_context("Processing Data"):
-        ...     # Use display.callback as the progress_callback
-        ...     process_data(progress_callback=display.callback)
-    """
-
     def __init__(
         self,
         console: Console | None = None,
@@ -69,135 +37,113 @@ class RichProgressDisplay:
         """Initialize the progress display."""
         self.console = console if console is not None else Console(force_terminal=True)
         self.show_progress = show_progress
-        self.progress: Progress | None = None
-        self.current_task: TaskID | None = None
         self.current_phase: str = ""
-        self.use_bar_mode: bool = True
+        self.current_step: str = ""
+        self.step_start_time: float = 0.0
+        self.in_chunk_progress: bool = False
+        self.step_timing_printed: bool = False
 
     def callback(
         self,
-        phase: str,
-        step: int,
-        total_steps: int,
-        progress: float,
-        message: str,
+        phase: str | None = None,
+        step_name: str | None = None,
+        step_number: int = 0,
+        total_steps: int = 0,
+        message: str = "",
+        progress: float = 0.0,
     ) -> None:
-        """Progress callback that updates the Rich display.
-
-        This method is designed to be passed as the progress_callback parameter
-        to overflow API functions.
-        """
-        if not self.show_progress or self.progress is None:
+        """Progress callback."""
+        if not self.show_progress:
             return
 
-        # Detect if we should use bar mode or spinner mode
-        # Use bars when we have clear step progression or quantifiable progress
-        # Use spinner for indeterminate or continuous operations
-        if total_steps > 1 or progress > 0:
-            self.use_bar_mode = True
-        else:
-            self.use_bar_mode = False
-
-        # Update or create task
-        if self.current_task is None or self.current_phase != phase:
-            # New phase - create new task
-            if self.current_task is not None:
-                # Complete the previous task
-                self.progress.update(self.current_task, completed=100, total=100)
+        # Print new phase
+        if phase is not None and phase != self.current_phase:
+            # If we were showing chunk progress, print newline to finish that line
+            if self.in_chunk_progress:
+                print()
+                self.in_chunk_progress = False
 
             self.current_phase = phase
-            if self.use_bar_mode:
-                # Create task with total = 100 for percentage-based updates
-                self.current_task = self.progress.add_task(
-                    f"[cyan]{phase}[/cyan]",
-                    total=100,
-                    completed=int(progress * 100),
-                )
+            self.console.print(f"\n[bold cyan]{phase}[/bold cyan]")
+            self.current_step = ""
+
+        # Handle step change
+        if step_name is not None:
+            if total_steps > 1:
+                new_step = f"{step_number}/{total_steps} {step_name}"
             else:
-                # Spinner mode - no total
-                self.current_task = self.progress.add_task(
-                    f"[cyan]{phase}[/cyan]",
-                    total=None,
+                new_step = step_name
+
+            if new_step != self.current_step:
+                # Finish previous step (print final line with timing)
+                if self.current_step and not self.step_timing_printed:
+                    elapsed = time.time() - self.step_start_time
+                    # Clear the line and print final step line with timing
+                    sys.stdout.write("\r\033[K")
+                    print(f"  {self.current_step} ({format_duration(elapsed)})")
+                    self.step_timing_printed = True
+                    self.in_chunk_progress = False
+
+                # Start new step
+                self.current_step = new_step
+                self.step_start_time = time.time()
+                self.step_timing_printed = False
+                print(f"  {self.current_step}", end="", flush=True)
+
+        # Handle chunk progress
+        if message and re.match(r"Chunk\s+\d+/\d+", message):
+            match = re.match(r"Chunk\s+(\d+)/(\d+)", message)
+            if match:
+                current = int(match.group(1))
+                total = int(match.group(2))
+                percentage = int((current / total) * 100)
+
+                # Show live chunk progress
+                sys.stdout.write(
+                    f"\r\033[K  {self.current_step} {current}/{total} ({percentage}%)"
                 )
-        else:
-            # Update existing task
-            if self.use_bar_mode:
-                # Update progress bar
-                self.progress.update(
-                    self.current_task,
-                    completed=progress * 100,
-                    description=f"[cyan]{phase}[/cyan]: {message}"
-                    if message
-                    else f"[cyan]{phase}[/cyan]",
-                )
-            else:
-                # Update spinner message
-                self.progress.update(
-                    self.current_task,
-                    description=f"[cyan]{phase}[/cyan]: {message}"
-                    if message
-                    else f"[cyan]{phase}[/cyan]",
-                )
+                sys.stdout.flush()
+                self.in_chunk_progress = True
+
+                # If this is the last chunk, finish the step with timing
+                if current == total:
+                    elapsed = time.time() - self.step_start_time
+                    # Clear the chunk progress line and print final step line with timing
+                    sys.stdout.write("\r\033[K")
+                    print(f"  {self.current_step} ({format_duration(elapsed)})")
+                    self.in_chunk_progress = False
+                    self.step_timing_printed = True
 
     @contextmanager
     def progress_context(self, initial_message: str = ""):
-        """Context manager that creates a progress display for the duration of an operation.
-
-        Args:
-            initial_message: Optional initial message to display
-
-        Example:
-            >>> display = RichProgressDisplay()
-            >>> with display.progress_context("Processing"):
-            ...     some_function(progress_callback=display.callback)
-        """
+        """Context manager for progress display."""
         if not self.show_progress:
-            # Silent mode - just yield without creating progress display
             yield self
             return
 
-        # Create Rich Progress with hybrid columns
-        self.progress = Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            BarColumn(),
-            PercentageColumn(),
-            MofNCompleteColumn(),
-            TimeElapsedColumn(),
-            console=self.console,
-            transient=False,
-        )
-
         try:
-            self.progress.start()
             if initial_message:
-                # Add an initial task
-                self.current_task = self.progress.add_task(
-                    f"[cyan]{initial_message}[/cyan]",
-                    total=None,
-                )
+                self.current_phase = initial_message
+                self.console.print(f"\n[bold cyan]{initial_message}[/bold cyan]")
             yield self
         finally:
-            # Complete any remaining tasks
-            if self.current_task is not None and self.use_bar_mode:
-                self.progress.update(self.current_task, completed=100, total=100)
-            self.progress.stop()
-            self.progress = None
-            self.current_task = None
+            # Finish any remaining step
+            if self.current_step and not self.step_timing_printed:
+                elapsed = time.time() - self.step_start_time
+                # Clear the line and print final step line with timing
+                if elapsed > 0:  # Only if step actually ran
+                    sys.stdout.write("\r\033[K")
+                    print(f"  {self.current_step} ({format_duration(elapsed)})")
+
             self.current_phase = ""
+            self.current_step = ""
+            self.step_timing_printed = False
+            self.in_chunk_progress = False
 
 
 def create_progress_display(
     console: Console | None = None,
     silent: bool = False,
 ) -> RichProgressDisplay:
-    """Factory function to create a progress display.
-
-    Args:
-        console: Rich Console instance (if None, creates a new one)
-        silent: If True, creates a silent display that shows nothing
-
-    Returns:
-        RichProgressDisplay instance
-    """
+    """Factory function to create a progress display."""
     return RichProgressDisplay(console=console, show_progress=not silent)

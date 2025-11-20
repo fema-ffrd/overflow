@@ -226,7 +226,7 @@ def fill_depressions_tiled(
     # Setup progress tracking
     if progress_callback is None:
         progress_callback = silent_callback
-    tracker = ProgressTracker(progress_callback, "Fill Depressions", total_steps=3)
+    tracker = ProgressTracker(progress_callback, "Filling depressions", total_steps=3)
 
     # setup
     working_dir, cleanup_working_dir = setup_working_dir(working_dir)
@@ -255,7 +255,7 @@ def fill_depressions_tiled(
             dem_tile.write(output_band)
             task_queue.get()
 
-    tracker.update(1, "Fill depressions in each tile")
+    tracker.update(1, step_name="Fill locally")
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         for dem_tile in raster_chunker(
@@ -285,7 +285,7 @@ def fill_depressions_tiled(
     output_ds.FlushCache()
 
     # connect tile edges and corners and solve the graph
-    tracker.update(2, "Connecting tiles and solving graph")
+    tracker.update(2, step_name="Solve graph")
     global_state.connect_tile_edges_and_corners()
     label_min_elevations = global_state.solve_graph()
 
@@ -298,7 +298,7 @@ def fill_depressions_tiled(
             dem_tile.write(output_band)
             task_queue.get()
 
-    tracker.update(3, "Raise elevation of each tile to match global labels")
+    tracker.update(3, step_name="Apply elevations")
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         for dem_tile in raster_chunker(

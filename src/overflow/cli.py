@@ -50,8 +50,8 @@ def breach_single_cell_pits_cli(input_file: str, output_file: str, chunk_size: i
     success = False
     try:
         progress_display = RichProgressDisplay()
-        with progress_display.progress_context("Breaching single cell pits"):
-            with timer("Breach single cell pits", spinner=False):
+        with timer("Breach single cell pits", spinner=False):
+            with progress_display.progress_context("Breaching single cell pits"):
                 breach_single_cell_pits(
                     input_file, output_file, chunk_size, progress_display.callback
                 )
@@ -83,8 +83,8 @@ def flow_direction_cli(input_file: str, output_file: str, chunk_size: int):
     success = False
     try:
         progress_display = RichProgressDisplay()
-        with progress_display.progress_context("Computing flow direction"):
-            with timer("Flow direction", spinner=False):
+        with timer("Flow direction", spinner=False):
+            with progress_display.progress_context("Computing flow direction"):
                 flow_direction(
                     input_file, output_file, chunk_size, progress_display.callback
                 )
@@ -130,8 +130,8 @@ def breach_paths_least_cost_cli(
     success = False
     try:
         progress_display = RichProgressDisplay()
-        with progress_display.progress_context("Breaching paths (least cost)"):
-            with timer("Breach paths least cost", spinner=False):
+        with timer("Breach paths least cost", spinner=False):
+            with progress_display.progress_context("Breaching paths (least cost)"):
                 breach_paths_least_cost(
                     input_file,
                     output_file,
@@ -193,8 +193,8 @@ def fix_flats_cli(
     success = False
     try:
         progress_display = RichProgressDisplay()
-        with progress_display.progress_context("Fixing flats"):
-            with timer("Fix flats", spinner=False):
+        with timer("Fixing flats", spinner=False):
+            with progress_display.progress_context("Fixing flats"):
                 if chunk_size <= 1:
                     fix_flats_from_file(dem_file, fdr_file, output_file)
                 else:
@@ -259,8 +259,8 @@ def fill_depressions_cli(
     success = False
     try:
         progress_display = RichProgressDisplay()
-        with progress_display.progress_context("Filling depressions"):
-            with timer("Fill depressions", spinner=False):
+        with timer("Filling", spinner=False):
+            with progress_display.progress_context("Filling depressions"):
                 if chunk_size <= 1:
                     fill_depressions(dem_file, output_file, fill_holes)
                 else:
@@ -313,8 +313,8 @@ def flow_accumulation_cli(
     success = False
     try:
         progress_display = RichProgressDisplay()
-        with progress_display.progress_context("Computing flow accumulation"):
-            with timer("Flow accumulation", spinner=False):
+        with timer("Flow accumulation", spinner=False):
+            with progress_display.progress_context("Flow Accumulation"):
                 if chunk_size <= 1:
                     flow_accumulation(fdr_file, output_file)
                 else:
@@ -381,8 +381,8 @@ def label_watersheds_cli(
     success = False
     try:
         progress_display = RichProgressDisplay()
-        with progress_display.progress_context("Labeling watersheds"):
-            with timer("Label watersheds", spinner=False):
+        with timer("Watershed delineation", spinner=False):
+            with progress_display.progress_context("Label Watersheds"):
                 # TODO, snap the drainage points to the flow accumulation grid
                 if chunk_size <= 1:
                     label_watersheds_from_file(
@@ -453,8 +453,8 @@ def extract_streams_cli(
     success = False
     try:
         progress_display = RichProgressDisplay()
-        with progress_display.progress_context("Extracting streams"):
-            with timer("Extract streams", spinner=False):
+        with timer("Stream extraction", spinner=False):
+            with progress_display.progress_context("Extract Streams"):
                 if chunk_size <= 1:
                     extract_streams(
                         fac_file,
@@ -543,7 +543,6 @@ def process_dem_cli(
     """
     success = False
     try:
-        console.rule("[bold blue]DEM Processing")
         progress_display = RichProgressDisplay()
 
         with timer("Total processing", silent=True, spinner=False):
@@ -557,26 +556,9 @@ def process_dem_cli(
             )
             ds = None  # Close the dataset
 
-            # Print configuration
-            console.print("\n[yellow]Configuration:[/yellow]")
-            console.print(f"  DEM file: [cyan]{dem_file}[/cyan]")
-            console.print(f"  Output directory: [cyan]{output_dir}[/cyan]")
-            console.print(
-                f"  Processing mode: [cyan]{'in-memory' if chunk_size <= 0 else 'tiled'} (chunk size: {core_chunk_size if chunk_size <= 0 else chunk_size})[/cyan]"
-            )
-            console.print(
-                f"  Breach search radius: [cyan]{search_radius_ft}ft ({search_radius} cells)[/cyan]"
-            )
-            console.print(f"  Maximum cost: [cyan]{max_cost}[/cyan]")
-            console.print(
-                f"  Drainage area threshold: [cyan]{da_sqmi} sqmi ({threshold} cells)[/cyan]"
-            )
-            console.print(f"  Extract basins: [cyan]{basins}[/cyan]")
-            console.print(f"  Fill holes: [cyan]{fill_holes}[/cyan]")
-
             if search_radius > 0:
-                with progress_display.progress_context("Breaching paths"):
-                    with timer("Breaching", spinner=False):
+                with timer("Breaching", spinner=False):
+                    with progress_display.progress_context("Breaching paths"):
                         breach_paths_least_cost(
                             dem_file,
                             f"{output_dir}/dem_corrected.tif",
@@ -586,8 +568,8 @@ def process_dem_cli(
                             progress_display.callback,
                         )
 
-                with progress_display.progress_context("Filling depressions"):
-                    with timer("Filling", spinner=False):
+                with timer("Filling", spinner=False):
+                    with progress_display.progress_context("Filling depressions"):
                         if chunk_size <= 0:
                             fill_depressions(
                                 f"{output_dir}/dem_corrected.tif", None, fill_holes
@@ -602,8 +584,8 @@ def process_dem_cli(
                                 progress_display.callback,
                             )
             else:
-                with progress_display.progress_context("Filling depressions"):
-                    with timer("Filling", spinner=False):
+                with timer("Filling", spinner=False):
+                    with progress_display.progress_context("Filling depressions"):
                         if chunk_size <= 0:
                             fill_depressions(
                                 dem_file, f"{output_dir}/dem_corrected.tif", fill_holes
@@ -622,8 +604,8 @@ def process_dem_cli(
                 "Corrected DEM", f"{output_dir}/dem_corrected.tif"
             )
 
-            with progress_display.progress_context("Computing flow direction"):
-                with timer("Flow direction", spinner=False):
+            with timer("Flow direction", spinner=False):
+                with progress_display.progress_context("Computing flow direction"):
                     flow_direction(
                         f"{output_dir}/dem_corrected.tif",
                         f"{output_dir}/fdr.tif",
@@ -633,8 +615,8 @@ def process_dem_cli(
 
             resource_stats.add_output_file("Flow Direction", f"{output_dir}/fdr.tif")
 
-            with progress_display.progress_context("Fixing flats"):
-                with timer("Fixing flats", spinner=False):
+            with timer("Fixing flats", spinner=False):
+                with progress_display.progress_context("Fixing flats"):
                     if chunk_size <= 0:
                         fix_flats_from_file(
                             f"{output_dir}/dem_corrected.tif",
@@ -651,8 +633,8 @@ def process_dem_cli(
                             progress_display.callback,
                         )
 
-            with progress_display.progress_context("Computing flow accumulation"):
-                with timer("Flow accumulation", spinner=False):
+            with timer("Flow accumulation", spinner=False):
+                with progress_display.progress_context("Flow Accumulation"):
                     if chunk_size <= 0:
                         flow_accumulation(
                             f"{output_dir}/fdr.tif", f"{output_dir}/accum.tif"
@@ -669,8 +651,8 @@ def process_dem_cli(
                 "Flow Accumulation", f"{output_dir}/accum.tif"
             )
 
-            with progress_display.progress_context("Extracting streams"):
-                with timer("Stream extraction", spinner=False):
+            with timer("Stream extraction", spinner=False):
+                with progress_display.progress_context("Extract Streams"):
                     if chunk_size <= 0:
                         extract_streams(
                             f"{output_dir}/accum.tif",
@@ -692,8 +674,8 @@ def process_dem_cli(
             resource_stats.add_output_file("Streams", f"{output_dir}/streams.gpkg")
 
             if basins:
-                with progress_display.progress_context("Labeling watersheds"):
-                    with timer("Watershed delineation", spinner=False):
+                with timer("Watershed delineation", spinner=False):
+                    with progress_display.progress_context("Label Watersheds"):
                         drainage_points = drainage_points_from_file(
                             f"{output_dir}/fdr.tif",
                             f"{output_dir}/streams.gpkg",
@@ -722,7 +704,6 @@ def process_dem_cli(
 
             success = True
 
-        console.rule("[bold green]Processing Complete")
         console.print(resource_stats.get_summary_panel(success=True))
 
     except Exception as exc:

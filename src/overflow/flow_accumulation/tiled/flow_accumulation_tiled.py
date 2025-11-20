@@ -195,7 +195,7 @@ def flow_accumulation_tiled(
             flow_acc_tile.write(output_band)
             task_queue.get()
 
-    tracker.update(1, "Calculating flow accumulation for each tile")
+    tracker.update(1, step_name="Calculate local")
 
     # Process each tile in parallel
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -221,7 +221,7 @@ def flow_accumulation_tiled(
     output_ds.FlushCache()
 
     # Calculate global accumulation
-    tracker.update(2, "Calculating global accumulation")
+    tracker.update(2, step_name="Calculate global accumulation")
     global_acc, global_offset = global_state.calculate_global_accumulation()
 
     def handle_finalize_flow_acc_result(future):
@@ -237,7 +237,7 @@ def flow_accumulation_tiled(
             finally:
                 task_queue.get()
 
-    tracker.update(3, "Finalizing flow accumulation for each tile")
+    tracker.update(3, step_name="Finalize accumulation")
 
     # Finalize flow accumulation for each tile in parallel
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
