@@ -46,7 +46,7 @@ jobs:
           labels: |
             org.opencontainers.image.title=Overflow
             org.opencontainers.image.description=High-performance hydrological terrain analysis
-            interface=${{ steps.read-interface.outputs.json }}
+            interface="${{ steps.read-interface.outputs.json }}"
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
