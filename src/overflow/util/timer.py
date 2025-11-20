@@ -1,6 +1,7 @@
 """Timing and resource tracking utilities for overflow commands."""
 
 import os
+import sys
 import time
 from contextlib import contextmanager
 from pathlib import Path
@@ -10,7 +11,7 @@ from rich.progress import Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
 from rich.table import Table
 from rich.text import Text
 
-console = Console(force_terminal=True)
+console = Console()
 
 
 class ResourceStats:
@@ -192,25 +193,25 @@ class ResourceStats:
         if self.output_files:
             lines.append(Text("\nOutputs:", style="bold"))
 
-            # Calculate max filename length for alignment
-            max_name_length = max(
-                len(file_path.name) for _, file_path in self.output_files
-            )
+            # Use same width as step names for consistency (34 chars)
+            max_name_length = 34
 
             for description, file_path in self.output_files:
                 if file_path.exists():
                     size = os.path.getsize(file_path)
                     # Pad filename to align sizes
-                    padded_name = file_path.name.ljust(max_name_length + 4)
+                    padded_name = file_path.name.ljust(max_name_length)
                     lines.append(
                         Text(
-                            f"  • {padded_name}{self.format_file_size(size)}",
+                            f"  • {padded_name} {self.format_file_size(size)}",
                             style="dim",
                         )
                     )
                 else:
-                    padded_name = file_path.name.ljust(max_name_length + 4)
-                    lines.append(Text(f"  • {padded_name}(not found)", style="dim red"))
+                    padded_name = file_path.name.ljust(max_name_length)
+                    lines.append(
+                        Text(f"  • {padded_name} (not found)", style="dim red")
+                    )
 
         # Combine all lines
         return Text("\n").join(lines)
@@ -291,10 +292,13 @@ def timer(
                 resource_stats.add_stats(description, duration)
                 progress.stop()
 
-                console.print(
-                    f"[dim cyan]✓[/dim cyan] [white]Done[/white] "
-                    f"[dim]({ResourceStats.format_compact_duration(duration)})[/dim]"
-                )
+                if sys.stdout.isatty():
+                    console.print(
+                        f"[dim cyan]✓[/dim cyan] [white]Done[/white] "
+                        f"[dim]({ResourceStats.format_compact_duration(duration)})[/dim]"
+                    )
+                else:
+                    print(f"Done ({ResourceStats.format_compact_duration(duration)})")
     else:
         # Silent mode during execution - only show completion message
         try:
@@ -304,7 +308,10 @@ def timer(
             resource_stats.add_stats(description, duration)
 
             if not silent:
-                console.print(
-                    f"[dim cyan]✓[/dim cyan] [white]Done[/white] "
-                    f"[dim]({ResourceStats.format_compact_duration(duration)})[/dim]"
-                )
+                if sys.stdout.isatty():
+                    console.print(
+                        f"[dim cyan]✓[/dim cyan] [white]Done[/white] "
+                        f"[dim]({ResourceStats.format_compact_duration(duration)})[/dim]"
+                    )
+                else:
+                    print(f"Done ({ResourceStats.format_compact_duration(duration)})")
