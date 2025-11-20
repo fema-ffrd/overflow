@@ -34,21 +34,15 @@ gdal.SetConfigOption("CPL_VSIL_USE_TEMP_FILE_FOR_RANDOM_WRITE", "YES")
 def print_banner():
     """Display the Overflow banner and version."""
     if sys.stdout.isatty():
-        banner = f"""[bold cyan]
-╔════════════════════════════════════╗
-║                                    ║
-║     ╔═╗╦  ╦╔═╗╦═╗╔═╗╦  ╔═╗╦ ╦      ║
-║  [dim]░[/dim][cyan]▒[/cyan][bold blue]▓[/bold blue]║ ║╚╗╔╝║╣ ╠╦╝╠╣ ║  ║ ║║║║[bold blue]▓[/bold blue][cyan]▒[/cyan][dim]░[/dim]   ║
-║     ╚═╝ ╚╝ ╚═╝╩╚═╚  ╩═╝╚═╝╚╩╝      ║
-║                                    ║
-║   Hydrological Terrain Analysis    ║
-╚════════════════════════════════════╝[/bold cyan]
-[dim]Version {__version__}[/dim]
+        banner = f"""[bold cyan]   ╔═╗╦  ╦╔═╗╦═╗╔═╗╦  ╔═╗╦ ╦
+[dim]░[/dim][cyan]▒[/cyan][bold blue]▓[/bold blue]║ ║╚╗╔╝║╣ ╠╦╝╠╣ ║  ║ ║║║║[bold blue]▓[/bold blue][cyan]▒[/cyan][dim]░[/dim]
+   ╚═╝ ╚╝ ╚═╝╩╚═╚  ╩═╝╚═╝╚╩╝[/bold cyan]
+        [dim]Version {__version__}[/dim]
 """
         console.print(banner)
     else:
         # Non-TTY output (plain text)
-        print(f"OVERFLOW v{__version__} - Hydrological Terrain Analysis\n")
+        print(f"OVERFLOW v{__version__}\n")
 
 
 @click.group(invoke_without_command=True)

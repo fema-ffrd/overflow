@@ -85,8 +85,12 @@ def drainage_points_from_file(
         if spatial_ref is not None:
             srs = osr.SpatialReference()
             srs.ImportFromWkt(spatial_ref.ExportToWkt())
+            # Use traditional GIS axis order (lon, lat) to avoid axis ordering issues
+            srs.SetAxisMappingStrategy(osr.OAMS_TRADITIONAL_GIS_ORDER)
             target_srs = osr.SpatialReference()
             target_srs.ImportFromWkt(fdr_ds.GetProjection())
+            # Use traditional GIS axis order (lon, lat) to avoid axis ordering issues
+            target_srs.SetAxisMappingStrategy(osr.OAMS_TRADITIONAL_GIS_ORDER)
             transform = osr.CoordinateTransformation(srs, target_srs)
             x, y, _ = transform.TransformPoint(x, y)
 

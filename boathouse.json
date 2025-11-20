@@ -52,7 +52,7 @@
                     "name": "chunk_size",
                     "type": "integer",
                     "description": "chunk size for tiled operations",
-                    "defaultValue": 2000
+                    "defaultValue": 512
                 },
                 {
                     "displayName": "Search Radius (feet)",
@@ -65,8 +65,8 @@
                     "displayName": "Max Cost",
                     "name": "max_cost",
                     "type": "float",
-                    "description": "maximum cost of breach paths (total sum of elevation removed from each cell in path)",
-                    "optional": true
+                    "defaultValue": 1000000000,
+                    "description": "maximum cost of breach paths (total sum of elevation removed from each cell in path)"
                 },
                 {
                     "displayName": "Drainage Area (square miles)",
@@ -86,6 +86,407 @@
                     "name": "fill_holes",
                     "type": "bool",
                     "description": "If set, fills no-data holes in the DEM"
+                }
+            ]
+        },
+        {
+            "name": "Breach Single Cell Pits",
+            "path": "overflow",
+            "cmd": [
+                "breach-single-cell-pits"
+            ],
+            "readme": "docs/user-guide/cli.md",
+            "description": "Breach single cell pits in a DEM. Produces an output DEM with breached single cell pits.",
+            "category": "Hydrology",
+            "keywords": [
+                "dem",
+                "breach",
+                "pit",
+                "depression",
+                "terrain",
+                "preprocessing",
+                "hydrology",
+                "raster"
+            ],
+            "args": [
+                {
+                    "displayName": "Input File",
+                    "name": "input_file",
+                    "type": "file",
+                    "description": "path to the GDAL supported raster dataset for the DEM"
+                },
+                {
+                    "displayName": "Output File",
+                    "name": "output_file",
+                    "type": "file",
+                    "description": "path to the output file (must be GeoTiff)"
+                },
+                {
+                    "displayName": "Chunk Size",
+                    "name": "chunk_size",
+                    "type": "integer",
+                    "description": "chunk size for tiled operations",
+                    "defaultValue": 512
+                }
+            ]
+        },
+        {
+            "name": "Flow Direction",
+            "path": "overflow",
+            "cmd": [
+                "flow-direction"
+            ],
+            "readme": "docs/user-guide/cli.md",
+            "description": "Generate flow direction rasters from a DEM. Returns a raster with delineated flow direction using D8 algorithm.",
+            "category": "Hydrology",
+            "keywords": [
+                "flow",
+                "direction",
+                "d8",
+                "dem",
+                "hydrology",
+                "drainage",
+                "raster",
+                "terrain"
+            ],
+            "args": [
+                {
+                    "displayName": "Input File",
+                    "name": "input_file",
+                    "type": "file",
+                    "description": "path to the DEM file"
+                },
+                {
+                    "displayName": "Output File",
+                    "name": "output_file",
+                    "type": "file",
+                    "description": "path to the output file"
+                },
+                {
+                    "displayName": "Chunk Size",
+                    "name": "chunk_size",
+                    "type": "integer",
+                    "description": "chunk size for tiled operations",
+                    "defaultValue": 512
+                }
+            ]
+        },
+        {
+            "name": "Breach Paths Least Cost",
+            "path": "overflow",
+            "cmd": [
+                "breach-paths-least-cost"
+            ],
+            "readme": "docs/user-guide/cli.md",
+            "description": "Breach paths of least cost for pits in a DEM. Only pits that can be solved within the search radius are solved.",
+            "category": "Hydrology",
+            "keywords": [
+                "dem",
+                "breach",
+                "pit",
+                "depression",
+                "least-cost",
+                "terrain",
+                "preprocessing",
+                "hydrology",
+                "raster"
+            ],
+            "args": [
+                {
+                    "displayName": "Input File",
+                    "name": "input_file",
+                    "type": "file",
+                    "description": "path to the GDAL supported raster dataset for the DEM"
+                },
+                {
+                    "displayName": "Output File",
+                    "name": "output_file",
+                    "type": "file",
+                    "description": "path to the output file (must be GeoTiff)"
+                },
+                {
+                    "displayName": "Chunk Size",
+                    "name": "chunk_size",
+                    "type": "integer",
+                    "description": "chunk size for tiled operations",
+                    "defaultValue": 512
+                },
+                {
+                    "displayName": "Search Radius",
+                    "name": "search_radius",
+                    "type": "integer",
+                    "description": "search radius in cells",
+                    "defaultValue": 200
+                },
+                {
+                    "displayName": "Max Cost",
+                    "name": "max_cost",
+                    "type": "float",
+                    "description": "maximum cost of breach paths (total sum of elevation removed from each cell in path)",
+                    "defaultValue": 1000000000
+                }
+            ]
+        },
+        {
+            "name": "Fix Flats",
+            "path": "overflow",
+            "cmd": [
+                "fix-flats"
+            ],
+            "readme": "docs/user-guide/cli.md",
+            "description": "Fix flats in a DEM to ensure proper flow direction across flat areas.",
+            "category": "Hydrology",
+            "keywords": [
+                "dem",
+                "flats",
+                "flow",
+                "direction",
+                "terrain",
+                "preprocessing",
+                "hydrology",
+                "raster"
+            ],
+            "args": [
+                {
+                    "displayName": "DEM File",
+                    "name": "dem_file",
+                    "type": "file",
+                    "description": "path to the GDAL supported raster dataset for the DEM"
+                },
+                {
+                    "displayName": "FDR File",
+                    "name": "fdr_file",
+                    "type": "file",
+                    "description": "path to the GDAL supported raster dataset for the flow direction (FDR)"
+                },
+                {
+                    "displayName": "Output File",
+                    "name": "output_file",
+                    "type": "file",
+                    "description": "path to the output file (must be GeoTiff)"
+                },
+                {
+                    "displayName": "Chunk Size",
+                    "name": "chunk_size",
+                    "type": "integer",
+                    "description": "chunk size for tiled operations",
+                    "defaultValue": 512
+                },
+                {
+                    "displayName": "Working Directory",
+                    "name": "working_dir",
+                    "type": "directory",
+                    "description": "working directory for temporary files",
+                    "defaultValue": null
+                }
+            ]
+        },
+        {
+            "name": "Fill Depressions",
+            "path": "overflow",
+            "cmd": [
+                "fill-depressions"
+            ],
+            "readme": "docs/user-guide/cli.md",
+            "description": "Fill depressions in a DEM to create a hydrologically corrected surface.",
+            "category": "Hydrology",
+            "keywords": [
+                "dem",
+                "fill",
+                "depression",
+                "pit",
+                "terrain",
+                "preprocessing",
+                "hydrology",
+                "raster"
+            ],
+            "args": [
+                {
+                    "displayName": "DEM File",
+                    "name": "dem_file",
+                    "type": "file",
+                    "description": "path to the GDAL supported raster dataset for the DEM"
+                },
+                {
+                    "displayName": "Output File",
+                    "name": "output_file",
+                    "type": "file",
+                    "description": "path to the output file (must be GeoTiff)"
+                },
+                {
+                    "displayName": "Chunk Size",
+                    "name": "chunk_size",
+                    "type": "integer",
+                    "description": "chunk size for tiled operations",
+                    "defaultValue": 512
+                },
+                {
+                    "displayName": "Working Directory",
+                    "name": "working_dir",
+                    "type": "directory",
+                    "description": "working directory for temporary files",
+                    "defaultValue": null
+                },
+                {
+                    "displayName": "Fill Holes?",
+                    "name": "fill_holes",
+                    "type": "bool",
+                    "description": "If set, fills no-data holes in the DEM"
+                }
+            ]
+        },
+        {
+            "name": "Flow Accumulation",
+            "path": "overflow",
+            "cmd": [
+                "flow-accumulation"
+            ],
+            "readme": "docs/user-guide/cli.md",
+            "description": "Calculate flow accumulation from a flow direction raster. Returns the number of upstream cells flowing into each cell.",
+            "category": "Hydrology",
+            "keywords": [
+                "flow",
+                "accumulation",
+                "drainage",
+                "hydrology",
+                "watershed",
+                "catchment",
+                "raster"
+            ],
+            "args": [
+                {
+                    "displayName": "FDR File",
+                    "name": "fdr_file",
+                    "type": "file",
+                    "description": "path to the GDAL supported raster dataset for the flow direction (FDR)"
+                },
+                {
+                    "displayName": "Output File",
+                    "name": "output_file",
+                    "type": "file",
+                    "description": "path to the output file (must be GeoTiff)"
+                },
+                {
+                    "displayName": "Chunk Size",
+                    "name": "chunk_size",
+                    "type": "integer",
+                    "description": "chunk size for tiled operations",
+                    "defaultValue": 512
+                }
+            ]
+        },
+        {
+            "name": "Label Watersheds",
+            "path": "overflow",
+            "cmd": [
+                "label-watersheds"
+            ],
+            "readme": "docs/user-guide/cli.md",
+            "description": "Label watersheds from a flow direction raster and drainage points. Returns a raster with labeled watershed basins.",
+            "category": "Hydrology",
+            "keywords": [
+                "watershed",
+                "basin",
+                "delineation",
+                "drainage",
+                "catchment",
+                "hydrology",
+                "pour-points",
+                "raster"
+            ],
+            "args": [
+                {
+                    "displayName": "FDR File",
+                    "name": "fdr_file",
+                    "type": "file",
+                    "description": "path to the GDAL supported raster dataset for the flow direction (FDR)"
+                },
+                {
+                    "displayName": "Drainage Points File",
+                    "name": "dp_file",
+                    "type": "file",
+                    "description": "path to the drainage points file"
+                },
+                {
+                    "displayName": "Output File",
+                    "name": "output_file",
+                    "type": "file",
+                    "description": "path to the output file (must be GeoTiff)"
+                },
+                {
+                    "displayName": "Chunk Size",
+                    "name": "chunk_size",
+                    "type": "integer",
+                    "description": "chunk size for tiled operations",
+                    "defaultValue": 512
+                },
+                {
+                    "displayName": "All Basins?",
+                    "name": "all_basins",
+                    "type": "bool",
+                    "description": "If set, labels all basins. If not set, only labels basins upstream of drainage points"
+                },
+                {
+                    "displayName": "Drainage Points Layer",
+                    "name": "dp_layer",
+                    "type": "string",
+                    "description": "name of the layer in the drainage points file",
+                    "defaultValue": null
+                }
+            ]
+        },
+        {
+            "name": "Extract Streams",
+            "path": "overflow",
+            "cmd": [
+                "extract-streams"
+            ],
+            "readme": "docs/user-guide/cli.md",
+            "description": "Extract streams from flow accumulation and flow direction rasters. Returns a vector stream network.",
+            "category": "Hydrology",
+            "keywords": [
+                "stream",
+                "extraction",
+                "network",
+                "hydrology",
+                "drainage",
+                "flow",
+                "accumulation",
+                "channel",
+                "vector"
+            ],
+            "args": [
+                {
+                    "displayName": "FAC File",
+                    "name": "fac_file",
+                    "type": "file",
+                    "description": "path to the GDAL supported raster dataset for the flow accumulation (FAC)"
+                },
+                {
+                    "displayName": "FDR File",
+                    "name": "fdr_file",
+                    "type": "file",
+                    "description": "path to the GDAL supported raster dataset for the flow direction (FDR)"
+                },
+                {
+                    "displayName": "Output Directory",
+                    "name": "output_dir",
+                    "type": "directory",
+                    "description": "path to the output directory"
+                },
+                {
+                    "displayName": "Cell Count Threshold",
+                    "name": "cell_count_threshold",
+                    "type": "integer",
+                    "description": "minimum number of upstream cells required to define a stream",
+                    "defaultValue": 5
+                },
+                {
+                    "displayName": "Chunk Size",
+                    "name": "chunk_size",
+                    "type": "integer",
+                    "description": "chunk size for tiled operations",
+                    "defaultValue": 512
                 }
             ]
         }

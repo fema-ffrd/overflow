@@ -741,6 +741,8 @@ def get_units_to_meters_conversion(raster_ds: gdal.Dataset) -> float:
     proj = ds.GetProjection()
     srs = osr.SpatialReference()
     srs.ImportFromWkt(proj)
+    # Use traditional GIS axis order (lon, lat) to avoid axis ordering issues
+    srs.SetAxisMappingStrategy(osr.OAMS_TRADITIONAL_GIS_ORDER)
 
     # Get the linear units
     linear_units = srs.GetLinearUnits()
@@ -765,11 +767,20 @@ def get_units_to_meters_conversion(raster_ds: gdal.Dataset) -> float:
         # Create transformation to meters (EPSG:3857 - Web Mercator)
         target = osr.SpatialReference()
         target.ImportFromEPSG(3857)
+        # Use traditional GIS axis order (lon, lat) to avoid axis ordering issues
+        target.SetAxisMappingStrategy(osr.OAMS_TRADITIONAL_GIS_ORDER)
         transform = osr.CoordinateTransformation(srs, target)
 
         # Convert both points and calculate distance
-        x1, y1, _ = transform.TransformPoint(center_x, center_y)
-        x2, y2, _ = transform.TransformPoint(center_x + long_offset, center_y)
+        try:
+            x1, y1, _ = transform.TransformPoint(center_x, center_y)
+            x2, y2, _ = transform.TransformPoint(center_x + long_offset, center_y)
+        except RuntimeError as e:
+            raise ValueError(
+                f"Failed to transform coordinates ({center_x}, {center_y}) to Web Mercator. "
+                f"This may indicate invalid coordinates or unsupported projection. "
+                f"Original error: {e}"
+            ) from e
 
         # Calculate distance in meters per degree
         meters_per_degree = np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2) / long_offset
