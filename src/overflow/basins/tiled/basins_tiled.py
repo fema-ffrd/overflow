@@ -134,7 +134,7 @@ def label_watersheds_tiled(
     # Setup progress tracking
     if progress_callback is None:
         progress_callback = silent_callback
-    tracker = ProgressTracker(progress_callback, "Label Watersheds", total_steps=3)
+    tracker = ProgressTracker(progress_callback, "Label Watersheds", total_steps=4)
     fdr_ds = gdal.Open(fdr_filepath)
     fdr_band = fdr_ds.GetRasterBand(1)
     gt = fdr_ds.GetGeoTransform()
@@ -261,7 +261,7 @@ def label_watersheds_tiled(
 
     graph = global_state.graph
 
-    tracker.update(3, step_name="Create basin polygons")
+    tracker.update(3, step_name="Find basin boundaries")
 
     basin_polygons_filepath = output_filepath.replace(".tif", ".gpkg")
     create_basin_polygons(
@@ -272,6 +272,9 @@ def label_watersheds_tiled(
         gt,
         projection,
         progress_callback,
+        step_transition_callback=lambda: tracker.update(
+            4, step_name="Create basin polygons"
+        ),
     )
 
     labels_ds = None

@@ -177,6 +177,10 @@ def create_global_state(
     task_queue: queue.Queue[int] = queue.Queue(max_workers)
     lock = Lock()
 
+    # Track progress as tiles are processed
+    chunk_counter = [0]  # Use list for mutability in closure
+    total_chunks = tile_rows * tile_cols
+
     def handle_result(future):
         with lock:
             local_graph, high_edges, low_edges, labels = future.result()
@@ -188,11 +192,13 @@ def create_global_state(
             labels_tile.from_numpy(labels)
             labels_tile.write(labels_band)
             task_queue.get()
+            # Report progress as tiles complete processing
+            chunk_counter[0] += 1
+            if progress_callback is not None:
+                progress_callback(message=f"Chunk {chunk_counter[0]}/{total_chunks}")
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        for dem_tile in raster_chunker(
-            dem_band, chunk_size, 1, progress_callback=progress_callback
-        ):
+        for dem_tile in raster_chunker(dem_band, chunk_size, 1):
             while task_queue.full():
                 time.sleep(0.1)
             task_queue.put(tile_index)

@@ -195,7 +195,7 @@ def nodes_to_points(
 def add_downstream_junctions(
     geotransform: tuple,
     streams_dataset_path: str,
-    streams_layer: str = "streams",
+    streams_layer_name: str = "streams",
     junctions_layer: str = "junctions",
     progress_callback: ProgressCallback | None = None,
 ):
@@ -207,7 +207,7 @@ def add_downstream_junctions(
         progress_callback = silent_callback
 
     ds = ogr.Open(streams_dataset_path, gdal.GA_Update)
-    streams_layer = ds.GetLayer(streams_layer)
+    streams_layer = ds.GetLayer(streams_layer_name)
     junctions_layer = ds.GetLayer(junctions_layer)
 
     # Get all existing junction locations
@@ -221,6 +221,7 @@ def add_downstream_junctions(
 
     # Find streams without downstream junctions
     junctions_to_add = []
+    total_streams = streams_layer.GetFeatureCount()
 
     for idx, feature in enumerate(streams_layer, 1):
         geom = feature.GetGeometryRef()  # type: ignore[attr-defined]
@@ -244,6 +245,10 @@ def add_downstream_junctions(
             junction_hashes.add(
                 hash_key
             )  # Add to set to avoid duplicates at same location
+
+        # Report progress
+        if idx % 100 == 0 or idx == total_streams:
+            progress_callback(message=f"Processed {idx}/{total_streams} streams")
 
     # Add new junctions
     for point in junctions_to_add:

@@ -390,6 +390,7 @@ def remove_tile_edge_junctions(
 
     # Keep track of stream replacements
     stream_replacements: dict[int, int] = {}  # old_fid -> new_fid
+    total_merges = len(stream_pairs_to_merge)
 
     for i, (
         (fid1, fid2, merge_type),
@@ -436,6 +437,10 @@ def remove_tile_edge_junctions(
         stream1 = None
         stream2 = None
         new_feature = None
+
+        # Report progress
+        if i % 100 == 0 or i == total_merges:
+            progress_callback(message=f"Merged {i}/{total_merges} segments")
 
     # Remove junctions
     for junction_fid in junction_fids_to_remove:

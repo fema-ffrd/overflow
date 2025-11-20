@@ -1,4 +1,5 @@
 import concurrent.futures
+import math
 import queue
 import time
 from threading import Lock
@@ -291,6 +292,12 @@ def create_flat_mask(
     task_queue: queue.Queue[int] = queue.Queue(max_workers)
     lock = Lock()
 
+    # Track progress as tiles are processed
+    chunk_counter = [0]  # Use list for mutability in closure
+    total_chunks = math.ceil(fdr_band.YSize / chunk_size) * math.ceil(
+        fdr_band.XSize / chunk_size
+    )
+
     def handle_result(future):
         with lock:
             flat_mask, tile_index = future.result()
@@ -299,11 +306,13 @@ def create_flat_mask(
             flat_mask_tile.from_numpy(flat_mask)
             flat_mask_tile.write(flat_mask_band)
             task_queue.get()
+            # Report progress as tiles complete processing
+            chunk_counter[0] += 1
+            if progress_callback is not None:
+                progress_callback(message=f"Chunk {chunk_counter[0]}/{total_chunks}")
 
     with concurrent.futures.ThreadPoolExecutor(max_workers) as executor:
-        for fdr_tile in raster_chunker(
-            fdr_band, chunk_size, 0, progress_callback=progress_callback
-        ):
+        for fdr_tile in raster_chunker(fdr_band, chunk_size, 0):
             while task_queue.full():
                 time.sleep(0.1)
             task_queue.put(tile_index)

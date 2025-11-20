@@ -1,4 +1,5 @@
 import concurrent.futures
+import math
 import queue
 import time
 from threading import Lock
@@ -288,6 +289,7 @@ def create_basin_polygons(
     gt: tuple,
     projection: str,
     progress_callback: ProgressCallback | None = None,
+    step_transition_callback=None,
 ):
     """
     Create polygons for each basin in the watershed raster. The polygons are created by tracing the boundary of each
@@ -314,6 +316,12 @@ def create_basin_polygons(
     lock = Lock()
     boundary_cells: dict[int, set[tuple[int, int]]] = {}
 
+    # Track progress as tiles are processed
+    chunk_counter = [0]  # Use list for mutability in closure
+    total_chunks = math.ceil(watersheds_band.YSize / chunk_size) * math.ceil(
+        watersheds_band.XSize / chunk_size
+    )
+
     def handle_chunk_result(future):
         with lock:
             boundary_cells_list, id_to_index = future.result()
@@ -323,11 +331,12 @@ def create_basin_polygons(
                 else:
                     boundary_cells[basin_id] = boundary_cells_list[index]
             task_queue.get()
+            # Report progress as tiles complete processing
+            chunk_counter[0] += 1
+            progress_callback(message=f"Chunk {chunk_counter[0]}/{total_chunks}")
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        for chunk in raster_chunker(
-            watersheds_band, chunk_size, 1, progress_callback=progress_callback
-        ):
+        for chunk in raster_chunker(watersheds_band, chunk_size, 1):
             while task_queue.full():
                 time.sleep(0.1)
             task_queue.put(1)
@@ -341,6 +350,10 @@ def create_basin_polygons(
     # Wait for all tasks to finish
     while not task_queue.empty():
         time.sleep(0.1)
+
+    # Signal transition to polygon creation phase
+    if step_transition_callback is not None:
+        step_transition_callback()
 
     # Create the output datasource and layer for the polygons
     driver = ogr.GetDriverByName("GPKG")
@@ -371,6 +384,20 @@ def create_basin_polygons(
     upstream_basins_dict = compute_targeted_upstream_basins(
         graph, set(boundary_cells.keys())
     )
+
+    # Track progress for polygon creation
+    polygon_counter = [0]  # Use list for mutability in closure
+    total_basins = len(boundary_cells)
+
+    # Update the handle_basin_result to report progress
+    original_handle_basin_result = handle_basin_result
+
+    def handle_basin_result_with_progress(future):
+        original_handle_basin_result(future)
+        with lock:
+            polygon_counter[0] += 1
+            progress_callback(message=f"Basin {polygon_counter[0]}/{total_basins}")
+
     index = 0
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         for basin_id in boundary_cells:
@@ -392,7 +419,7 @@ def create_basin_polygons(
             future = executor.submit(
                 process_basin, basin_id, upstream_basin_boundary_cells, gt
             )
-            future.add_done_callback(handle_basin_result)
+            future.add_done_callback(handle_basin_result_with_progress)
 
     # Wait for all tasks to finish
     while not task_queue.empty():

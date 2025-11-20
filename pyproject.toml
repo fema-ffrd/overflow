@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "overflow-hydro"
-version = "0.1.10"
+version = "0.1.11"
 description = "High-performance Python library for hydrological terrain analysis with parallel, tiled algorithms"
 readme = "README.md"
 requires-python = ">=3.11"
