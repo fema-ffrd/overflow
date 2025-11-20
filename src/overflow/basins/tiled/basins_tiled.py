@@ -161,6 +161,11 @@ def label_watersheds_tiled(
 
     lock = Lock()
 
+    chunk_counter = [0]  # Use list for mutability in closure
+    total_chunks = math.ceil(fdr_band.YSize / chunk_size) * math.ceil(
+        fdr_band.XSize / chunk_size
+    )
+
     def handle_result(future):
         with lock:
             watersheds, local_graph, fdr_perimeter, tile_row, tile_col, tile_index = (
@@ -174,13 +179,14 @@ def label_watersheds_tiled(
             global_state.watersheds[tile_index] = watersheds_perimeter
             global_state.graph.update(local_graph)
             task_queue.get()
+            # Report progress as tiles complete
+            chunk_counter[0] += 1
+            tracker.callback(message=f"Chunk {chunk_counter[0]}/{total_chunks}")
 
     tracker.update(1, step_name="Label tiles")
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        for fdr_tile in raster_chunker(
-            fdr_band, chunk_size, 0, progress_callback=progress_callback
-        ):
+        for fdr_tile in raster_chunker(fdr_band, chunk_size, 0):
             while task_queue.full():
                 time.sleep(0.1)
             task_queue.put(tile_index)
@@ -213,6 +219,8 @@ def label_watersheds_tiled(
 
     global_state.complete_graph()
 
+    chunk_counter_finalize = [0]  # Use list for mutability in closure
+
     def handle_finalized_tile(future):
         with lock:
             finalized_labels, row, col = future.result()
@@ -220,14 +228,17 @@ def label_watersheds_tiled(
             chunk.from_numpy(finalized_labels)
             chunk.write(labels_band)
             task_queue.get()
+            # Report progress as tiles complete
+            chunk_counter_finalize[0] += 1
+            tracker.callback(
+                message=f"Chunk {chunk_counter_finalize[0]}/{total_chunks}"
+            )
 
     tracker.update(2, step_name="Finalize watersheds")
 
     # iterate over labels now using the graph to assign ids to drainage points or outlets
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        for labels_tile in raster_chunker(
-            labels_band, chunk_size, lock=lock, progress_callback=progress_callback
-        ):
+        for labels_tile in raster_chunker(labels_band, chunk_size, lock=lock):
             while task_queue.full():
                 time.sleep(0.1)
             task_queue.put(1)

@@ -1,5 +1,6 @@
 import re
 import sys
+import threading
 import time
 from contextlib import contextmanager
 
@@ -16,19 +17,27 @@ def format_duration(seconds: float) -> str:
         Compact duration string
     """
     hours, remainder = divmod(int(seconds), 3600)
-    minutes, secs = divmod(remainder, 60)
+    minutes, secs_int = divmod(remainder, 60)
     parts = []
 
     if hours > 0:
         parts.append(f"{hours}h")
     if minutes > 0 or hours > 0:
         parts.append(f"{minutes}m")
-    parts.append(f"{secs}s")
+
+    # For durations under 1 minute, show decimal seconds for precision
+    if hours == 0 and minutes == 0:
+        parts.append(f"{seconds:.1f}s")
+    else:
+        parts.append(f"{secs_int}s")
 
     return "".join(parts)
 
 
 class RichProgressDisplay:
+    # Custom spinner frames
+    SPINNER_FRAMES = ["■", "≡", "=", "-", "=", "≡"]
+
     def __init__(
         self,
         console: Console | None = None,
@@ -42,6 +51,52 @@ class RichProgressDisplay:
         self.step_start_time: float = 0.0
         self.in_chunk_progress: bool = False
         self.step_timing_printed: bool = False
+        self.spinner_index: int = 0
+        self.spinner_thread: threading.Thread | None = None
+        self.spinner_stop_event: threading.Event = threading.Event()
+        self.spinner_lock: threading.Lock = threading.Lock()
+        self.chunk_info: str = ""  # Store current chunk info for spinner updates
+
+    def _spinner_worker(self) -> None:
+        """Background thread that updates the spinner continuously."""
+        while not self.spinner_stop_event.is_set():
+            if self.current_step and not self.step_timing_printed:
+                with self.spinner_lock:
+                    # Advance spinner
+                    self.spinner_index = (self.spinner_index + 1) % len(
+                        self.SPINNER_FRAMES
+                    )
+                    spinner = self.SPINNER_FRAMES[self.spinner_index]
+
+                    # Update display with bold cyan spinner (matching phase color)
+                    if self.chunk_info:
+                        # Show step with chunk info
+                        sys.stdout.write(
+                            f"\r\033[K  \033[1;36m{spinner}\033[0m {self.current_step} {self.chunk_info}"
+                        )
+                    else:
+                        # Show step without chunk info
+                        sys.stdout.write(
+                            f"\r\033[K  \033[1;36m{spinner}\033[0m {self.current_step}"
+                        )
+                    sys.stdout.flush()
+
+            # Update every 0.1 seconds
+            self.spinner_stop_event.wait(0.1)
+
+    def _start_spinner(self) -> None:
+        """Start the spinner animation thread."""
+        self._stop_spinner()  # Stop any existing thread
+        self.spinner_stop_event.clear()
+        self.spinner_thread = threading.Thread(target=self._spinner_worker, daemon=True)
+        self.spinner_thread.start()
+
+    def _stop_spinner(self) -> None:
+        """Stop the spinner animation thread."""
+        if self.spinner_thread and self.spinner_thread.is_alive():
+            self.spinner_stop_event.set()
+            self.spinner_thread.join(timeout=0.5)
+            self.spinner_thread = None
 
     def callback(
         self,
@@ -77,6 +132,7 @@ class RichProgressDisplay:
             if new_step != self.current_step:
                 # Finish previous step (print final line with timing)
                 if self.current_step and not self.step_timing_printed:
+                    self._stop_spinner()
                     elapsed = time.time() - self.step_start_time
                     # Clear the line and print final step line with timing
                     sys.stdout.write("\r\033[K")
@@ -84,11 +140,14 @@ class RichProgressDisplay:
                     self.step_timing_printed = True
                     self.in_chunk_progress = False
 
-                # Start new step
-                self.current_step = new_step
-                self.step_start_time = time.time()
-                self.step_timing_printed = False
-                print(f"  {self.current_step}", end="", flush=True)
+                # Start new step with spinner
+                with self.spinner_lock:
+                    self.current_step = new_step
+                    self.step_start_time = time.time()
+                    self.step_timing_printed = False
+                    self.spinner_index = 0
+                    self.chunk_info = ""
+                self._start_spinner()
 
         # Handle chunk progress
         if message and re.match(r"Chunk\s+\d+/\d+", message):
@@ -98,15 +157,14 @@ class RichProgressDisplay:
                 total = int(match.group(2))
                 percentage = int((current / total) * 100)
 
-                # Show live chunk progress
-                sys.stdout.write(
-                    f"\r\033[K  {self.current_step} {current}/{total} ({percentage}%)"
-                )
-                sys.stdout.flush()
-                self.in_chunk_progress = True
+                # Update chunk info for spinner thread to display
+                with self.spinner_lock:
+                    self.chunk_info = f"{current}/{total} ({percentage}%)"
+                    self.in_chunk_progress = True
 
                 # If this is the last chunk, finish the step with timing
                 if current == total:
+                    self._stop_spinner()
                     elapsed = time.time() - self.step_start_time
                     # Clear the chunk progress line and print final step line with timing
                     sys.stdout.write("\r\033[K")
@@ -129,11 +187,15 @@ class RichProgressDisplay:
         finally:
             # Finish any remaining step
             if self.current_step and not self.step_timing_printed:
+                self._stop_spinner()
                 elapsed = time.time() - self.step_start_time
                 # Clear the line and print final step line with timing
                 if elapsed > 0:  # Only if step actually ran
                     sys.stdout.write("\r\033[K")
                     print(f"  {self.current_step} ({format_duration(elapsed)})")
+
+            # Ensure spinner is stopped
+            self._stop_spinner()
 
             self.current_phase = ""
             self.current_step = ""

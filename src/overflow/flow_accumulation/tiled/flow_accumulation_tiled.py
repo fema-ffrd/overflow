@@ -170,6 +170,11 @@ def flow_accumulation_tiled(
     task_queue: queue.Queue[int] = queue.Queue(max_workers)
     lock = Lock()
 
+    chunk_counter = [0]  # Use list for mutability in closure
+    total_chunks = math.ceil(input_band.YSize / chunk_size) * math.ceil(
+        input_band.XSize / chunk_size
+    )
+
     def handle_flow_acc_tile_result(future):
         """Handle the result of a single tile flow accumulation calculation."""
         (
@@ -194,14 +199,15 @@ def flow_accumulation_tiled(
             flow_acc_tile.from_numpy(flow_acc)
             flow_acc_tile.write(output_band)
             task_queue.get()
+            # Report progress as tiles complete
+            chunk_counter[0] += 1
+            tracker.callback(message=f"Chunk {chunk_counter[0]}/{total_chunks}")
 
     tracker.update(1, step_name="Calculate local")
 
     # Process each tile in parallel
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        for flow_dir_tile in raster_chunker(
-            input_band, chunk_size, progress_callback=progress_callback
-        ):
+        for flow_dir_tile in raster_chunker(input_band, chunk_size):
             while task_queue.full():
                 time.sleep(0.1)
             task_queue.put(0)
@@ -224,6 +230,8 @@ def flow_accumulation_tiled(
     tracker.update(2, step_name="Calculate global accumulation")
     global_acc, global_offset = global_state.calculate_global_accumulation()
 
+    chunk_counter_finalize = [0]  # Use list for mutability in closure
+
     def handle_finalize_flow_acc_result(future):
         """Handle the result of finalizing flow accumulation for a tile."""
         with lock:
@@ -236,14 +244,17 @@ def flow_accumulation_tiled(
                 print("Warning: Error finalizing flow accumulation for a tile", e)
             finally:
                 task_queue.get()
+                # Report progress as tiles complete
+                chunk_counter_finalize[0] += 1
+                tracker.callback(
+                    message=f"Chunk {chunk_counter_finalize[0]}/{total_chunks}"
+                )
 
     tracker.update(3, step_name="Finalize accumulation")
 
     # Finalize flow accumulation for each tile in parallel
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        for flow_acc_tile in raster_chunker(
-            output_band, chunk_size, lock=lock, progress_callback=progress_callback
-        ):
+        for flow_acc_tile in raster_chunker(output_band, chunk_size, lock=lock):
             while task_queue.full():
                 time.sleep(0.1)
             task_queue.put(0)

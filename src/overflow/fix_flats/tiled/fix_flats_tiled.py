@@ -152,7 +152,7 @@ def fix_flats_tiled(
     tracker.update(1, step_name="Create global state")
 
     global_state = create_global_state(
-        dem_band, fdr_band, labels_band, chunk_size, progress_callback
+        dem_band, fdr_band, labels_band, chunk_size, tracker.callback
     )
 
     tracker.update(2, step_name="Solve graph")
@@ -168,7 +168,7 @@ def fix_flats_tiled(
         global_state,
         dist_to_high_edge_tiles,
         dist_to_low_edge_tiles,
-        progress_callback,
+        tracker.callback,
     )
 
     tracker.update(4, step_name="Update flow direction")
@@ -179,7 +179,7 @@ def fix_flats_tiled(
         fixed_fdr_band,
         flat_mask_band,
         chunk_size,
-        progress_callback,
+        tracker.callback,
     )
     if cleanup_working_dir:
         shutil.rmtree(working_dir)

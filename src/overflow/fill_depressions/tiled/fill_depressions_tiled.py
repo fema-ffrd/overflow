@@ -243,6 +243,11 @@ def fill_depressions_tiled(
     lock = Lock()
 
     # Fill depressions in each tile
+    chunk_counter = [0]  # Use list for mutability in closure
+    total_chunks = math.ceil(input_band.YSize / chunk_size) * math.ceil(
+        input_band.XSize / chunk_size
+    )
+
     def handle_fill_tile_result(future):
         labels, dem, graph, tile_row, tile_col = future.result()
         with lock:
@@ -254,13 +259,14 @@ def fill_depressions_tiled(
             dem_tile.from_numpy(dem)
             dem_tile.write(output_band)
             task_queue.get()
+            # Report progress as tiles complete
+            chunk_counter[0] += 1
+            tracker.callback(message=f"Chunk {chunk_counter[0]}/{total_chunks}")
 
     tracker.update(1, step_name="Fill locally")
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        for dem_tile in raster_chunker(
-            input_band, chunk_size, progress_callback=progress_callback
-        ):
+        for dem_tile in raster_chunker(input_band, chunk_size):
             while task_queue.full():
                 time.sleep(0.1)
             task_queue.put(0)
@@ -290,6 +296,8 @@ def fill_depressions_tiled(
     label_min_elevations = global_state.solve_graph()
 
     # raise elevation of dem to match global labels
+    chunk_counter_raise = [0]  # Use list for mutability in closure
+
     def handle_raise_tile_result(future):
         with lock:
             dem, tile_row, tile_col = future.result()
@@ -297,13 +305,14 @@ def fill_depressions_tiled(
             dem_tile.from_numpy(dem)
             dem_tile.write(output_band)
             task_queue.get()
+            # Report progress as tiles complete
+            chunk_counter_raise[0] += 1
+            tracker.callback(message=f"Chunk {chunk_counter_raise[0]}/{total_chunks}")
 
     tracker.update(3, step_name="Apply elevations")
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        for dem_tile in raster_chunker(
-            output_band, chunk_size, lock=lock, progress_callback=progress_callback
-        ):
+        for dem_tile in raster_chunker(output_band, chunk_size, lock=lock):
             while task_queue.full():
                 time.sleep(0.1)
             task_queue.put(0)

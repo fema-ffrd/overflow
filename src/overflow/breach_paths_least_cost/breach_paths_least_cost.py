@@ -399,6 +399,11 @@ def breach_paths_least_cost(
 
     search_window_size = 2 * search_radius + 1
 
+    chunk_counter = [0]  # Use list for mutability in closure
+    total_chunks = math.ceil(input_band.YSize / chunk_size) * math.ceil(
+        input_band.XSize / chunk_size
+    )
+
     def handle_breach_tile_result(future):
         breached_dem, tile_row, tile_col = future.result()
         with lock:
@@ -406,6 +411,9 @@ def breach_paths_least_cost(
             dem_tile.from_numpy(breached_dem)
             dem_tile.write(output_band)
             task_queue.get()
+            # Report progress as tiles complete
+            chunk_counter[0] += 1
+            progress_callback(message=f"Chunk {chunk_counter[0]}/{total_chunks}")
 
     # Breach paths
     progress_callback(
@@ -417,7 +425,6 @@ def breach_paths_least_cost(
             input_band,
             chunk_size=chunk_size,
             chunk_buffer_size=search_radius,
-            progress_callback=progress_callback,
         ):
             while task_queue.full():
                 time.sleep(0.1)

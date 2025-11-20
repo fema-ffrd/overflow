@@ -1,4 +1,5 @@
 import concurrent.futures
+import math
 import os
 import queue
 import time
@@ -533,14 +534,20 @@ def extract_streams_tiled(
             # Write lines
             write_lines(lines_layer, lines)
             task_queue.get()
+            # Report progress as tiles complete
+            chunk_counter[0] += 1
+            tracker.callback(message=f"Chunk {chunk_counter[0]}/{total_chunks}")
+
+    chunk_counter = [0]  # Use list for mutability in closure
+    total_chunks = math.ceil(fac_band.YSize / chunk_size) * math.ceil(
+        fac_band.XSize / chunk_size
+    )
 
     tracker.update(1, "Extract streams")
 
     # Process tiles in parallel
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        for fac_tile in raster_chunker(
-            fac_band, chunk_size, progress_callback=progress_callback
-        ):
+        for fac_tile in raster_chunker(fac_band, chunk_size):
             while task_queue.full():
                 time.sleep(0.1)
             task_queue.put(0)
