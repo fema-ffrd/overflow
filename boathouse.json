@@ -56,34 +56,34 @@
                 },
                 {
                     "displayName": "Search Radius (feet)",
-                    "name": "--search_radius_ft",
+                    "name": "search_radius_ft",
                     "type": "integer",
                     "defaultValue": 200,
                     "description": "max search radius in feet to look for solution paths during breaching"
                 },
                 {
                     "displayName": "Max Cost",
-                    "name": "--max_cost",
+                    "name": "max_cost",
                     "type": "float",
                     "description": "maximum cost of breach paths (total sum of elevation removed from each cell in path)",
                     "optional": true
                 },
                 {
                     "displayName": "Drainage Area (square miles)",
-                    "name": "--da_sqmi",
+                    "name": "da_sqmi",
                     "type": "float",
                     "defaultValue": 1,
                     "description": "minimum drainage area in square miles for stream extraction"
                 },
                 {
                     "displayName": "Generate Basins?",
-                    "name": "--basins",
+                    "name": "basins",
                     "type": "bool",
                     "description": "flag to enable watershed delineation"
                 },
                 {
                     "displayName": "Fill Holes?",
-                    "name": "--fill_holes",
+                    "name": "fill_holes",
                     "type": "bool",
                     "description": "If set, fills no-data holes in the DEM"
                 }
