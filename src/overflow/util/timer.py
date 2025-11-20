@@ -172,7 +172,9 @@ class ResourceStats:
 
         # Status
         if success:
-            lines.append(Text("✓ Operation completed successfully", style="bold green"))
+            lines.append(
+                Text("✓ All operations completed successfully.", style="bold green")
+            )
         else:
             lines.append(Text("✗ Operation failed", style="bold red"))
 
@@ -187,17 +189,28 @@ class ResourceStats:
             )
 
         # Output files
-        for description, file_path in self.output_files:
-            if file_path.exists():
-                size = os.path.getsize(file_path)
-                lines.append(
-                    Text(
-                        f"Output: {file_path} ({self.format_file_size(size)})",
-                        style="dim",
+        if self.output_files:
+            lines.append(Text("\nOutputs:", style="bold"))
+
+            # Calculate max filename length for alignment
+            max_name_length = max(
+                len(file_path.name) for _, file_path in self.output_files
+            )
+
+            for description, file_path in self.output_files:
+                if file_path.exists():
+                    size = os.path.getsize(file_path)
+                    # Pad filename to align sizes
+                    padded_name = file_path.name.ljust(max_name_length + 4)
+                    lines.append(
+                        Text(
+                            f"  • {padded_name}{self.format_file_size(size)}",
+                            style="dim",
+                        )
                     )
-                )
-            else:
-                lines.append(Text(f"Output: {file_path} (not found)", style="dim red"))
+                else:
+                    padded_name = file_path.name.ljust(max_name_length + 4)
+                    lines.append(Text(f"  • {padded_name}(not found)", style="dim red"))
 
         # Combine all lines
         return Text("\n").join(lines)
@@ -279,8 +292,8 @@ def timer(
                 progress.stop()
 
                 console.print(
-                    f"[dim cyan]✓[/dim cyan] [white]{description}[/white] "
-                    f"[dim]{ResourceStats.format_compact_duration(duration)}[/dim]"
+                    f"[dim cyan]✓[/dim cyan] [white]Done[/white] "
+                    f"[dim]({ResourceStats.format_compact_duration(duration)})[/dim]"
                 )
     else:
         # Silent mode during execution - only show completion message
@@ -292,6 +305,6 @@ def timer(
 
             if not silent:
                 console.print(
-                    f"[dim cyan]✓[/dim cyan] [white]{description}[/white] "
-                    f"[dim]{ResourceStats.format_compact_duration(duration)}[/dim]"
+                    f"[dim cyan]✓[/dim cyan] [white]Done[/white] "
+                    f"[dim]({ResourceStats.format_compact_duration(duration)})[/dim]"
                 )
