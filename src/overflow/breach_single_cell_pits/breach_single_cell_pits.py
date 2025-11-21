@@ -144,3 +144,11 @@ def breach_single_cell_pits(
     ):
         _ = breach_single_cell_pits_in_chunk(chunk.data, nodata_value)
         chunk.write(output_band)
+
+    # Flush cache and close datasets
+    output_band.FlushCache()
+    output_ds.FlushCache()
+    output_band = None
+    output_ds = None
+    band = None
+    input_raster = None

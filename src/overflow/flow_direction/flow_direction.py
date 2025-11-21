@@ -157,3 +157,12 @@ def flow_direction(
         result = flow_direction_for_tile(chunk.data, nodata_value)
         chunk.from_numpy(result)
         chunk.write(output_band)
+
+    # Explicitly flush cache and close datasets to ensure
+    # data is fully written to disk before next step reads it
+    output_band.FlushCache()
+    output_ds.FlushCache()
+    output_band = None
+    output_ds = None
+    band = None
+    input_raster = None

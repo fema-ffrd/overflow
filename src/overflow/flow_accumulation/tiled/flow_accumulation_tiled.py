@@ -16,6 +16,7 @@ from overflow.flow_accumulation.core.flow_accumulation import (
 from overflow.util.constants import (
     FLOW_ACCUMULATION_NODATA,
     FLOW_DIRECTION_NODATA,
+    FLOW_DIRECTION_UNDEFINED,
 )
 from overflow.util.perimeter import get_tile_perimeter
 from overflow.util.progress import ProgressCallback, ProgressTracker, silent_callback
@@ -111,7 +112,17 @@ def finalize_flow_accumulation(
             # Propagate the additional accumulation downstream
             current_row, current_col = local_row, local_col
             current_dir = flow_dir[current_row, current_col]
-            while current_dir != FLOW_DIRECTION_NODATA:
+            # Cycle detection: no valid path should exceed total cells in tile
+            max_iterations = rows * cols
+            iterations = 0
+            while current_dir not in (FLOW_DIRECTION_NODATA, FLOW_DIRECTION_UNDEFINED):
+                iterations += 1
+                if iterations > max_iterations:
+                    # Cycle detected - stop propagation
+                    break
+                # Bounds check: ensure we're still within the tile
+                if not (0 <= current_row < rows and 0 <= current_col < cols):
+                    break
                 flow_acc[current_row, current_col] += global_offset[global_index]
                 current_row, current_col, current_dir = get_next_cell(
                     flow_dir, current_row, current_col

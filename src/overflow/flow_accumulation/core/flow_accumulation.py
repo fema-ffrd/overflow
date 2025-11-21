@@ -29,6 +29,10 @@ def get_next_cell(
         tuple[int, int, int]: the (row, col, val) of the next (downstream) cell
     """
     fdr_value = flow_direction[row, col]
+    # Safety check: prevent out-of-bounds access on NEIGHBOR_OFFSETS (length 8)
+    # FLOW_DIRECTION_UNDEFINED = 8, FLOW_DIRECTION_NODATA = 9
+    if fdr_value >= 8:
+        return row, col, fdr_value
     d_row, d_col = NEIGHBOR_OFFSETS[fdr_value]
     next_row = row + d_row
     next_col = col + d_col
@@ -84,7 +88,16 @@ def follow_path(flow_direction, row, col, links):
     init_row = row
     init_col = col
     rows, cols = flow_direction.shape
+    # Cycle detection: no valid path should exceed total cells in tile
+    max_iterations = rows * cols
+    iterations = 0
     while True:
+        iterations += 1
+        if iterations > max_iterations:
+            # Cycle detected - mark as terminating to prevent infinite loop
+            links[init_row, init_col, 0] = FLOW_TERMINATES[0]
+            links[init_row, init_col, 1] = FLOW_TERMINATES[1]
+            break
         next_row, next_col, next_val = get_next_cell(flow_direction, row, col)
         is_outside_tile = (
             next_row < 0 or next_row >= rows or next_col < 0 or next_col >= cols
@@ -213,6 +226,7 @@ def flow_accumulation(fdr_path: str, output_fac_path: str) -> None:
     fac_array, _ = single_tile_flow_accumulation(fdr_array, False)
     fac_band.WriteArray(fac_array)
     fac_band.FlushCache()
+    fac_ds.FlushCache()
     fac_band = None
     fac_ds = None
     fdr_ds_band = None

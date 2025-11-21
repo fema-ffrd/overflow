@@ -465,5 +465,10 @@ def breach_paths_least_cost(
     while not task_queue.empty():
         time.sleep(0.1)
 
-    input_ds = None
+    # Flush cache and close datasets
+    output_band.FlushCache()
+    output_ds.FlushCache()
+    output_band = None
     output_ds = None
+    input_band = None
+    input_ds = None

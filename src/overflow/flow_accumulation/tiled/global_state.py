@@ -3,7 +3,6 @@ from numba.experimental import jitclass
 from numba.typed import List  # type: ignore[attr-defined]
 
 from overflow.util.constants import (
-    FLOW_DIRECTION_NODATA,
     FLOW_EXTERNAL,
     NEIGHBOR_OFFSETS,
 )
@@ -142,7 +141,9 @@ class GlobalState:
         Returns:
             tuple[int, int]: Next cell row and column.
         """
-        if flow_direction == FLOW_DIRECTION_NODATA:
+        # Safety check: prevent out-of-bounds access on NEIGHBOR_OFFSETS (length 8)
+        # FLOW_DIRECTION_UNDEFINED = 8, FLOW_DIRECTION_NODATA = 9
+        if flow_direction >= 8:
             return row, col
         d_row, d_col = NEIGHBOR_OFFSETS[flow_direction]
         return row + d_row, col + d_col
