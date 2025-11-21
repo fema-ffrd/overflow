@@ -16,6 +16,93 @@ from overflow.util.raster import create_dataset
 gdal.UseExceptions()
 
 
+# =============================================================================
+# Shared distance calculation primitives
+# =============================================================================
+
+
+@njit
+def cell_to_geographic_coords(
+    row: int, col: int, geotransform: tuple
+) -> tuple[float, float]:
+    """
+    Convert raster cell indices to geographic coordinates (cell center).
+
+    Parameters:
+    - row: Row index
+    - col: Column index
+    - geotransform: GDAL geotransform tuple
+
+    Returns:
+    - (lon, lat) tuple in degrees
+    """
+    lon = (
+        geotransform[0] + (col + 0.5) * geotransform[1] + (row + 0.5) * geotransform[2]
+    )
+    lat = (
+        geotransform[3] + (col + 0.5) * geotransform[4] + (row + 0.5) * geotransform[5]
+    )
+    return lon, lat
+
+
+@njit
+def haversine_distance(
+    lat1: float, lon1: float, lat2: float, lon2: float, semi_major: float
+) -> float:
+    """
+    Calculate distance between two geographic coordinates using Haversine formula.
+
+    Parameters:
+    - lat1, lon1: First point in degrees
+    - lat2, lon2: Second point in degrees
+    - semi_major: Semi-major axis of ellipsoid (meters)
+
+    Returns:
+    - Distance in meters
+    """
+    lat1_rad = np.radians(lat1)
+    lon1_rad = np.radians(lon1)
+    lat2_rad = np.radians(lat2)
+    lon2_rad = np.radians(lon2)
+
+    dlat = lat2_rad - lat1_rad
+    dlon = lon2_rad - lon1_rad
+
+    a = (
+        np.sin(dlat / 2) ** 2
+        + np.cos(lat1_rad) * np.cos(lat2_rad) * np.sin(dlon / 2) ** 2
+    )
+    c = 2 * np.arcsin(np.sqrt(a))
+
+    return semi_major * c  # type: ignore[no-any-return]
+
+
+@njit
+def projected_step_distance(
+    d_row: int, d_col: int, pixel_size_x: float, pixel_size_y: float
+) -> float:
+    """
+    Calculate the physical distance for a single grid step in projected coordinates.
+
+    Parameters:
+    - d_row: Row offset (-1, 0, or 1)
+    - d_col: Column offset (-1, 0, or 1)
+    - pixel_size_x: Pixel width in map units
+    - pixel_size_y: Pixel height in map units
+
+    Returns:
+    - Distance in map units
+    """
+    dx = abs(d_col * pixel_size_x)
+    dy = abs(d_row * pixel_size_y)
+    return np.sqrt(dx * dx + dy * dy)  # type: ignore[no-any-return]
+
+
+# =============================================================================
+# Flow distance calculation functions
+# =============================================================================
+
+
 @njit
 def calculate_flow_distance_projected(
     direction: int, pixel_size_x: float, pixel_size_y: float
@@ -32,9 +119,7 @@ def calculate_flow_distance_projected(
     - float: The physical distance of the flow step.
     """
     d_row, d_col = NEIGHBOR_OFFSETS[direction]
-    dx = abs(d_col * pixel_size_x)
-    dy = abs(d_row * pixel_size_y)
-    return np.sqrt(dx * dx + dy * dy)  # type: ignore[no-any-return]
+    return projected_step_distance(d_row, d_col, pixel_size_x, pixel_size_y)  # type: ignore[no-any-return]
 
 
 @njit
@@ -58,47 +143,9 @@ def calculate_flow_distance_geographic(
     Returns:
     - float: The physical distance in meters.
     """
-    # Convert cell centers to geographic coordinates
-    lon1 = (
-        geotransform[0]
-        + (from_col + 0.5) * geotransform[1]
-        + (from_row + 0.5) * geotransform[2]
-    )
-    lat1 = (
-        geotransform[3]
-        + (from_col + 0.5) * geotransform[4]
-        + (from_row + 0.5) * geotransform[5]
-    )
-    lon2 = (
-        geotransform[0]
-        + (to_col + 0.5) * geotransform[1]
-        + (to_row + 0.5) * geotransform[2]
-    )
-    lat2 = (
-        geotransform[3]
-        + (to_col + 0.5) * geotransform[4]
-        + (to_row + 0.5) * geotransform[5]
-    )
-
-    # Convert to radians
-    lat1_rad = np.radians(lat1)
-    lon1_rad = np.radians(lon1)
-    lat2_rad = np.radians(lat2)
-    lon2_rad = np.radians(lon2)
-
-    # Haversine formula
-    dlat = lat2_rad - lat1_rad
-    dlon = lon2_rad - lon1_rad
-
-    a = (
-        np.sin(dlat / 2) ** 2
-        + np.cos(lat1_rad) * np.cos(lat2_rad) * np.sin(dlon / 2) ** 2
-    )
-    c = 2 * np.arcsin(np.sqrt(a))
-
-    # Use semi-major axis as radius
-    distance = semi_major * c
-    return distance  # type: ignore[no-any-return]
+    lon1, lat1 = cell_to_geographic_coords(from_row, from_col, geotransform)
+    lon2, lat2 = cell_to_geographic_coords(to_row, to_col, geotransform)
+    return haversine_distance(lat1, lon1, lat2, lon2, semi_major)  # type: ignore[no-any-return]
 
 
 @njit(parallel=True, nogil=True)
@@ -272,24 +319,23 @@ def calculate_upstream_flow_length(
 
 
 @njit
-def find_all_most_upstream_basins(dp_id: int, basin_graph: dict) -> List:
+def find_all_upstream_basins(dp_id: int, basin_graph: dict) -> List:
     """
-    Find ALL terminal upstream basins plus the current basin.
+    Find ALL upstream basins plus the current basin.
 
-    Returns basins to check for the longest path:
-    - Always includes the current basin (dp_id)
-    - Includes all upstream basins that have no further upstream connections
+    The longest flow path could originate from any upstream basin's max cell,
+    not just terminal basins, so we need to check all of them.
 
     Returns:
-    - List of basin IDs to check (current basin + all terminal upstream basins)
+    - List of basin IDs to check (current basin + all upstream basins)
     """
     result = List.empty_list(int64)
 
     # Always include the current basin
     result.append(dp_id)
 
-    # Find all basins upstream of this one
-    all_upstream = {dp_id}
+    # Find all basins upstream of this one using BFS
+    visited = {dp_id}
     to_visit = List.empty_list(int64)
     to_visit.append(dp_id)
 
@@ -300,24 +346,10 @@ def find_all_most_upstream_basins(dp_id: int, basin_graph: dict) -> List:
         if current in basin_graph:
             upstream_list = basin_graph[current]
             for upstream_id in upstream_list:
-                if upstream_id not in all_upstream:
-                    all_upstream.add(upstream_id)
+                if upstream_id not in visited:
+                    visited.add(upstream_id)
                     to_visit.append(upstream_id)
-
-    # Now find all terminal basins (basins with no upstream connections)
-    for basin_id in all_upstream:
-        if basin_id == dp_id:
-            continue  # Already added
-
-        # Check if this basin has no upstream connections
-        has_upstream = False
-        if basin_id in basin_graph:
-            if len(basin_graph[basin_id]) > 0:
-                has_upstream = True
-
-        # If no upstream connections, it's a terminal basin
-        if not has_upstream:
-            result.append(basin_id)
+                    result.append(upstream_id)
 
     return result
 
@@ -396,9 +428,7 @@ def calculate_path_distance_projected(
         curr_row, curr_col = path[i]
         d_row = curr_row - prev_row
         d_col = curr_col - prev_col
-        dx = abs(d_col * pixel_size_x)
-        dy = abs(d_row * pixel_size_y)
-        total_dist += np.sqrt(dx * dx + dy * dy)
+        total_dist += projected_step_distance(d_row, d_col, pixel_size_x, pixel_size_y)
     return total_dist
 
 
@@ -423,48 +453,9 @@ def calculate_path_distance_geographic(
     for i in range(1, len(path)):
         prev_row, prev_col = path[i - 1]
         curr_row, curr_col = path[i]
-
-        # Convert to geographic coordinates (cell centers)
-        lon1 = (
-            geotransform[0]
-            + (prev_col + 0.5) * geotransform[1]
-            + (prev_row + 0.5) * geotransform[2]
-        )
-        lat1 = (
-            geotransform[3]
-            + (prev_col + 0.5) * geotransform[4]
-            + (prev_row + 0.5) * geotransform[5]
-        )
-        lon2 = (
-            geotransform[0]
-            + (curr_col + 0.5) * geotransform[1]
-            + (curr_row + 0.5) * geotransform[2]
-        )
-        lat2 = (
-            geotransform[3]
-            + (curr_col + 0.5) * geotransform[4]
-            + (curr_row + 0.5) * geotransform[5]
-        )
-
-        # Convert to radians
-        lat1_rad = np.radians(lat1)
-        lon1_rad = np.radians(lon1)
-        lat2_rad = np.radians(lat2)
-        lon2_rad = np.radians(lon2)
-
-        # Haversine formula
-        dlat = lat2_rad - lat1_rad
-        dlon = lon2_rad - lon1_rad
-
-        a = (
-            np.sin(dlat / 2) ** 2
-            + np.cos(lat1_rad) * np.cos(lat2_rad) * np.sin(dlon / 2) ** 2
-        )
-        c = 2 * np.arcsin(np.sqrt(a))
-
-        distance = semi_major * c
-        total_dist += distance
-
+        lon1, lat1 = cell_to_geographic_coords(prev_row, prev_col, geotransform)
+        lon2, lat2 = cell_to_geographic_coords(curr_row, curr_col, geotransform)
+        total_dist += haversine_distance(lat1, lon1, lat2, lon2, semi_major)
     return total_dist
 
 
@@ -484,8 +475,10 @@ def trace_longest_flow_path(
     """
     Trace the longest flow path from the most distant cell to a drainage point.
 
-    Finds ALL most upstream basins, traces paths from the max cell in each,
-    calculates the full path distance for each, and returns the longest path.
+    Finds ALL upstream basins, traces paths from the
+    max cell in each, calculates the full path distance for each, and returns
+    the longest path. Any upstream basin could contain the start of the longest
+    path, so all must be considered.
 
     Parameters:
     - fdr (np.ndarray): Flow direction raster.
@@ -502,15 +495,15 @@ def trace_longest_flow_path(
     Returns:
     - list: List of (row, col) tuples representing the path from farthest point to drainage point.
     """
-    # Find ALL most upstream basins in this watershed
-    most_upstream_basins = find_all_most_upstream_basins(dp_id, basin_graph)
+    # Find ALL upstream basins in this watershed (any could contain the longest path start)
+    upstream_basins = find_all_upstream_basins(dp_id, basin_graph)
 
-    # Try all most upstream basins and find the longest path
+    # Try all upstream basins and find the longest path
     longest_path = [(drainage_point[0], drainage_point[1])]
     max_path_distance = 0.0
 
-    for i in range(len(most_upstream_basins)):
-        basin_id = most_upstream_basins[i]
+    for i in range(len(upstream_basins)):
+        basin_id = upstream_basins[i]
 
         # Get the pre-calculated max cell for this basin
         if basin_id not in basin_max_cells:
@@ -546,41 +539,6 @@ def trace_longest_flow_path(
 def is_geographic(srs: osr.SpatialReference) -> bool:
     """Check if a spatial reference system is geographic (lat/lon)."""
     return srs.IsGeographic() == 1  # type: ignore[no-any-return]
-
-
-def calculate_geographic_distance(
-    lat1: float, lon1: float, lat2: float, lon2: float, srs: osr.SpatialReference
-) -> float:
-    """
-    Calculate distance between two geographic coordinates using Haversine formula.
-    Returns distance in meters.
-
-    Parameters:
-    - lat1, lon1: First point (degrees)
-    - lat2, lon2: Second point (degrees)
-    - srs: Spatial reference system to get ellipsoid parameters from
-    """
-    # Get ellipsoid parameters from CRS
-    radius = srs.GetSemiMajor()  # semi-major axis in meters
-
-    # Convert to radians
-    lat1_rad = np.radians(lat1)
-    lon1_rad = np.radians(lon1)
-    lat2_rad = np.radians(lat2)
-    lon2_rad = np.radians(lon2)
-
-    # Haversine formula
-    dlat = lat2_rad - lat1_rad
-    dlon = lon2_rad - lon1_rad
-
-    a = (
-        np.sin(dlat / 2) ** 2
-        + np.cos(lat1_rad) * np.cos(lat2_rad) * np.sin(dlon / 2) ** 2
-    )
-    c = 2 * np.arcsin(np.sqrt(a))
-
-    distance = radius * c
-    return distance  # type: ignore[no-any-return]
 
 
 def longest_flow_path_from_file(
@@ -769,34 +727,21 @@ def create_longest_flow_path_vectors(
 
         for i, (r, c) in enumerate(path):
             # Convert raster coordinates to map coordinates (cell centers)
-            x = (
-                geotransform[0]
-                + (c + 0.5) * geotransform[1]
-                + (r + 0.5) * geotransform[2]
-            )
-            y = (
-                geotransform[3]
-                + (c + 0.5) * geotransform[4]
-                + (r + 0.5) * geotransform[5]
-            )
+            x, y = cell_to_geographic_coords(r, c, geotransform)
             coords.append((x, y))
 
             # Calculate segment distance
             if i > 0:
+                prev_x, prev_y = coords[i - 1]
                 if is_geographic:
-                    # For geographic CRS, use Haversine formula
-                    dist_m = calculate_geographic_distance(
-                        coords[i - 1][1],
-                        coords[i - 1][0],  # lat1, lon1
-                        coords[i][1],
-                        coords[i][0],  # lat2, lon2
-                        srs_input,
+                    # For geographic CRS, use Haversine formula (y=lat, x=lon)
+                    total_distance_meters += haversine_distance(
+                        prev_y, prev_x, y, x, semi_major
                     )
-                    total_distance_meters += dist_m
                 else:
                     # For projected CRS, calculate Euclidean distance
-                    dx = coords[i][0] - coords[i - 1][0]
-                    dy = coords[i][1] - coords[i - 1][1]
+                    dx = x - prev_x
+                    dy = y - prev_y
                     total_distance_meters += np.sqrt(dx * dx + dy * dy)
 
         # Create line geometry
