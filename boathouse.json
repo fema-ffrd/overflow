@@ -276,8 +276,7 @@
                     "displayName": "Working Directory",
                     "name": "working_dir",
                     "type": "directory",
-                    "description": "working directory for temporary files",
-                    "defaultValue": null
+                    "description": "working directory for temporary files"
                 }
             ]
         },
@@ -324,8 +323,7 @@
                     "displayName": "Working Directory",
                     "name": "working_dir",
                     "type": "directory",
-                    "description": "working directory for temporary files",
-                    "defaultValue": null
+                    "description": "working directory for temporary files"
                 },
                 {
                     "displayName": "Fill Holes?",
@@ -436,8 +434,7 @@
                     "displayName": "Drainage Points Layer",
                     "name": "dp_layer",
                     "type": "string",
-                    "description": "name of the layer in the drainage points file",
-                    "defaultValue": null
+                    "description": "name of the layer in the drainage points file"
                 },
                 {
                     "displayName": "Snap Radius (feet)",
@@ -500,6 +497,58 @@
                     "type": "integer",
                     "description": "chunk size for tiled operations",
                     "defaultValue": 512
+                }
+            ]
+        },
+        {
+            "name": "Longest Flow Path",
+            "path": "overflow",
+            "cmd": [
+                "longest-flow-path"
+            ],
+            "readme": "docs/user-guide/cli.md",
+            "description": "Calculate the longest flow path (upstream flow length) from drainage points. Returns a flow length raster and vector lines representing the longest flow path for each drainage point.",
+            "category": "Hydrology",
+            "keywords": [
+                "flow",
+                "length",
+                "longest",
+                "path",
+                "upstream",
+                "distance",
+                "drainage",
+                "hydrology",
+                "watershed",
+                "basin",
+                "time",
+                "concentration",
+                "raster",
+                "vector"
+            ],
+            "args": [
+                {
+                    "displayName": "FDR File",
+                    "name": "fdr_file",
+                    "type": "file",
+                    "description": "path to the GDAL supported raster dataset for the flow direction (FDR)"
+                },
+                {
+                    "displayName": "Drainage Points File",
+                    "name": "dp_file",
+                    "type": "file",
+                    "description": "path to the drainage points file (OGR compatible format)"
+                },
+                {
+                    "displayName": "Output File",
+                    "name": "output_file",
+                    "type": "file",
+                    "description": "path to the output file (must be GeoTiff)"
+                },
+                {
+                    "displayName": "Drainage Points Layer",
+                    "name": "dp_layer",
+                    "type": "string",
+                    "description": "name of the layer in the drainage points file"
                 }
             ]
         }

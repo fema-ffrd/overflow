@@ -23,6 +23,7 @@ from overflow.fix_flats.tiled import fix_flats_tiled
 from overflow.flow_accumulation.core import flow_accumulation
 from overflow.flow_accumulation.tiled import flow_accumulation_tiled
 from overflow.flow_direction import flow_direction
+from overflow.longest_flow_path import longest_flow_path_from_file
 from overflow.util.cli_progress import RichProgressDisplay
 from overflow.util.constants import DEFAULT_CHUNK_SIZE, DEFAULT_SEARCH_RADIUS
 from overflow.util.raster import (
@@ -790,6 +791,69 @@ def process_dem_cli(
     except Exception as exc:
         console.print(
             f"[bold red]Error:[/bold red] process_dem failed with the following exception: {str(exc)}"
+        )
+        if not success:
+            console.print(resource_stats.get_summary_panel(success=False))
+        raise click.Abort()
+
+
+@main.command(name="longest-flow-path")
+@click.option(
+    "--fdr_file",
+    help="path to the GDAL supported raster dataset for the FDR",
+    required=True,
+)
+@click.option(
+    "--dp_file",
+    help="path to the drainage points file",
+    required=True,
+)
+@click.option(
+    "--output_file",
+    help="path to the output file (must be GeoTiff)",
+    required=True,
+)
+@click.option(
+    "--dp_layer",
+    help="name of the layer in the drainage points file",
+    required=False,
+    default=None,
+)
+def longest_flow_path_cli(
+    fdr_file: str,
+    dp_file: str,
+    output_file: str,
+    dp_layer: str | None,
+):
+    """
+    Calculate the longest flow path (upstream flow length) from drainage points.
+
+    This command calculates the distance from each cell to its downstream drainage point,
+    measured along the flow path. The output is a Float32 raster where each cell contains
+    the upstream flow length in map units.
+
+    The longest flow path for a basin is the pixel with the maximum value in that basin.
+    """
+    success = False
+    try:
+        progress_display = RichProgressDisplay()
+        with timer("Calculate longest flow path", spinner=False):
+            with progress_display.progress_context("Calculating flow length"):
+                longest_flow_path_from_file(
+                    fdr_file,
+                    dp_file,
+                    output_file,
+                    dp_layer,
+                )
+                resource_stats.add_output_file("Flow Length", output_file)
+                vector_output = output_file.replace(".tif", "_paths.gpkg")
+                resource_stats.add_output_file("Flow Paths", vector_output)
+                success = True
+
+        console.print(resource_stats.get_summary_panel(success=success))
+    except Exception as exc:
+        console.print(
+            f"[bold red]Error:[/bold red] longest_flow_path failed with the following exception: {str(exc)}"
         )
         if not success:
             console.print(resource_stats.get_summary_panel(success=False))

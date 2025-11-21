@@ -19,7 +19,10 @@ gdal.UseExceptions()
 
 
 def drainage_points_from_file(
-    fdr_filepath: str, drainage_points_file: str, layer_name: None | str = None
+    fdr_filepath: str,
+    drainage_points_file: str,
+    layer_name: None | str = None,
+    use_fids: bool = False,
 ) -> dict:
     """
     Read drainage points from an OGR compatible file and return a dictionary for use in the label_watersheds function.
@@ -98,7 +101,10 @@ def drainage_points_from_file(
         col, row = map(int, gdal.ApplyGeoTransform(inv_geotransform, x, y))
 
         # Add the drainage point to the dictionary
-        drainage_points[(row, col)] = 0
+        if use_fids:
+            drainage_points[(row, col)] = feature.GetFID()
+        else:
+            drainage_points[(row, col)] = 0
 
     return drainage_points  # type: ignore[no-any-return]
 
