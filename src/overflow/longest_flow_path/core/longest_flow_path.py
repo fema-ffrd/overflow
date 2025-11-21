@@ -11,7 +11,7 @@ from overflow.basins.core.basins import (
 from overflow.util.constants import NEIGHBOR_OFFSETS
 from overflow.util.queue import GridCellFloat32Queue as Queue
 from overflow.util.raster import GridCellFloat32 as GridCell
-from overflow.util.raster import create_dataset
+from overflow.util.raster import create_dataset, snap_drainage_points
 
 gdal.UseExceptions()
 
@@ -546,6 +546,8 @@ def longest_flow_path_from_file(
     drainage_points_file: str,
     output_file: str,
     layer_name: str | None = None,
+    fac_filepath: str | None = None,
+    snap_radius: int = 0,
 ) -> None:
     """
     Calculate the longest flow path (upstream flow length) from drainage points.
@@ -559,6 +561,10 @@ def longest_flow_path_from_file(
     - output_file (str): The path to save the flow length raster (GeoTIFF).
     - layer_name (str | None): The name of the layer in the drainage points file to read.
                               If None, the first layer in the file will be used. Default is None.
+    - fac_filepath (str | None): The path to the flow accumulation raster file for snapping.
+                                 If None, no snapping is performed. Default is None.
+    - snap_radius (int): Radius in cells to search for maximum flow accumulation when snapping.
+                         If 0 or fac_filepath is None, no snapping is performed. Default is 0.
 
     Returns:
     - None
@@ -572,10 +578,16 @@ def longest_flow_path_from_file(
     For projected CRS: distances are in the native units
     For geographic CRS: distances are calculated in meters using Haversine formula
     """
-    # Read drainage points
-    drainage_points = drainage_points_from_file(
+    # Read drainage points (ignore fid_mapping for this function)
+    drainage_points, _ = drainage_points_from_file(
         fdr_filepath, drainage_points_file, layer_name, True
     )
+
+    # Snap drainage points to flow accumulation grid if fac_filepath is provided
+    if fac_filepath is not None and snap_radius > 0:
+        drainage_points = snap_drainage_points(  # type: ignore[assignment]
+            drainage_points, fac_filepath, snap_radius
+        )
 
     # Get geotransform and projection
     fdr_ds = gdal.Open(fdr_filepath)

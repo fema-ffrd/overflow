@@ -10,6 +10,7 @@ from overflow.basins.core import (
     drainage_points_from_file,
     label_watersheds,
     label_watersheds_from_file,
+    update_drainage_points_file,
 )
 from overflow.basins.tiled import label_watersheds_tiled
 from overflow.breach_paths_least_cost import breach_paths_least_cost
@@ -407,7 +408,7 @@ def flow_accumulation_cli(
 @click.option(
     "--snap_radius_ft",
     help="radius in feet to snap drainage points to maximum flow accumulation",
-    default=30,
+    default=0,
     type=float,
 )
 def label_watersheds_cli(
@@ -429,14 +430,16 @@ def label_watersheds_cli(
         progress_display = RichProgressDisplay()
         with timer("Watershed delineation", spinner=False):
             with progress_display.progress_context("Label Watersheds"):
-                # Load drainage points
-                drainage_points = drainage_points_from_file(fdr_file, dp_file, dp_layer)
+                # Load drainage points and FID mapping
+                drainage_points, fid_mapping = drainage_points_from_file(
+                    fdr_file, dp_file, dp_layer
+                )
 
                 # Snap drainage points to flow accumulation grid if fac_file is provided
                 if fac_file is not None and snap_radius_ft > 0:
                     snap_radius_cells = feet_to_cell_count(snap_radius_ft, fdr_file)
-                    drainage_points = snap_drainage_points(
-                        drainage_points, fac_file, snap_radius_cells
+                    drainage_points, fid_mapping = snap_drainage_points(
+                        drainage_points, fac_file, snap_radius_cells, fid_mapping
                     )
 
                 if chunk_size <= 1:
@@ -446,7 +449,7 @@ def label_watersheds_cli(
                         raise ValueError("Could not open flow direction raster file")
 
                     fdr = fdr_ds.GetRasterBand(1).ReadAsArray()
-                    watersheds, _ = label_watersheds(fdr, drainage_points)
+                    watersheds, graph = label_watersheds(fdr, drainage_points)
 
                     if not all_basins:
                         # Remove any label not in drainage_points values
@@ -474,7 +477,7 @@ def label_watersheds_cli(
                     fdr_ds = None
                 else:
                     # Tiled processing
-                    label_watersheds_tiled(
+                    graph = label_watersheds_tiled(
                         fdr_file,
                         drainage_points,
                         output_file,
@@ -482,6 +485,12 @@ def label_watersheds_cli(
                         all_basins,
                         progress_display.callback,
                     )
+
+                # Update drainage points file with basin_id and ds_basin_id
+                update_drainage_points_file(
+                    dp_file, drainage_points, fid_mapping, graph, dp_layer
+                )
+
                 resource_stats.add_output_file("Watersheds", output_file)
                 success = True
 
@@ -758,7 +767,7 @@ def process_dem_cli(
             if basins:
                 with timer("Watershed delineation", spinner=False):
                     with progress_display.progress_context("Label Watersheds"):
-                        drainage_points = drainage_points_from_file(
+                        drainage_points, fid_mapping = drainage_points_from_file(
                             f"{output_dir}/fdr.tif",
                             f"{output_dir}/streams.gpkg",
                             "junctions",
@@ -773,13 +782,21 @@ def process_dem_cli(
                                 "junctions",
                             )
                         else:
-                            label_watersheds_tiled(
+                            graph = label_watersheds_tiled(
                                 f"{output_dir}/fdr.tif",
                                 drainage_points,
                                 f"{output_dir}/basins.tif",
                                 chunk_size,
                                 False,
                                 progress_display.callback,
+                            )
+                            # Update drainage points file with basin_id and ds_basin_id
+                            update_drainage_points_file(
+                                f"{output_dir}/streams.gpkg",
+                                drainage_points,
+                                fid_mapping,
+                                graph,
+                                "junctions",
                             )
 
                 resource_stats.add_output_file("Basins", f"{output_dir}/basins.tif")
@@ -804,6 +821,12 @@ def process_dem_cli(
     required=True,
 )
 @click.option(
+    "--fac_file",
+    help="path to the GDAL supported raster dataset for the flow accumulation (FAC)",
+    required=False,
+    default=None,
+)
+@click.option(
     "--dp_file",
     help="path to the drainage points file",
     required=True,
@@ -819,11 +842,19 @@ def process_dem_cli(
     required=False,
     default=None,
 )
+@click.option(
+    "--snap_radius_ft",
+    help="radius in feet to snap drainage points to maximum flow accumulation",
+    default=0,
+    type=float,
+)
 def longest_flow_path_cli(
     fdr_file: str,
+    fac_file: str | None,
     dp_file: str,
     output_file: str,
     dp_layer: str | None,
+    snap_radius_ft: float,
 ):
     """
     Calculate the longest flow path (upstream flow length) from drainage points.
@@ -839,11 +870,18 @@ def longest_flow_path_cli(
         progress_display = RichProgressDisplay()
         with timer("Calculate longest flow path", spinner=False):
             with progress_display.progress_context("Calculating flow length"):
+                # Calculate snap radius in cells if FAC file is provided
+                snap_radius_cells = 0
+                if fac_file is not None and snap_radius_ft > 0:
+                    snap_radius_cells = feet_to_cell_count(snap_radius_ft, fdr_file)
+
                 longest_flow_path_from_file(
                     fdr_file,
                     dp_file,
                     output_file,
                     dp_layer,
+                    fac_file,
+                    snap_radius_cells,
                 )
                 resource_stats.add_output_file("Flow Length", output_file)
                 vector_output = output_file.replace(".tif", "_paths.gpkg")

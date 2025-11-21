@@ -23,7 +23,7 @@ def drainage_points_from_file(
     drainage_points_file: str,
     layer_name: None | str = None,
     use_fids: bool = False,
-) -> dict:
+) -> tuple[dict, dict]:
     """
     Read drainage points from an OGR compatible file and return a dictionary for use in the label_watersheds function.
 
@@ -37,9 +37,12 @@ def drainage_points_from_file(
                         If None, the first layer in the file will be used. Default is None.
 
     Returns:
-    - dict: A dictionary containing the drainage points.
+    - tuple[dict, dict]: A tuple containing two dictionaries:
+        - drainage_points: A dictionary containing the drainage points.
             The keys are tuples (row, col) representing the coordinates of the drainage points,
             and the values are the corresponding watershed IDs that will be populated by the label_watersheds function.
+        - fid_mapping: A dictionary mapping (row, col) tuples to feature IDs (FIDs) in the original file.
+            This is used to update the original file with basin IDs after watershed delineation.
 
     Description:
     The function reads the drainage points from an OGR compatible file using the OGR library.
@@ -74,6 +77,9 @@ def drainage_points_from_file(
     # Create a dictionary to store the drainage points
     drainage_points = Dict.empty(UniTuple(int64, 2), int64)
 
+    # Create a dictionary to map (row, col) to FID
+    fid_mapping: dict[tuple[int, int], int] = {}
+
     # Iterate over the features in the layer
     for feature in layer:
         # Get the geometry of the feature
@@ -100,13 +106,111 @@ def drainage_points_from_file(
         # Convert the coordinates to row and column indices
         col, row = map(int, gdal.ApplyGeoTransform(inv_geotransform, x, y))
 
+        # Store the FID mapping
+        fid_mapping[(row, col)] = feature.GetFID()
+
         # Add the drainage point to the dictionary
         if use_fids:
             drainage_points[(row, col)] = feature.GetFID()
         else:
             drainage_points[(row, col)] = 0
 
-    return drainage_points  # type: ignore[no-any-return]
+    ds = None
+    fdr_ds = None
+
+    return drainage_points, fid_mapping  # type: ignore[return-value]
+
+
+def update_drainage_points_file(
+    drainage_points_file: str,
+    drainage_points: dict,
+    fid_mapping: dict,
+    graph: dict,
+    layer_name: None | str = None,
+) -> None:
+    """
+    Update the drainage points file in place with basin_id and downstream_basin_id fields.
+
+    Parameters:
+    - drainage_points_file (str): The path to the drainage points file.
+                                  The file should be in an OGR compatible format (e.g., Shapefile, GeoPackage).
+    - drainage_points (dict): A dictionary containing the drainage points after watershed delineation.
+                              The keys are tuples (row, col) representing the coordinates of the drainage points,
+                              and the values are the assigned basin IDs.
+    - fid_mapping (dict): A dictionary mapping (row, col) tuples to feature IDs (FIDs) in the original file.
+    - graph (dict): The watershed connectivity graph where keys are basin IDs and values are downstream basin IDs.
+    - layer_name (str | None): The name of the layer in the drainage points file to update.
+                               If None, the first layer in the file will be used. Default is None.
+
+    Description:
+    This function updates the drainage points file in place by adding two new fields:
+    - basin_id: The assigned basin ID for each drainage point.
+    - ds_basin_id: The downstream basin ID for each drainage point (from the watershed graph).
+    """
+    # Open the drainage points file for update
+    ds = ogr.Open(drainage_points_file, 1)  # 1 = update mode
+    if ds is None:
+        raise ValueError("Could not open drainage points file for update")
+
+    # Get the layer
+    layer = ds.GetLayer() if layer_name is None else ds.GetLayerByName(layer_name)
+    if layer is None:
+        raise ValueError("Could not open layer in drainage points file")
+
+    # Create the basin_id field if it doesn't exist
+    layer_defn = layer.GetLayerDefn()
+    basin_id_field_index = layer_defn.GetFieldIndex("basin_id")
+    if basin_id_field_index < 0:
+        basin_id_field = ogr.FieldDefn("basin_id", ogr.OFTInteger64)
+        layer.CreateField(basin_id_field)
+
+    # Create the ds_basin_id field if it doesn't exist
+    ds_basin_id_field_index = layer_defn.GetFieldIndex("ds_basin_id")
+    if ds_basin_id_field_index < 0:
+        ds_basin_id_field = ogr.FieldDefn("ds_basin_id", ogr.OFTInteger64)
+        layer.CreateField(ds_basin_id_field)
+
+    # Create a reverse mapping from FID to (row, col)
+    fid_to_coords: dict[int, tuple[int, int]] = {
+        fid: coords for coords, fid in fid_mapping.items()
+    }
+
+    # Create a set of valid drainage point basin IDs
+    drainage_point_basin_ids: set[int] = {
+        int(basin_id) for basin_id in drainage_points.values()
+    }
+
+    # Update each feature with basin_id and ds_basin_id
+    for feature in layer:
+        fid = feature.GetFID()
+        if fid not in fid_to_coords:
+            continue
+
+        coords = fid_to_coords[fid]
+        if coords not in drainage_points:
+            continue
+
+        basin_id = int(drainage_points[coords])
+        feature.SetField("basin_id", basin_id)
+
+        # Walk the graph to find the downstream drainage point basin ID.
+        # Intermediate basin IDs may have been reassigned during finalization,
+        # so we need to traverse until we find a drainage point or reach the end.
+        ds_basin_id = 0
+        current_id = basin_id
+        while current_id in graph:
+            next_id = int(graph[current_id])
+            if next_id in drainage_point_basin_ids:
+                ds_basin_id = next_id
+                break
+            current_id = next_id
+        feature.SetField("ds_basin_id", ds_basin_id)
+
+        layer.SetFeature(feature)
+
+    # Cleanup
+    ds.FlushCache()
+    ds = None
 
 
 @njit
@@ -341,7 +445,7 @@ def label_watersheds_from_file(
         raise ValueError("Could not open flow direction raster file")
 
     fdr = fdr_ds.GetRasterBand(1).ReadAsArray()
-    drainage_points = drainage_points_from_file(
+    drainage_points, fid_mapping = drainage_points_from_file(
         fdr_filepath, drainage_points_file, layer_name
     )
 
@@ -375,6 +479,11 @@ def label_watersheds_from_file(
         basin_polygons_filepath,
         out_ds.GetGeoTransform(),
         out_ds.GetProjection(),
+    )
+
+    # Update drainage points file with basin_id and ds_basin_id
+    update_drainage_points_file(
+        drainage_points_file, drainage_points, fid_mapping, graph, layer_name
     )
 
     out_band = None

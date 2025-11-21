@@ -5,7 +5,11 @@ from numba.typed import Dict  # type: ignore[attr-defined]
 from numba.types import UniTuple
 from osgeo import gdal, ogr, osr
 
-from overflow.basins.core import label_watersheds
+from overflow.basins.core import (
+    drainage_points_from_file,
+    label_watersheds,
+    update_drainage_points_file,
+)
 from overflow.basins.tiled import label_watersheds_tiled
 from overflow.util.constants import FLOW_DIRECTION_NODATA
 
@@ -165,3 +169,120 @@ def test_label_watersheds_tiled(
     ds = None
     gdal.Unlink(output_path)
     gdal.Unlink(gpkg_path)
+
+
+@pytest.fixture(name="test_drainage_points_gpkg")
+def fixture_test_drainage_points_gpkg(test_fdr_with_drainage_points_filepath):
+    """Create a GeoPackage file with drainage points."""
+    gpkg_path = "/vsimem/test_drainage_points.gpkg"
+    driver = ogr.GetDriverByName("GPKG")
+    ds = driver.CreateDataSource(gpkg_path)
+
+    # Get the spatial reference from the FDR
+    fdr_ds = gdal.Open(test_fdr_with_drainage_points_filepath)
+    srs = osr.SpatialReference()
+    srs.ImportFromWkt(fdr_ds.GetProjection())
+    gt = fdr_ds.GetGeoTransform()
+    fdr_ds = None
+
+    layer = ds.CreateLayer("drainage_points", srs, ogr.wkbPoint)
+
+    # Add some fields that should persist
+    layer.CreateField(ogr.FieldDefn("name", ogr.OFTString))
+
+    # Create drainage points at (2, 2) and (3, 2) in raster coordinates
+    # Convert to geo coordinates using geotransform
+    for i, (row, col) in enumerate([(2, 2), (3, 2)]):
+        x = gt[0] + col * gt[1] + 0.5 * gt[1]  # center of cell
+        y = gt[3] + row * gt[5] + 0.5 * gt[5]  # center of cell
+
+        feature = ogr.Feature(layer.GetLayerDefn())
+        feature.SetField("name", f"point_{i}")
+        point = ogr.Geometry(ogr.wkbPoint)
+        point.AddPoint(x, y)
+        feature.SetGeometry(point)
+        layer.CreateFeature(feature)
+        feature = None
+
+    ds.FlushCache()
+    ds = None
+    yield gpkg_path
+    gdal.Unlink(gpkg_path)
+
+
+def test_drainage_points_from_file_returns_fid_mapping(
+    test_fdr_with_drainage_points_filepath, test_drainage_points_gpkg
+):
+    """Test that drainage_points_from_file returns both drainage_points and fid_mapping."""
+    drainage_points, fid_mapping = drainage_points_from_file(
+        test_fdr_with_drainage_points_filepath,
+        test_drainage_points_gpkg,
+    )
+
+    # Should have 2 drainage points
+    assert len(drainage_points) == 2
+    assert len(fid_mapping) == 2
+
+    # Check that fid_mapping contains the correct FIDs
+    assert (2, 2) in fid_mapping
+    assert (3, 2) in fid_mapping
+
+    # FIDs should be 0 and 1 (or 1 and 2 depending on driver)
+    fids = set(fid_mapping.values())
+    assert len(fids) == 2
+
+
+def test_update_drainage_points_file(
+    test_fdr_with_drainage_points_filepath,
+    test_fdr_with_drainage_points,
+    test_drainage_points_gpkg,
+):
+    """Test that update_drainage_points_file adds basin_id and ds_basin_id fields."""
+    # Load drainage points from file
+    drainage_points, fid_mapping = drainage_points_from_file(
+        test_fdr_with_drainage_points_filepath,
+        test_drainage_points_gpkg,
+    )
+
+    # Run label_watersheds to assign basin IDs
+    watersheds, graph = label_watersheds(test_fdr_with_drainage_points, drainage_points)
+
+    # Update the drainage points file
+    update_drainage_points_file(
+        test_drainage_points_gpkg, drainage_points, fid_mapping, graph
+    )
+
+    # Verify the file was updated
+    ds = ogr.Open(test_drainage_points_gpkg)
+    layer = ds.GetLayer()
+
+    # Check that the new fields exist
+    layer_defn = layer.GetLayerDefn()
+    field_names = [
+        layer_defn.GetFieldDefn(i).GetName() for i in range(layer_defn.GetFieldCount())
+    ]
+    assert "basin_id" in field_names
+    assert "ds_basin_id" in field_names
+
+    # Check that values were written correctly
+    feature_data = []
+    for feature in layer:
+        basin_id = feature.GetField("basin_id")
+        ds_basin_id = feature.GetField("ds_basin_id")
+        name = feature.GetField("name")
+        feature_data.append(
+            {"name": name, "basin_id": basin_id, "ds_basin_id": ds_basin_id}
+        )
+
+    # Sort by name to ensure consistent ordering
+    feature_data.sort(key=lambda x: x["name"])
+
+    # point_0 is at (2, 2) - should have basin_id = 13 and ds_basin_id = 18
+    assert feature_data[0]["basin_id"] == 13
+    assert feature_data[0]["ds_basin_id"] == 18
+
+    # point_1 is at (3, 2) - should have basin_id = 18 and ds_basin_id = 0 (outlet)
+    assert feature_data[1]["basin_id"] == 18
+    assert feature_data[1]["ds_basin_id"] == 0
+
+    ds = None

@@ -371,7 +371,8 @@ from overflow.basins.core import label_watersheds_from_file, drainage_points_fro
 from overflow.basins.tiled import label_watersheds_tiled
 
 # Get drainage points from vector file
-drainage_points = drainage_points_from_file(
+# Returns drainage_points dict and fid_mapping for updating the file later
+drainage_points, fid_mapping = drainage_points_from_file(
     fdr_filepath="flowdir.tif",
     drainage_points_file="points.gpkg",
     layer_name=None    # use first layer if None

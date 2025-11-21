@@ -840,8 +840,11 @@ def sqmi_to_cell_count(sqmi: float, raster_path: str) -> int:
 
 
 def snap_drainage_points(
-    drainage_points: dict, fac_filepath: str, snap_radius: int
-) -> dict:
+    drainage_points: dict,
+    fac_filepath: str,
+    snap_radius: int,
+    fid_mapping: dict | None = None,
+) -> dict | tuple[dict, dict]:
     """
     Snap drainage points to the cell with maximum flow accumulation within a given radius.
 
@@ -850,12 +853,18 @@ def snap_drainage_points(
         fac_filepath (str): Path to the flow accumulation raster file.
         snap_radius (int): Radius in cells to search for maximum flow accumulation.
                           If 1, snaps to the closest cell center (no change).
+        fid_mapping (dict | None): Optional dictionary mapping (row, col) tuples to feature IDs.
+                                   If provided, the mapping will be updated with snapped coordinates.
 
     Returns:
-        dict: Updated drainage points dictionary with snapped coordinates.
+        dict | tuple[dict, dict]: Updated drainage points dictionary with snapped coordinates.
+                                  If fid_mapping is provided, returns a tuple of
+                                  (snapped_points, snapped_fid_mapping).
     """
     # If radius is 1 or less, no snapping needed (already at cell centers)
     if snap_radius <= 1:
+        if fid_mapping is not None:
+            return drainage_points, fid_mapping
         return drainage_points
 
     # Open the flow accumulation raster
@@ -873,6 +882,9 @@ def snap_drainage_points(
 
     # Create new dictionary for snapped points
     snapped_points = Dict.empty(UniTuple(int64, 2), int64)
+
+    # Create new dictionary for snapped FID mapping if provided
+    snapped_fid_mapping: dict[tuple[int, int], int] = {}
 
     # Process each drainage point
     for (row, col), watershed_id in drainage_points.items():
@@ -892,6 +904,8 @@ def snap_drainage_points(
         if fac_window is None:
             # If we can't read the window, keep the original point
             snapped_points[(row, col)] = watershed_id
+            if fid_mapping is not None and (row, col) in fid_mapping:
+                snapped_fid_mapping[(row, col)] = fid_mapping[(row, col)]
             continue
 
         # Find the cell with maximum flow accumulation
@@ -905,5 +919,12 @@ def snap_drainage_points(
         # Add snapped point to dictionary
         snapped_points[(snapped_row, snapped_col)] = watershed_id
 
+        # Update FID mapping if provided
+        if fid_mapping is not None and (row, col) in fid_mapping:
+            snapped_fid_mapping[(snapped_row, snapped_col)] = fid_mapping[(row, col)]
+
     fac_ds = None  # Close the dataset
+
+    if fid_mapping is not None:
+        return snapped_points, snapped_fid_mapping  # type: ignore[return-value]
     return snapped_points  # type: ignore[no-any-return]
