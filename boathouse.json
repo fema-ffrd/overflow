@@ -6,7 +6,7 @@
             "cmd": [
                 "process-dem"
             ],
-            "readme": "docs/user-guide/cli.md",
+            "readme": "https://github.com/fema-ffrd/overflow/",
             "description": "This process takes a DEM as input and returns delineated streams and optionally basins.",
             "category": "Hydrology",
             "keywords": [
@@ -95,7 +95,7 @@
             "cmd": [
                 "breach-single-cell-pits"
             ],
-            "readme": "docs/user-guide/cli.md",
+            "readme": "https://github.com/fema-ffrd/overflow/",
             "description": "Breach single cell pits in a DEM. Produces an output DEM with breached single cell pits.",
             "category": "Hydrology",
             "keywords": [
@@ -136,7 +136,7 @@
             "cmd": [
                 "flow-direction"
             ],
-            "readme": "docs/user-guide/cli.md",
+            "readme": "https://github.com/fema-ffrd/overflow/",
             "description": "Generate flow direction rasters from a DEM. Returns a raster with delineated flow direction using D8 algorithm.",
             "category": "Hydrology",
             "keywords": [
@@ -177,7 +177,7 @@
             "cmd": [
                 "breach-paths-least-cost"
             ],
-            "readme": "docs/user-guide/cli.md",
+            "readme": "https://github.com/fema-ffrd/overflow/",
             "description": "Breach paths of least cost for pits in a DEM. Only pits that can be solved within the search radius are solved.",
             "category": "Hydrology",
             "keywords": [
@@ -233,7 +233,7 @@
             "cmd": [
                 "fix-flats"
             ],
-            "readme": "docs/user-guide/cli.md",
+            "readme": "https://github.com/fema-ffrd/overflow/",
             "description": "Fix flats in a DEM to ensure proper flow direction across flat areas.",
             "category": "Hydrology",
             "keywords": [
@@ -286,7 +286,7 @@
             "cmd": [
                 "fill-depressions"
             ],
-            "readme": "docs/user-guide/cli.md",
+            "readme": "https://github.com/fema-ffrd/overflow/",
             "description": "Fill depressions in a DEM to create a hydrologically corrected surface.",
             "category": "Hydrology",
             "keywords": [
@@ -339,7 +339,7 @@
             "cmd": [
                 "flow-accumulation"
             ],
-            "readme": "docs/user-guide/cli.md",
+            "readme": "https://github.com/fema-ffrd/overflow/",
             "description": "Calculate flow accumulation from a flow direction raster. Returns the number of upstream cells flowing into each cell.",
             "category": "Hydrology",
             "keywords": [
@@ -379,7 +379,7 @@
             "cmd": [
                 "label-watersheds"
             ],
-            "readme": "docs/user-guide/cli.md",
+            "readme": "https://github.com/fema-ffrd/overflow/",
             "description": "Label watersheds from a flow direction raster and drainage points. Returns a raster with labeled watershed basins.",
             "category": "Hydrology",
             "keywords": [
@@ -451,7 +451,7 @@
             "cmd": [
                 "extract-streams"
             ],
-            "readme": "docs/user-guide/cli.md",
+            "readme": "https://github.com/fema-ffrd/overflow/",
             "description": "Extract streams from flow accumulation and flow direction rasters. Returns a vector stream network.",
             "category": "Hydrology",
             "keywords": [
@@ -506,7 +506,7 @@
             "cmd": [
                 "longest-flow-path"
             ],
-            "readme": "docs/user-guide/cli.md",
+            "readme": "https://github.com/fema-ffrd/overflow/",
             "description": "Calculate the longest flow path (upstream flow length) from drainage points. Returns a flow length raster and vector lines representing the longest flow path for each drainage point.",
             "category": "Hydrology",
             "keywords": [
