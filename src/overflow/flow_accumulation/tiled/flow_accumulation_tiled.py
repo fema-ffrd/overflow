@@ -122,6 +122,9 @@ def finalize_flow_accumulation(
                 iterations += 1
                 if iterations > max_iterations:
                     # Cycle detected - stop propagation
+                    print(
+                        "Warning: Cycle detected in flow direction data during finalization."
+                    )
                     break
                 # Bounds check: ensure we're still within the tile
                 if not (0 <= current_row < rows and 0 <= current_col < cols):

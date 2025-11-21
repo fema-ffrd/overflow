@@ -384,6 +384,7 @@ def trace_path_from_cell(
     while (current_row, current_col) != drainage_point:
         iterations += 1
         if iterations > max_iterations:
+            print("Warning: Maximum iterations reached while tracing flow path.")
             break
 
         # Get the flow direction

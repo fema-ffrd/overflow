@@ -97,6 +97,7 @@ def follow_path(flow_direction, row, col, links):
             # Cycle detected - mark as terminating to prevent infinite loop
             links[init_row, init_col, 0] = FLOW_TERMINATES[0]
             links[init_row, init_col, 1] = FLOW_TERMINATES[1]
+            print("Warning: Cycle detected in flow direction data.")
             break
         next_row, next_col, next_val = get_next_cell(flow_direction, row, col)
         is_outside_tile = (
