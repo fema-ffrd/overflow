@@ -542,7 +542,8 @@
                     "displayName": "Output File",
                     "name": "output_file",
                     "type": "file",
-                    "description": "path to the output file (must be GeoTiff)"
+                    "description": "path to the output file (must be GeoTiff)",
+                    "direction": "output"
                 },
                 {
                     "displayName": "Drainage Points Layer",
