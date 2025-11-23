@@ -29,7 +29,7 @@
 			}
 		}
 	},
-	"postCreateCommand": "sudo chown -R ubuntu:ubuntu ${containerWorkspaceFolder} && uv pip install -r requirements.txt -r requirements-dev.txt",
+	"postCreateCommand": "sudo chown -R ubuntu:ubuntu ${containerWorkspaceFolder} && uv pip install -e .[dev,docs]",
 	// avoid dubious ownership of the workspace folder https://www.kenmuse.com/blog/avoiding-dubious-ownership-in-dev-containers/
 	"postStartCommand": "git config --global --add safe.directory ${containerWorkspaceFolder}"
 }

@@ -1,6 +1,9 @@
-# Overflow
+---
+title: Overflow
+subtitle: Hydrological Terrain Analysis for Massive DEMs
+---
 
-**High-performance hydrological terrain analysis**
+# Overflow
 
 Overflow specializes in processing massive Digital Elevation Models (DEMs) through parallel, tiled algorithms.
 
@@ -12,33 +15,39 @@ Traditional hydrological tools are often single-threded and rely on virtual-memo
 
 Every workflow in Overflow is designed for parallel execution using Numba JIT-compiled algorithms. This is achieved through state-of-the-art tiled, topological approaches that implement efficient IO access patterns even for global operations. Processes in Overflow are guaranteed to complete in a fixed number of passes over the data and create results identical to the authoritative widely used algorithms, regardless of the dataset size.
 
-### Scaling Global Algorithms
+## Scaling Global Algorithms
 
 Raster processing algorithms vary significantly in complexity. While most tools can easily parallelize simple tasks, Overflow is specifically engineered to handle the "hard" problems in hydrology. These can be broadly categorized into three classes based on their computational complexity and data dependencies:
 
-#### Local Operations
+### Local Operations
 
 Mathematically, a local operation maps a single input value to a single output value using a function $f$. There are no spatial dependencies. If $I$ is the input raster and $O$ is the output raster, then for each pixel at row $i$ and column $j$:
 
-$$O_{i,j} = f(I_{i,j})$$
+$$
+O_{i,j} = f(I_{i,j})
+$$
 
 These operations consider each pixel in isolation. They are computationally inexpensive and trivial to parallelize because no information needs to be shared between pixels. These include operations like reclassifying elevation ranges (e.g., converting meters to feet) or calculating NDVI from imagery.
 
-#### Focal / Regional Operations
+### Focal / Regional Operations
 
 These operations calculate a value based on a pixel and its immediate neighbors (e.g., a 3x3 window). Parallelizing these requires "halo" or buffer regions around tiles to ensure edge pixels can see their neighbors in adjacent tiles. These include operations like calculating flow direction, slope, or local relief. Mathematically, a focal operation can be expressed as:
 
-$$O_{i,j} = f\left( \{ I_{u,v} \mid u \in [i-k, i+k], v \in [j-k, j+k] \} \right)$$
+$$
+O_{i,j} = f\left( \{ I_{u,v} \mid u \in [i-k, i+k], v \in [j-k, j+k] \} \right)
+$$
 
 Where $k$ defines the size of the neighborhood.
 
-#### Global Operations
+### Global Operations
 
 These are the most computationally difficult algorithms to parallelize because the value of a single pixel can depend on **any other pixel** in the entire raster, regardless of distance. A change in elevation at one edge of the map can affect flow accumulation at the opposite edge. Unfortunately, these global operations include most of the useful hydrological processes. Flow accumulation, depression filling, undefined flow direction resolution, basin delineation, longest flow paths and stream network extraction are all global operations.
 
 Most global algorithms in hydrology are defined recursively, making them inherently sequential. The value at a pixel depends on the topology of the flow network.
 
-$$O_{i,j} = f\left( \{ I_{u,v} \mid (u,v) \in \mathcal{P}_{(i,j)} \} \right)$$
+$$
+O_{i,j} = f\left( \{ I_{u,v} \mid (u,v) \in \mathcal{P}_{(i,j)} \} \right)
+$$
 
 Where $P(i,j)$​ is the set of all pixels forming a directed path ending at $(i,j)$.
 
