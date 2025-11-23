@@ -146,7 +146,7 @@ def finalize_flow_accumulation(
     return flow_acc, tile_row, tile_col
 
 
-def flow_accumulation_tiled(
+def _flow_accumulation_tiled(
     input_path: str,
     output_path: str,
     chunk_size: int,

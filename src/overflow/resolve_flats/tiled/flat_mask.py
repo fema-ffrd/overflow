@@ -10,7 +10,7 @@ from numba import njit  # type: ignore[attr-defined]
 from numba.typed import List  # type: ignore[attr-defined]
 from osgeo import gdal
 
-from overflow.fix_flats.tiled.global_state import GlobalState
+from overflow.resolve_flats.tiled.global_state import GlobalState
 from overflow.util.constants import FLOW_DIRECTION_UNDEFINED
 from overflow.util.numba_types import Int64PairList
 from overflow.util.perimeter import Int64Perimeter

@@ -1,6 +1,6 @@
 from osgeo import gdal
 
-from overflow.fix_flats.core.fix_flats import d8_masked_flow_dirs
+from overflow.resolve_flats.core.resolve_flats import d8_masked_flow_dirs
 from overflow.util.raster import RasterChunk, raster_chunker
 
 

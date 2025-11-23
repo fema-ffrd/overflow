@@ -450,7 +450,7 @@ def remove_tile_edge_junctions(
     ds = None
 
 
-def extract_streams_tiled(
+def _extract_streams_tiled(
     fac_path: str,
     fdr_path: str,
     output_dir: str,

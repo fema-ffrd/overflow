@@ -258,7 +258,7 @@ def priority_flood_tile(
     return labels, graph, label_count
 
 
-def fill_depressions(
+def _fill_depressions(
     dem_file: str, out_file: str | None, fill_holes: bool = False
 ) -> None:
     """

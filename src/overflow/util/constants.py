@@ -5,7 +5,7 @@ DEFAULT_SEARCH_RADIUS = 200
 DEFAULT_MAX_PITS = 24
 UNVISITED_INDEX = -1
 EPSILON_GRADIENT = 1e-5  # small value to apply to gradient of breaching to nodata cells
-DEFAULT_CHUNK_SIZE = 2000
+DEFAULT_CHUNK_SIZE = 512
 
 #   3  |   2    |  1
 # ------------------

@@ -6,12 +6,12 @@ from overflow.util.constants import (
 )
 
 from .breach_paths_least_cost import (
+    _breach_paths_least_cost,
     breach_all_pits_in_chunk_least_cost,
-    breach_paths_least_cost,
 )
 
 __all__ = [
-    "breach_paths_least_cost",
+    "_breach_paths_least_cost",
     "breach_all_pits_in_chunk_least_cost",
     "DEFAULT_SEARCH_RADIUS",
     "EPSILON_GRADIENT",

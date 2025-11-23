@@ -1,3 +1,3 @@
-from .flow_accumulation_tiled import flow_accumulation_tiled
+from .flow_accumulation_tiled import _flow_accumulation_tiled
 
-__all__ = ["flow_accumulation_tiled"]
+__all__ = ["_flow_accumulation_tiled"]

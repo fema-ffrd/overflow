@@ -342,7 +342,7 @@ def breach_all_pits_in_chunk_least_cost(
     return output_dem, tile_row, tile_col
 
 
-def breach_paths_least_cost(
+def _breach_paths_least_cost(
     input_path: str,
     output_path: str,
     chunk_size: int = DEFAULT_CHUNK_SIZE,

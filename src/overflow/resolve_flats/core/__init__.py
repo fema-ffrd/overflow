@@ -1,8 +1,8 @@
-from .fix_flats import (
+from .resolve_flats import (
+    _resolve_flats_core,
     away_from_higher,
     d8_masked_flow_dirs,
     fix_flats,
-    fix_flats_from_file,
     flat_edges,
     label_flats,
     resolve_flats,
@@ -10,8 +10,8 @@ from .fix_flats import (
 )
 
 __all__ = [
+    "_resolve_flats_core",
     "fix_flats",
-    "fix_flats_from_file",
     "flat_edges",
     "label_flats",
     "away_from_higher",

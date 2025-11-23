@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from osgeo import gdal
 
-from overflow.fix_flats.tiled.fix_flats_tiled import fix_flats_tiled
+from overflow.resolve_flats.tiled.resolve_flats_tiled import _resolve_flats_tiled
 from overflow.util.constants import (
     FLOW_DIRECTION_EAST,
     FLOW_DIRECTION_NODATA,
@@ -266,7 +266,7 @@ def fixture_expected_fixed_fdr_zhou_2022():
 
 
 @pytest.mark.parametrize("chunk_size", [2, 4, 8, 12])
-def test_fix_flats_tiled(
+def test__resolve_flats_tiled(
     dem_zhou_2022_filepath,
     fdr_zhou_2022_filepath,
     expected_fixed_fdr_zhou_2022,
@@ -280,7 +280,7 @@ def test_fix_flats_tiled(
      - Chunk size 12 will test a chunk size larger than the DEM
     """
     output_filepath = f"/vsimem/fixed_fdr_{chunk_size}.tif"
-    fix_flats_tiled(
+    _resolve_flats_tiled(
         dem_zhou_2022_filepath,
         fdr_zhou_2022_filepath,
         output_filepath,

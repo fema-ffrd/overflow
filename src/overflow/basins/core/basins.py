@@ -18,7 +18,7 @@ from .basin_polygons import create_basin_polygons
 gdal.UseExceptions()
 
 
-def drainage_points_from_file(
+def _drainage_points_from_file(
     fdr_filepath: str,
     drainage_points_file: str,
     layer_name: None | str = None,
@@ -411,7 +411,7 @@ def label_watersheds(
     return watersheds, local_graph
 
 
-def label_watersheds_from_file(
+def _label_watersheds_core(
     fdr_filepath: str,
     drainage_points_file: str,
     output_file: str,
@@ -445,7 +445,7 @@ def label_watersheds_from_file(
         raise ValueError("Could not open flow direction raster file")
 
     fdr = fdr_ds.GetRasterBand(1).ReadAsArray()
-    drainage_points, fid_mapping = drainage_points_from_file(
+    drainage_points, fid_mapping = _drainage_points_from_file(
         fdr_filepath, drainage_points_file, layer_name
     )
 

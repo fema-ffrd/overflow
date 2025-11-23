@@ -5,7 +5,7 @@ from numba.types import int64  # type: ignore[attr-defined]
 from osgeo import gdal, ogr, osr
 
 from overflow.basins.core.basins import (
-    drainage_points_from_file,
+    _drainage_points_from_file,
     upstream_neighbor_generator,
 )
 from overflow.util.constants import NEIGHBOR_OFFSETS
@@ -542,10 +542,11 @@ def is_geographic(srs: osr.SpatialReference) -> bool:
     return srs.IsGeographic() == 1  # type: ignore[no-any-return]
 
 
-def longest_flow_path_from_file(
+def _flow_length_core(
     fdr_filepath: str,
     drainage_points_file: str,
-    output_file: str,
+    output_raster: str,
+    output_vector: str | None = None,
     layer_name: str | None = None,
     fac_filepath: str | None = None,
     snap_radius: int = 0,
@@ -559,7 +560,9 @@ def longest_flow_path_from_file(
     Parameters:
     - fdr_filepath (str): The path to the flow direction raster file.
     - drainage_points_file (str): The path to the drainage points file (OGR compatible format).
-    - output_file (str): The path to save the flow length raster (GeoTIFF).
+    - output_raster (str): The path to save the flow length raster (GeoTIFF).
+    - output_vector (str | None): The path to save the longest flow path vectors (GeoPackage).
+                                  If None, vectors are not created.
     - layer_name (str | None): The name of the layer in the drainage points file to read.
                               If None, the first layer in the file will be used. Default is None.
     - fac_filepath (str | None): The path to the flow accumulation raster file for snapping.
@@ -580,7 +583,7 @@ def longest_flow_path_from_file(
     For geographic CRS: distances are calculated in meters using Haversine formula
     """
     # Read drainage points (ignore fid_mapping for this function)
-    drainage_points, _ = drainage_points_from_file(
+    drainage_points, _ = _drainage_points_from_file(
         fdr_filepath, drainage_points_file, layer_name, True
     )
 
@@ -627,7 +630,7 @@ def longest_flow_path_from_file(
 
     # Create output raster dataset
     out_ds = create_dataset(
-        output_file,
+        output_raster,
         -1.0,  # nodata value for float32
         gdal.GDT_Float32,
         fdr.shape[1],
@@ -642,21 +645,21 @@ def longest_flow_path_from_file(
     out_band = None
     out_ds = None
 
-    # Create vector output for longest flow paths
-    vector_output = output_file.replace(".tif", "_paths.gpkg")
-    create_longest_flow_path_vectors(
-        fdr,
-        drainage_points,
-        gt,
-        projection,
-        vector_output,
-        is_geo,
-        srs,
-        basin_graph,
-        basin_max_cells,
-        pixel_size_x,
-        pixel_size_y,
-    )
+    # Create vector output for longest flow paths (if requested)
+    if output_vector is not None:
+        create_longest_flow_path_vectors(
+            fdr,
+            drainage_points,
+            gt,
+            projection,
+            output_vector,
+            is_geo,
+            srs,
+            basin_graph,
+            basin_max_cells,
+            pixel_size_x,
+            pixel_size_y,
+        )
 
     # Clean up
     fdr_ds = None

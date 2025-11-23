@@ -5,26 +5,21 @@ import click
 import numpy as np
 from osgeo import gdal
 
-from overflow import __version__
+from overflow import (
+    __version__,
+    accumulation,
+    breach,
+    fill,
+    flow_direction,
+    streams,
+)
 from overflow.basins.core import (
-    drainage_points_from_file,
+    _drainage_points_from_file,
     label_watersheds,
-    label_watersheds_from_file,
     update_drainage_points_file,
 )
-from overflow.basins.tiled import label_watersheds_tiled
-from overflow.breach_paths_least_cost import breach_paths_least_cost
-from overflow.breach_single_cell_pits import breach_single_cell_pits
-from overflow.extract_streams.core import extract_streams
-from overflow.extract_streams.tiled import extract_streams_tiled
-from overflow.fill_depressions.core import fill_depressions
-from overflow.fill_depressions.tiled import fill_depressions_tiled
-from overflow.fix_flats.core import fix_flats_from_file
-from overflow.fix_flats.tiled import fix_flats_tiled
-from overflow.flow_accumulation.core import flow_accumulation
-from overflow.flow_accumulation.tiled import flow_accumulation_tiled
-from overflow.flow_direction import flow_direction
-from overflow.longest_flow_path import longest_flow_path_from_file
+from overflow.basins.tiled import _label_watersheds_tiled
+from overflow.longest_flow_path import _flow_length_core
 from overflow.util.cli_progress import RichProgressDisplay
 from overflow.util.constants import DEFAULT_CHUNK_SIZE, DEFAULT_SEARCH_RADIUS
 from overflow.util.raster import (
@@ -67,87 +62,27 @@ def main(ctx):
         click.echo(ctx.get_help())
 
 
-@main.command(name="breach-single-cell-pits")
+@main.command(name="breach")
 @click.option(
     "--input_file",
     help="path to the GDAL supported raster dataset for the DEM",
+    required=True,
 )
-@click.option("--output_file", help="path to the output file (must be GeoTiff)")
-@click.option("--chunk_size", help="chunk size", default=DEFAULT_CHUNK_SIZE)
-def breach_single_cell_pits_cli(input_file: str, output_file: str, chunk_size: int):
-    """
-    This function is used to breach single cell pits in a DEM.
-    The function takes filepath to a GDAL supported raster dataset as
-    input and prodeces an output DEM with breached single cell pits.
-    """
-    success = False
-    try:
-        progress_display = RichProgressDisplay()
-        with timer("Breach single cell pits", spinner=False):
-            with progress_display.progress_context("Breaching single cell pits"):
-                breach_single_cell_pits(
-                    input_file, output_file, chunk_size, progress_display.callback
-                )
-                resource_stats.add_output_file("Breached DEM", output_file)
-                success = True
-
-        console.print(resource_stats.get_summary_panel(success=success))
-    except Exception as exc:
-        console.print(
-            f"[bold red]Error:[/bold red] breach_single_cell_pits failed with the following exception: {str(exc)}"
-        )
-        if not success:
-            console.print(resource_stats.get_summary_panel(success=False))
-        raise click.Abort()
-
-
-@main.command(name="flow-direction")
 @click.option(
-    "--input_file",
-    help="path to the DEM file",
+    "--output_file",
+    help="path to the output file (must be GeoTiff)",
+    required=True,
 )
-@click.option("--output_file", help="path to the output file")
 @click.option("--chunk_size", help="chunk size", default=DEFAULT_CHUNK_SIZE)
-def flow_direction_cli(input_file: str, output_file: str, chunk_size: int):
-    """
-    This function is used to generate flow direction rasters from chunks of a DEM.
-    The function takes a chunk of a DEM as input and returns a chunk of DEM with delineated flow direction.
-    """
-    success = False
-    try:
-        progress_display = RichProgressDisplay()
-        with timer("Flow direction", spinner=False):
-            with progress_display.progress_context("Computing flow direction"):
-                flow_direction(
-                    input_file, output_file, chunk_size, progress_display.callback
-                )
-                resource_stats.add_output_file("Flow Direction", output_file)
-                success = True
-
-        console.print(resource_stats.get_summary_panel(success=success))
-    except Exception as exc:
-        console.print(
-            f"[bold red]Error:[/bold red] flow_direction failed with the following exception: {str(exc)}"
-        )
-        if not success:
-            console.print(resource_stats.get_summary_panel(success=False))
-        raise click.Abort()
-
-
-@main.command(name="breach-paths-least-cost")
 @click.option(
-    "--input_file",
-    help="path to the GDAL supported raster dataset for the DEM",
+    "--search_radius", help="search radius in cells", default=DEFAULT_SEARCH_RADIUS
 )
-@click.option("--output_file", help="path to the output file (must be GeoTiff)")
-@click.option("--chunk_size", help="chunk size", default=DEFAULT_CHUNK_SIZE)
-@click.option("--search_radius", help="search radius", default=DEFAULT_SEARCH_RADIUS)
 @click.option(
     "--max_cost",
     help="maximum cost of breach paths (total sum of elevation removed from each cell in path)",
     default=np.inf,
 )
-def breach_paths_least_cost_cli(
+def breach_cli(
     input_file: str,
     output_file: str,
     chunk_size: int,
@@ -155,17 +90,17 @@ def breach_paths_least_cost_cli(
     max_cost: float,
 ):
     """
-    This function is used to breach paths of least cost for pits in a DEM.
-    The function takes filepath to a GDAL supported raster dataset as
-    input and prodeces an output DEM with breached paths of least cost.
-    Only pits that can be solved within the search radius are solved.
+    Breach pits in a DEM using least-cost paths.
+
+    This command identifies pits (local minima) in the DEM and creates breach
+    paths to allow water to flow out, minimizing the total elevation change.
     """
     success = False
     try:
         progress_display = RichProgressDisplay()
-        with timer("Breach paths least cost", spinner=False):
-            with progress_display.progress_context("Breaching paths (least cost)"):
-                breach_paths_least_cost(
+        with timer("Breach", spinner=False):
+            with progress_display.progress_context("Breaching pits"):
+                breach(
                     input_file,
                     output_file,
                     chunk_size,
@@ -179,149 +114,146 @@ def breach_paths_least_cost_cli(
         console.print(resource_stats.get_summary_panel(success=success))
     except Exception as exc:
         console.print(
-            f"[bold red]Error:[/bold red] breach_paths_least_cost failed with the following exception: {str(exc)}"
+            f"[bold red]Error:[/bold red] breach failed with the following exception: {str(exc)}"
         )
         if not success:
             console.print(resource_stats.get_summary_panel(success=False))
         raise click.Abort()
 
 
-@main.command(name="fix-flats")
+@main.command(name="fill")
 @click.option(
-    "--dem_file",
-    help="path to the GDAL supported raster dataset for the DEM",
-    required=True,
-)
-@click.option(
-    "--fdr_file",
-    help="path to the GDAL supported raster dataset for the FDR",
-    required=True,
-)
-@click.option(
-    "--output_file",
-    help="path to the output file (must be GeoTiff)",
-    required=True,
-)
-@click.option(
-    "--chunk_size",
-    help="chunk size",
-    default=DEFAULT_CHUNK_SIZE,
-)
-@click.option(
-    "--working_dir",
-    help="working directory",
-)
-def fix_flats_cli(
-    dem_file: str,
-    fdr_file: str,
-    output_file: str,
-    chunk_size: int,
-    working_dir: str | None,
-):
-    """
-    This function is used to fix flats in a DEM.
-    The function takes filepath to a GDAL supported raster dataset as
-    input and prodeces an output DEM with fixed flats.
-    """
-    success = False
-    try:
-        progress_display = RichProgressDisplay()
-        with timer("Fixing flats", spinner=False):
-            with progress_display.progress_context("Fixing flats"):
-                if chunk_size <= 1:
-                    fix_flats_from_file(dem_file, fdr_file, output_file)
-                else:
-                    fix_flats_tiled(
-                        dem_file,
-                        fdr_file,
-                        output_file,
-                        chunk_size,
-                        working_dir,
-                        progress_display.callback,
-                    )
-                resource_stats.add_output_file("Fixed FDR", output_file)
-                success = True
-
-        console.print(resource_stats.get_summary_panel(success=success))
-    except Exception as exc:
-        console.print(
-            f"[bold red]Error:[/bold red] fix_flats failed with the following exception: {str(exc)}"
-        )
-        if not success:
-            console.print(resource_stats.get_summary_panel(success=False))
-        raise click.Abort()
-
-
-@main.command(name="fill-depressions")
-@click.option(
-    "--dem_file",
+    "--input_file",
     help="path to the GDAL supported raster dataset for the DEM",
     required=True,
 )
 @click.option(
     "--output_file",
-    help="path to the output file (must be GeoTiff)",
-    required=True,
+    help="path to the output file (must be GeoTiff). If not provided, modifies input in place.",
+    required=False,
+    default=None,
 )
 @click.option(
     "--chunk_size",
-    help="chunk size",
+    help="chunk size (use <= 1 for in-memory processing)",
     default=DEFAULT_CHUNK_SIZE,
 )
 @click.option(
     "--working_dir",
-    help="working directory",
+    help="working directory for temporary files",
 )
 @click.option(
     "--fill_holes",
-    help="If set, fills holes in the DEM",
+    help="If set, fills holes (nodata regions) in the DEM",
     is_flag=True,
 )
-def fill_depressions_cli(
-    dem_file: str,
-    output_file: str,
+def fill_cli(
+    input_file: str,
+    output_file: str | None,
     chunk_size: int,
     working_dir: str | None,
     fill_holes: bool,
 ):
     """
-    This function is used to fill depressions in a DEM.
-    The function takes filepath to a GDAL supported raster dataset as
-    input and prodeces an output DEM with filled depressions.
+    Fill depressions in a DEM using priority flood algorithm.
+
+    This command fills local depressions (sinks) in the DEM to create a
+    hydrologically conditioned surface where water can flow to the edges.
     """
     success = False
     try:
         progress_display = RichProgressDisplay()
-        with timer("Filling", spinner=False):
+        with timer("Fill", spinner=False):
             with progress_display.progress_context("Filling depressions"):
-                if chunk_size <= 1:
-                    fill_depressions(dem_file, output_file, fill_holes)
-                else:
-                    fill_depressions_tiled(
-                        dem_file,
-                        output_file,
-                        chunk_size,
-                        working_dir,
-                        fill_holes,
-                        progress_display.callback,
-                    )
-                resource_stats.add_output_file("Filled DEM", output_file)
+                fill(
+                    input_file,
+                    output_file,
+                    chunk_size,
+                    working_dir,
+                    fill_holes,
+                    progress_display.callback,
+                )
+                resource_stats.add_output_file("Filled DEM", output_file or input_file)
                 success = True
 
         console.print(resource_stats.get_summary_panel(success=success))
     except Exception as exc:
         console.print(
-            f"[bold red]Error:[/bold red] fill_depressions failed with the following exception: {str(exc)}"
+            f"[bold red]Error:[/bold red] fill failed with the following exception: {str(exc)}"
         )
         if not success:
             console.print(resource_stats.get_summary_panel(success=False))
         raise click.Abort()
 
 
-@main.command(name="flow-accumulation")
+@main.command(name="flow-direction")
 @click.option(
-    "--fdr_file",
-    help="path to the GDAL supported raster dataset for the FDR",
+    "--input_file",
+    help="path to the DEM file",
+    required=True,
+)
+@click.option(
+    "--output_file",
+    help="path to the output file",
+    required=True,
+)
+@click.option(
+    "--chunk_size",
+    help="chunk size (use <= 1 for in-memory processing)",
+    default=DEFAULT_CHUNK_SIZE,
+)
+@click.option(
+    "--working_dir",
+    help="working directory for temporary files",
+)
+@click.option(
+    "--no_resolve_flats",
+    help="If set, skip resolving flat areas",
+    is_flag=True,
+)
+def flow_direction_cli(
+    input_file: str,
+    output_file: str,
+    chunk_size: int,
+    working_dir: str | None,
+    no_resolve_flats: bool,
+):
+    """
+    Compute D8 flow directions from a DEM and resolve flat areas.
+
+    This command calculates the steepest descent direction for each cell using
+    the D8 algorithm, then resolves flat areas to ensure continuous flow paths.
+    """
+    success = False
+    try:
+        progress_display = RichProgressDisplay()
+        with timer("Flow direction", spinner=False):
+            with progress_display.progress_context("Computing flow direction"):
+                flow_direction(
+                    input_file,
+                    output_file,
+                    chunk_size,
+                    working_dir,
+                    resolve_flats=not no_resolve_flats,
+                    progress_callback=progress_display.callback,
+                )
+                resource_stats.add_output_file("Flow Direction", output_file)
+                success = True
+
+        console.print(resource_stats.get_summary_panel(success=success))
+    except Exception as exc:
+        console.print(
+            f"[bold red]Error:[/bold red] flow-direction failed with the following exception: {str(exc)}"
+        )
+        if not success:
+            console.print(resource_stats.get_summary_panel(success=False))
+        raise click.Abort()
+
+
+@main.command(name="accumulation")
+@click.option(
+    "--input_file",
+    help="path to the GDAL supported raster dataset for the flow direction raster",
     required=True,
 )
 @click.option(
@@ -331,51 +263,50 @@ def fill_depressions_cli(
 )
 @click.option(
     "--chunk_size",
-    help="chunk size",
+    help="chunk size (use <= 1 for in-memory processing)",
     default=DEFAULT_CHUNK_SIZE,
 )
-def flow_accumulation_cli(
-    fdr_file: str,
+def accumulation_cli(
+    input_file: str,
     output_file: str,
     chunk_size: int,
 ):
     """
-    This function is used to calculate flow accumulation from a flow direction raster.
-    The function takes a flow direction raster as input and returns a flow accumulation raster.
+    Calculate flow accumulation from a flow direction raster.
+
+    This command computes the number of upstream cells that flow into each
+    cell, representing drainage area in cell units.
     """
     success = False
     try:
         progress_display = RichProgressDisplay()
-        with timer("Flow accumulation", spinner=False):
+        with timer("Accumulation", spinner=False):
             with progress_display.progress_context("Flow Accumulation"):
-                if chunk_size <= 1:
-                    flow_accumulation(fdr_file, output_file)
-                else:
-                    flow_accumulation_tiled(
-                        fdr_file, output_file, chunk_size, progress_display.callback
-                    )
+                accumulation(
+                    input_file, output_file, chunk_size, progress_display.callback
+                )
                 resource_stats.add_output_file("Flow Accumulation", output_file)
                 success = True
 
         console.print(resource_stats.get_summary_panel(success=success))
     except Exception as exc:
         console.print(
-            f"[bold red]Error:[/bold red] flow_accumulation failed with the following exception: {str(exc)}"
+            f"[bold red]Error:[/bold red] accumulation failed with the following exception: {str(exc)}"
         )
         if not success:
             console.print(resource_stats.get_summary_panel(success=False))
         raise click.Abort()
 
 
-@main.command(name="label-watersheds")
+@main.command(name="basins")
 @click.option(
     "--fdr_file",
-    help="path to the GDAL supported raster dataset for the FDR",
+    help="path to the GDAL supported raster dataset for the flow direction raster",
     required=True,
 )
 @click.option(
     "--fac_file",
-    help="path to the GDAL supported raster dataset for the flow accumulation (FAC)",
+    help="path to the GDAL supported raster dataset for the flow accumulation (optional, for snapping)",
     required=False,
     default=None,
 )
@@ -391,7 +322,7 @@ def flow_accumulation_cli(
 )
 @click.option(
     "--chunk_size",
-    help="chunk size",
+    help="chunk size (use <= 1 for in-memory processing)",
     default=DEFAULT_CHUNK_SIZE,
 )
 @click.option(
@@ -411,7 +342,7 @@ def flow_accumulation_cli(
     default=0,
     type=float,
 )
-def label_watersheds_cli(
+def basins_cli(
     fdr_file: str,
     fac_file: str | None,
     dp_file: str,
@@ -422,8 +353,10 @@ def label_watersheds_cli(
     snap_radius_ft: float,
 ):
     """
-    This function is used to label watersheds from a flow direction raster.
-    The function takes a flow direction raster and drainage points as input and returns a watersheds raster.
+    Delineate drainage basins from a flow direction raster and drainage points.
+
+    This command labels each cell with the ID of its downstream drainage point,
+    effectively delineating basin boundaries.
     """
     success = False
     try:
@@ -431,7 +364,7 @@ def label_watersheds_cli(
         with timer("Watershed delineation", spinner=False):
             with progress_display.progress_context("Label Watersheds"):
                 # Load drainage points and FID mapping
-                drainage_points, fid_mapping = drainage_points_from_file(
+                drainage_points, fid_mapping = _drainage_points_from_file(
                     fdr_file, dp_file, dp_layer
                 )
 
@@ -449,14 +382,14 @@ def label_watersheds_cli(
                         raise ValueError("Could not open flow direction raster file")
 
                     fdr = fdr_ds.GetRasterBand(1).ReadAsArray()
-                    watersheds, graph = label_watersheds(fdr, drainage_points)
+                    watersheds_arr, graph = label_watersheds(fdr, drainage_points)
 
                     if not all_basins:
                         # Remove any label not in drainage_points values
-                        unique_labels = np.unique(watersheds)
+                        unique_labels = np.unique(watersheds_arr)
                         for label in unique_labels:
                             if label not in drainage_points.values():
-                                watersheds[watersheds == label] = 0
+                                watersheds_arr[watersheds_arr == label] = 0
 
                     # Create output dataset
                     out_ds = create_dataset(
@@ -469,7 +402,7 @@ def label_watersheds_cli(
                         fdr_ds.GetProjection(),
                     )
                     out_band = out_ds.GetRasterBand(1)
-                    out_band.WriteArray(watersheds)
+                    out_band.WriteArray(watersheds_arr)
                     out_band.FlushCache()
                     out_ds.FlushCache()
                     out_ds = None
@@ -477,7 +410,7 @@ def label_watersheds_cli(
                     fdr_ds = None
                 else:
                     # Tiled processing
-                    graph = label_watersheds_tiled(
+                    graph = _label_watersheds_tiled(
                         fdr_file,
                         drainage_points,
                         output_file,
@@ -491,28 +424,28 @@ def label_watersheds_cli(
                     dp_file, drainage_points, fid_mapping, graph, dp_layer
                 )
 
-                resource_stats.add_output_file("Watersheds", output_file)
+                resource_stats.add_output_file("Basins", output_file)
                 success = True
 
         console.print(resource_stats.get_summary_panel(success=success))
     except Exception as exc:
         console.print(
-            f"[bold red]Error:[/bold red] label_watersheds failed with the following exception: {str(exc)}"
+            f"[bold red]Error:[/bold red] basins failed with the following exception: {str(exc)}"
         )
         if not success:
             console.print(resource_stats.get_summary_panel(success=False))
         raise click.Abort()
 
 
-@main.command(name="extract-streams")
+@main.command(name="streams")
 @click.option(
     "--fac_file",
-    help="path to the GDAL supported raster dataset for the FAC",
+    help="path to the GDAL supported raster dataset for the flow accumulation",
     required=True,
 )
 @click.option(
     "--fdr_file",
-    help="path to the GDAL supported raster dataset for the FDR",
+    help="path to the GDAL supported raster dataset for the flow direction",
     required=True,
 )
 @click.option(
@@ -521,62 +454,55 @@ def label_watersheds_cli(
     required=True,
 )
 @click.option(
-    "--cell_count_threshold",
-    help="cell count threshold",
+    "--threshold",
+    help="minimum flow accumulation threshold (cell count) to define a stream",
     default=5,
 )
 @click.option(
     "--chunk_size",
-    help="chunk size",
+    help="chunk size (use <= 1 for in-memory processing)",
     default=DEFAULT_CHUNK_SIZE,
 )
-def extract_streams_cli(
+def streams_cli(
     fac_file: str,
     fdr_file: str,
     output_dir: str,
-    cell_count_threshold: int,
+    threshold: int,
     chunk_size: int,
 ):
     """
-    This function is used to extract streams from a flow accumulation and flow direction raster.
-    The function takes a flow accumulation and flow direction raster as input and returns a streams raster.
+    Extract stream networks from flow accumulation and direction rasters.
+
+    This command identifies stream cells based on a flow accumulation threshold
+    and creates vector stream lines and junction points (streams.gpkg).
     """
     success = False
     try:
         progress_display = RichProgressDisplay()
         with timer("Stream extraction", spinner=False):
             with progress_display.progress_context("Extract Streams"):
-                if chunk_size <= 1:
-                    extract_streams(
-                        fac_file,
-                        fdr_file,
-                        output_dir,
-                        cell_count_threshold,
-                        progress_display.callback,
-                    )
-                else:
-                    extract_streams_tiled(
-                        fac_file,
-                        fdr_file,
-                        output_dir,
-                        cell_count_threshold,
-                        chunk_size,
-                        progress_display.callback,
-                    )
+                streams(
+                    fac_file,
+                    fdr_file,
+                    output_dir,
+                    threshold,
+                    chunk_size,
+                    progress_display.callback,
+                )
                 resource_stats.add_output_file("Streams", f"{output_dir}/streams.gpkg")
                 success = True
 
         console.print(resource_stats.get_summary_panel(success=success))
     except Exception as exc:
         console.print(
-            f"[bold red]Error:[/bold red] extract_streams failed with the following exception: {str(exc)}"
+            f"[bold red]Error:[/bold red] streams failed with the following exception: {str(exc)}"
         )
         if not success:
             console.print(resource_stats.get_summary_panel(success=False))
         raise click.Abort()
 
 
-@main.command(name="process-dem")
+@main.command(name="pipeline")
 @click.option(
     "--dem_file",
     help="path to the GDAL supported raster dataset for the DEM",
@@ -589,12 +515,12 @@ def extract_streams_cli(
 )
 @click.option(
     "--chunk_size",
-    help="chunk size",
+    help="chunk size (use <= 0 for in-memory processing)",
     default=DEFAULT_CHUNK_SIZE,
 )
 @click.option(
     "--search_radius_ft",
-    help="search radius in feet to look for solution paths",
+    help="search radius in feet for pit breaching (0 to skip breaching)",
     default=200,
 )
 @click.option(
@@ -618,7 +544,7 @@ def extract_streams_cli(
     help="If set, fills holes in the DEM",
     is_flag=True,
 )
-def process_dem_cli(
+def pipeline_cli(
     dem_file: str,
     output_dir: str,
     chunk_size: int,
@@ -629,8 +555,15 @@ def process_dem_cli(
     fill_holes: bool,
 ):
     """
-    This function is used to process a DEM.
-    The function takes a DEM as input and returns a streams raster.
+    Run complete DEM processing pipeline.
+
+    This command runs a full hydrological analysis workflow:
+    1. Breach pits (optional, if search_radius_ft > 0)
+    2. Fill depressions
+    3. Compute flow direction (with flat resolution)
+    4. Calculate flow accumulation
+    5. Extract streams
+    6. Delineate watersheds (optional, if --basins flag is set)
     """
     success = False
     try:
@@ -649,8 +582,8 @@ def process_dem_cli(
 
             if search_radius > 0:
                 with timer("Breaching", spinner=False):
-                    with progress_display.progress_context("Breaching paths"):
-                        breach_paths_least_cost(
+                    with progress_display.progress_context("Breaching pits"):
+                        breach(
                             dem_file,
                             f"{output_dir}/dem_corrected.tif",
                             core_chunk_size,
@@ -661,35 +594,25 @@ def process_dem_cli(
 
                 with timer("Filling", spinner=False):
                     with progress_display.progress_context("Filling depressions"):
-                        if chunk_size <= 0:
-                            fill_depressions(
-                                f"{output_dir}/dem_corrected.tif", None, fill_holes
-                            )
-                        else:
-                            fill_depressions_tiled(
-                                f"{output_dir}/dem_corrected.tif",
-                                None,
-                                chunk_size,
-                                output_dir,
-                                fill_holes,
-                                progress_display.callback,
-                            )
+                        fill(
+                            f"{output_dir}/dem_corrected.tif",
+                            None,
+                            chunk_size if chunk_size > 0 else 0,
+                            output_dir,
+                            fill_holes,
+                            progress_display.callback,
+                        )
             else:
                 with timer("Filling", spinner=False):
                     with progress_display.progress_context("Filling depressions"):
-                        if chunk_size <= 0:
-                            fill_depressions(
-                                dem_file, f"{output_dir}/dem_corrected.tif", fill_holes
-                            )
-                        else:
-                            fill_depressions_tiled(
-                                dem_file,
-                                f"{output_dir}/dem_corrected.tif",
-                                chunk_size,
-                                output_dir,
-                                fill_holes,
-                                progress_display.callback,
-                            )
+                        fill(
+                            dem_file,
+                            f"{output_dir}/dem_corrected.tif",
+                            chunk_size if chunk_size > 0 else 0,
+                            output_dir,
+                            fill_holes,
+                            progress_display.callback,
+                        )
 
             resource_stats.add_output_file(
                 "Corrected DEM", f"{output_dir}/dem_corrected.tif"
@@ -701,42 +624,21 @@ def process_dem_cli(
                         f"{output_dir}/dem_corrected.tif",
                         f"{output_dir}/fdr.tif",
                         core_chunk_size,
-                        progress_display.callback,
+                        output_dir,
+                        resolve_flats=True,
+                        progress_callback=progress_display.callback,
                     )
 
             resource_stats.add_output_file("Flow Direction", f"{output_dir}/fdr.tif")
 
-            with timer("Fixing flats", spinner=False):
-                with progress_display.progress_context("Fixing flats"):
-                    if chunk_size <= 0:
-                        fix_flats_from_file(
-                            f"{output_dir}/dem_corrected.tif",
-                            f"{output_dir}/fdr.tif",
-                            None,
-                        )
-                    else:
-                        fix_flats_tiled(
-                            f"{output_dir}/dem_corrected.tif",
-                            f"{output_dir}/fdr.tif",
-                            None,
-                            chunk_size,
-                            output_dir,
-                            progress_display.callback,
-                        )
-
             with timer("Flow accumulation", spinner=False):
                 with progress_display.progress_context("Flow Accumulation"):
-                    if chunk_size <= 0:
-                        flow_accumulation(
-                            f"{output_dir}/fdr.tif", f"{output_dir}/accum.tif"
-                        )
-                    else:
-                        flow_accumulation_tiled(
-                            f"{output_dir}/fdr.tif",
-                            f"{output_dir}/accum.tif",
-                            chunk_size,
-                            progress_display.callback,
-                        )
+                    accumulation(
+                        f"{output_dir}/fdr.tif",
+                        f"{output_dir}/accum.tif",
+                        chunk_size if chunk_size > 0 else 0,
+                        progress_display.callback,
+                    )
 
             resource_stats.add_output_file(
                 "Flow Accumulation", f"{output_dir}/accum.tif"
@@ -744,60 +646,67 @@ def process_dem_cli(
 
             with timer("Stream extraction", spinner=False):
                 with progress_display.progress_context("Extract Streams"):
-                    if chunk_size <= 0:
-                        extract_streams(
-                            f"{output_dir}/accum.tif",
-                            f"{output_dir}/fdr.tif",
-                            output_dir,
-                            threshold,
-                            progress_display.callback,
-                        )
-                    else:
-                        extract_streams_tiled(
-                            f"{output_dir}/accum.tif",
-                            f"{output_dir}/fdr.tif",
-                            output_dir,
-                            threshold,
-                            chunk_size,
-                            progress_display.callback,
-                        )
+                    streams(
+                        f"{output_dir}/accum.tif",
+                        f"{output_dir}/fdr.tif",
+                        output_dir,
+                        threshold,
+                        chunk_size if chunk_size > 0 else 0,
+                        progress_display.callback,
+                    )
 
             resource_stats.add_output_file("Streams", f"{output_dir}/streams.gpkg")
 
             if basins:
                 with timer("Watershed delineation", spinner=False):
                     with progress_display.progress_context("Label Watersheds"):
-                        drainage_points, fid_mapping = drainage_points_from_file(
+                        dp, fid_mapping = _drainage_points_from_file(
                             f"{output_dir}/fdr.tif",
                             f"{output_dir}/streams.gpkg",
                             "junctions",
                         )
 
                         if chunk_size <= 0:
-                            label_watersheds_from_file(
-                                f"{output_dir}/fdr.tif",
-                                f"{output_dir}/streams.gpkg",
+                            # Non-tiled processing
+                            fdr_ds = gdal.Open(f"{output_dir}/fdr.tif")
+                            fdr = fdr_ds.GetRasterBand(1).ReadAsArray()
+                            watersheds_arr, graph = label_watersheds(fdr, dp)
+
+                            # Create output dataset
+                            out_ds = create_dataset(
                                 f"{output_dir}/basins.tif",
-                                False,
-                                "junctions",
+                                0,
+                                gdal.GDT_Int64,
+                                fdr.shape[1],
+                                fdr.shape[0],
+                                fdr_ds.GetGeoTransform(),
+                                fdr_ds.GetProjection(),
                             )
+                            out_band = out_ds.GetRasterBand(1)
+                            out_band.WriteArray(watersheds_arr)
+                            out_band.FlushCache()
+                            out_ds.FlushCache()
+                            out_ds = None
+                            out_band = None
+                            fdr_ds = None
                         else:
-                            graph = label_watersheds_tiled(
+                            graph = _label_watersheds_tiled(
                                 f"{output_dir}/fdr.tif",
-                                drainage_points,
+                                dp,
                                 f"{output_dir}/basins.tif",
                                 chunk_size,
                                 False,
                                 progress_display.callback,
                             )
-                            # Update drainage points file with basin_id and ds_basin_id
-                            update_drainage_points_file(
-                                f"{output_dir}/streams.gpkg",
-                                drainage_points,
-                                fid_mapping,
-                                graph,
-                                "junctions",
-                            )
+
+                        # Update drainage points file with basin_id and ds_basin_id
+                        update_drainage_points_file(
+                            f"{output_dir}/streams.gpkg",
+                            dp,
+                            fid_mapping,
+                            graph,
+                            "junctions",
+                        )
 
                 resource_stats.add_output_file("Basins", f"{output_dir}/basins.tif")
 
@@ -807,24 +716,18 @@ def process_dem_cli(
 
     except Exception as exc:
         console.print(
-            f"[bold red]Error:[/bold red] process_dem failed with the following exception: {str(exc)}"
+            f"[bold red]Error:[/bold red] pipeline failed with the following exception: {str(exc)}"
         )
         if not success:
             console.print(resource_stats.get_summary_panel(success=False))
         raise click.Abort()
 
 
-@main.command(name="longest-flow-path")
+@main.command(name="flow-length")
 @click.option(
     "--fdr_file",
-    help="path to the GDAL supported raster dataset for the FDR",
+    help="path to the GDAL supported raster dataset for the flow direction",
     required=True,
-)
-@click.option(
-    "--fac_file",
-    help="path to the GDAL supported raster dataset for the flow accumulation (FAC)",
-    required=False,
-    default=None,
 )
 @click.option(
     "--dp_file",
@@ -832,9 +735,21 @@ def process_dem_cli(
     required=True,
 )
 @click.option(
-    "--output_file",
-    help="path to the output file (must be GeoTiff)",
+    "--output_raster",
+    help="path to the output raster file (must be GeoTiff)",
     required=True,
+)
+@click.option(
+    "--output_vector",
+    help="path to the output vector file (GeoPackage) for longest flow paths. If not provided, no vector output is created.",
+    required=False,
+    default=None,
+)
+@click.option(
+    "--fac_file",
+    help="path to the flow accumulation raster (optional, for snapping drainage points)",
+    required=False,
+    default=None,
 )
 @click.option(
     "--dp_layer",
@@ -848,50 +763,52 @@ def process_dem_cli(
     default=0,
     type=float,
 )
-def longest_flow_path_cli(
+def flow_length_cli(
     fdr_file: str,
-    fac_file: str | None,
     dp_file: str,
-    output_file: str,
+    output_raster: str,
+    output_vector: str | None,
+    fac_file: str | None,
     dp_layer: str | None,
     snap_radius_ft: float,
 ):
     """
-    Calculate the longest flow path (upstream flow length) from drainage points.
+    Calculate upstream flow length (longest flow path) from drainage points.
 
     This command calculates the distance from each cell to its downstream drainage point,
-    measured along the flow path. The output is a Float32 raster where each cell contains
-    the upstream flow length in map units.
+    measured along the flow path. The output raster contains flow length values in map units
+    (or meters for geographic CRS).
 
-    The longest flow path for a basin is the pixel with the maximum value in that basin.
+    The longest flow path for a basin is the cell with the maximum value in that basin.
     """
     success = False
     try:
         progress_display = RichProgressDisplay()
-        with timer("Calculate longest flow path", spinner=False):
+        with timer("Calculate flow length", spinner=False):
             with progress_display.progress_context("Calculating flow length"):
                 # Calculate snap radius in cells if FAC file is provided
                 snap_radius_cells = 0
                 if fac_file is not None and snap_radius_ft > 0:
                     snap_radius_cells = feet_to_cell_count(snap_radius_ft, fdr_file)
 
-                longest_flow_path_from_file(
+                _flow_length_core(
                     fdr_file,
                     dp_file,
-                    output_file,
+                    output_raster,
+                    output_vector,
                     dp_layer,
                     fac_file,
                     snap_radius_cells,
                 )
-                resource_stats.add_output_file("Flow Length", output_file)
-                vector_output = output_file.replace(".tif", "_paths.gpkg")
-                resource_stats.add_output_file("Flow Paths", vector_output)
+                resource_stats.add_output_file("Flow Length Raster", output_raster)
+                if output_vector is not None:
+                    resource_stats.add_output_file("Flow Paths Vector", output_vector)
                 success = True
 
         console.print(resource_stats.get_summary_panel(success=success))
     except Exception as exc:
         console.print(
-            f"[bold red]Error:[/bold red] longest_flow_path failed with the following exception: {str(exc)}"
+            f"[bold red]Error:[/bold red] flow-length failed with the following exception: {str(exc)}"
         )
         if not success:
             console.print(resource_stats.get_summary_panel(success=False))

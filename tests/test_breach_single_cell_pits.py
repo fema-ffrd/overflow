@@ -1,4 +1,3 @@
-import click.testing
 import numpy as np
 import pytest
 from osgeo import gdal
@@ -7,7 +6,8 @@ from overflow.breach_single_cell_pits import (
     breach_single_cell_pits,
     breach_single_cell_pits_in_chunk,
 )
-from overflow.cli import breach_single_cell_pits_cli
+
+# Note: breach_single_cell_pits CLI has been removed in favor of the unified breach command
 
 
 @pytest.fixture(name="raster_file_path")
@@ -103,35 +103,5 @@ def test_breach_single_cell_pits(raster_file_path):
     band_array = band.ReadAsArray(0, 0, result.RasterXSize, result.RasterYSize)
     assert np.allclose(band_array, expected)
 
-
-def test_breach_single_cell_pits_cli(raster_file_path):
-    """Test the CLI."""
-    output_path = "/vsimem/test_breach_single_cell_pits_cli.tif"
-    runner = click.testing.CliRunner()
-    result = runner.invoke(
-        breach_single_cell_pits_cli,
-        [
-            "--input_file",
-            raster_file_path,
-            "--output_file",
-            output_path,
-            "--chunk_size",
-            "5",
-        ],
-    )
-    assert result.exit_code == 0
-    dataset = gdal.Open(output_path)
-    band = dataset.GetRasterBand(1)
-    array = band.ReadAsArray()
-    expected_dem = np.array(
-        [
-            [2, 2, 2, 2, 2],
-            [-1, 2, 2, 2, 2],
-            [2, -0.5, 0, 2, 2],
-            [2, 2, 2, 2, 2],
-            [2, 2, 2, 2, 2],
-        ],
-        dtype=np.float32,
-    )
-    assert np.allclose(array, expected_dem)
-    gdal.Unlink(output_path)
+    # Note: CLI test removed - breach_single_cell_pits CLI has been removed
+    # in favor of the unified 'breach' command which uses breach_paths_least_cost

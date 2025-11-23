@@ -2,7 +2,7 @@ import numpy as np
 from numba import njit  # type: ignore[attr-defined]
 from numba.typed import List  # type: ignore[attr-defined]
 
-from overflow.fix_flats.core.fix_flats import label_flats
+from overflow.resolve_flats.core.resolve_flats import label_flats
 from overflow.util.constants import FLOW_DIRECTION_NODATA, FLOW_DIRECTION_UNDEFINED
 from overflow.util.queue import Int64PairQueue as Queue
 from overflow.util.raster import neighbor_generator

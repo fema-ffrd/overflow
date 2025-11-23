@@ -1,10 +1,10 @@
 {
     "cli": [
         {
-            "name": "Process DEM",
+            "name": "Pipeline",
             "path": "overflow",
             "cmd": [
-                "process-dem"
+                "pipeline"
             ],
             "readme": "https://github.com/fema-ffrd/overflow/",
             "description": "This process takes a DEM as input and returns delineated streams and optionally basins.",
@@ -90,92 +90,10 @@
             ]
         },
         {
-            "name": "Breach Single Cell Pits",
+            "name": "Breach",
             "path": "overflow",
             "cmd": [
-                "breach-single-cell-pits"
-            ],
-            "readme": "https://github.com/fema-ffrd/overflow/",
-            "description": "Breach single cell pits in a DEM. Produces an output DEM with breached single cell pits.",
-            "category": "Hydrology",
-            "keywords": [
-                "dem",
-                "breach",
-                "pit",
-                "depression",
-                "terrain",
-                "preprocessing",
-                "hydrology",
-                "raster"
-            ],
-            "args": [
-                {
-                    "displayName": "Input File",
-                    "name": "input_file",
-                    "type": "file",
-                    "description": "path to the GDAL supported raster dataset for the DEM"
-                },
-                {
-                    "displayName": "Output File",
-                    "name": "output_file",
-                    "type": "file",
-                    "description": "path to the output file (must be GeoTiff)"
-                },
-                {
-                    "displayName": "Chunk Size",
-                    "name": "chunk_size",
-                    "type": "integer",
-                    "description": "chunk size for tiled operations",
-                    "defaultValue": 512
-                }
-            ]
-        },
-        {
-            "name": "Flow Direction",
-            "path": "overflow",
-            "cmd": [
-                "flow-direction"
-            ],
-            "readme": "https://github.com/fema-ffrd/overflow/",
-            "description": "Generate flow direction rasters from a DEM. Returns a raster with delineated flow direction using D8 algorithm.",
-            "category": "Hydrology",
-            "keywords": [
-                "flow",
-                "direction",
-                "d8",
-                "dem",
-                "hydrology",
-                "drainage",
-                "raster",
-                "terrain"
-            ],
-            "args": [
-                {
-                    "displayName": "Input File",
-                    "name": "input_file",
-                    "type": "file",
-                    "description": "path to the DEM file"
-                },
-                {
-                    "displayName": "Output File",
-                    "name": "output_file",
-                    "type": "file",
-                    "description": "path to the output file"
-                },
-                {
-                    "displayName": "Chunk Size",
-                    "name": "chunk_size",
-                    "type": "integer",
-                    "description": "chunk size for tiled operations",
-                    "defaultValue": 512
-                }
-            ]
-        },
-        {
-            "name": "Breach Paths Least Cost",
-            "path": "overflow",
-            "cmd": [
-                "breach-paths-least-cost"
+                "breach"
             ],
             "readme": "https://github.com/fema-ffrd/overflow/",
             "description": "Breach paths of least cost for pits in a DEM. Only pits that can be solved within the search radius are solved.",
@@ -228,63 +146,10 @@
             ]
         },
         {
-            "name": "Fix Flats",
+            "name": "Fill",
             "path": "overflow",
             "cmd": [
-                "fix-flats"
-            ],
-            "readme": "https://github.com/fema-ffrd/overflow/",
-            "description": "Fix flats in a DEM to ensure proper flow direction across flat areas.",
-            "category": "Hydrology",
-            "keywords": [
-                "dem",
-                "flats",
-                "flow",
-                "direction",
-                "terrain",
-                "preprocessing",
-                "hydrology",
-                "raster"
-            ],
-            "args": [
-                {
-                    "displayName": "DEM File",
-                    "name": "dem_file",
-                    "type": "file",
-                    "description": "path to the GDAL supported raster dataset for the DEM"
-                },
-                {
-                    "displayName": "FDR File",
-                    "name": "fdr_file",
-                    "type": "file",
-                    "description": "path to the GDAL supported raster dataset for the flow direction (FDR)"
-                },
-                {
-                    "displayName": "Output File",
-                    "name": "output_file",
-                    "type": "file",
-                    "description": "path to the output file (must be GeoTiff)"
-                },
-                {
-                    "displayName": "Chunk Size",
-                    "name": "chunk_size",
-                    "type": "integer",
-                    "description": "chunk size for tiled operations",
-                    "defaultValue": 512
-                },
-                {
-                    "displayName": "Working Directory",
-                    "name": "working_dir",
-                    "type": "directory",
-                    "description": "working directory for temporary files"
-                }
-            ]
-        },
-        {
-            "name": "Fill Depressions",
-            "path": "overflow",
-            "cmd": [
-                "fill-depressions"
+                "fill"
             ],
             "readme": "https://github.com/fema-ffrd/overflow/",
             "description": "Fill depressions in a DEM to create a hydrologically corrected surface.",
@@ -334,10 +199,52 @@
             ]
         },
         {
-            "name": "Flow Accumulation",
+            "name": "Flow Direction",
             "path": "overflow",
             "cmd": [
-                "flow-accumulation"
+                "flow-direction"
+            ],
+            "readme": "https://github.com/fema-ffrd/overflow/",
+            "description": "Generate flow direction rasters from a DEM and resolve flat areas. Returns a raster with delineated flow direction using D8 algorithm.",
+            "category": "Hydrology",
+            "keywords": [
+                "flow",
+                "direction",
+                "d8",
+                "dem",
+                "hydrology",
+                "drainage",
+                "raster",
+                "terrain",
+                "flats"
+            ],
+            "args": [
+                {
+                    "displayName": "Input File",
+                    "name": "input_file",
+                    "type": "file",
+                    "description": "path to the DEM file"
+                },
+                {
+                    "displayName": "Output File",
+                    "name": "output_file",
+                    "type": "file",
+                    "description": "path to the output file"
+                },
+                {
+                    "displayName": "Chunk Size",
+                    "name": "chunk_size",
+                    "type": "integer",
+                    "description": "chunk size for tiled operations",
+                    "defaultValue": 512
+                }
+            ]
+        },
+        {
+            "name": "Accumulation",
+            "path": "overflow",
+            "cmd": [
+                "accumulation"
             ],
             "readme": "https://github.com/fema-ffrd/overflow/",
             "description": "Calculate flow accumulation from a flow direction raster. Returns the number of upstream cells flowing into each cell.",
@@ -374,10 +281,10 @@
             ]
         },
         {
-            "name": "Label Watersheds",
+            "name": "Basins",
             "path": "overflow",
             "cmd": [
-                "label-watersheds"
+                "basins"
             ],
             "readme": "https://github.com/fema-ffrd/overflow/",
             "description": "Label watersheds from a flow direction raster and drainage points. Returns a raster with labeled watershed basins.",
@@ -446,10 +353,10 @@
             ]
         },
         {
-            "name": "Extract Streams",
+            "name": "Streams",
             "path": "overflow",
             "cmd": [
-                "extract-streams"
+                "streams"
             ],
             "readme": "https://github.com/fema-ffrd/overflow/",
             "description": "Extract streams from flow accumulation and flow direction rasters. Returns a vector stream network.",
@@ -501,10 +408,10 @@
             ]
         },
         {
-            "name": "Longest Flow Path",
+            "name": "Flow Length",
             "path": "overflow",
             "cmd": [
-                "longest-flow-path"
+                "flow-length"
             ],
             "readme": "https://github.com/fema-ffrd/overflow/",
             "description": "Calculate the longest flow path (upstream flow length) from drainage points. Returns a flow length raster and vector lines representing the longest flow path for each drainage point.",

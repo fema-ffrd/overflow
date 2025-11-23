@@ -2,8 +2,8 @@ import numpy as np
 import pytest
 from osgeo import gdal, ogr, osr
 
-from overflow.extract_streams.core import extract_streams
-from overflow.extract_streams.tiled import extract_streams_tiled
+from overflow.extract_streams.core import _extract_streams_core
+from overflow.extract_streams.tiled import _extract_streams_tiled
 from overflow.util.constants import FLOW_ACCUMULATION_NODATA, FLOW_DIRECTION_NODATA
 
 
@@ -93,7 +93,7 @@ def test_extract_streams(raster_file_paths, test_rasters):
     fac_path = raster_file_paths["fac"]
     threshold = 5
 
-    extract_streams(fac_path, fdr_path, output_dir, threshold)
+    _extract_streams_core(fac_path, fdr_path, output_dir, threshold)
 
     streams_raster = f"{output_dir}/streams.tif"
     streams_vector = f"{output_dir}/streams.gpkg"
@@ -127,7 +127,7 @@ def test_extract_streams_tiled(raster_file_paths, test_rasters):
     threshold = 5
     chunk_size = 3
 
-    extract_streams_tiled(fac_path, fdr_path, output_dir, threshold, chunk_size)
+    _extract_streams_tiled(fac_path, fdr_path, output_dir, threshold, chunk_size)
 
     # Check if output files are created
     streams_raster = f"{output_dir}/streams.tif"
@@ -164,10 +164,10 @@ def test_compare_core_and_tiled(raster_file_paths):
     chunk_size = 3
 
     # Run core algorithm
-    extract_streams(fac_path, fdr_path, f"{output_dir}/core", threshold)
+    _extract_streams_core(fac_path, fdr_path, f"{output_dir}/core", threshold)
 
     # Run tiled algorithm
-    extract_streams_tiled(
+    _extract_streams_tiled(
         fac_path, fdr_path, f"{output_dir}/tiled", threshold, chunk_size
     )
 

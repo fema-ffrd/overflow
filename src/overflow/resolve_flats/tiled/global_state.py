@@ -11,7 +11,7 @@ from numba.experimental import jitclass
 from numba.typed import List  # type: ignore[attr-defined]
 from osgeo import gdal
 
-from overflow.fix_flats.tiled.graphs import GlobalGraph
+from overflow.resolve_flats.tiled.graphs import GlobalGraph
 from overflow.util.numba_types import Int64Pair, Int64PairListList
 from overflow.util.perimeter import (
     Float32Perimeter,

@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from overflow.fix_flats.core import (
+from overflow.resolve_flats.core import (
     away_from_higher,
     d8_masked_flow_dirs,
     fix_flats,

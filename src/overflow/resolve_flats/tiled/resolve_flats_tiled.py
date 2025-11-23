@@ -4,9 +4,9 @@ import tempfile
 
 from osgeo import gdal
 
-from overflow.fix_flats.tiled.flat_mask import create_flat_mask
-from overflow.fix_flats.tiled.global_state import create_global_state
-from overflow.fix_flats.tiled.update_fdr import update_fdr
+from overflow.resolve_flats.tiled.flat_mask import create_flat_mask
+from overflow.resolve_flats.tiled.global_state import create_global_state
+from overflow.resolve_flats.tiled.update_fdr import update_fdr
 from overflow.util.constants import DEFAULT_CHUNK_SIZE, FLOW_DIRECTION_NODATA
 from overflow.util.progress import ProgressCallback, ProgressTracker, silent_callback
 from overflow.util.raster import create_dataset, open_dataset
@@ -83,7 +83,7 @@ def setup_datasets(
     return (dem_ds, fdr_ds, fixed_fdr_ds, labels_ds, flat_mask_ds)
 
 
-def fix_flats_tiled(
+def _resolve_flats_tiled(
     dem_filepath: str,
     fdr_filepath: str,
     output_filepath: str | None,

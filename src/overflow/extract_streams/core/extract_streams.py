@@ -319,7 +319,7 @@ def draw_lines(
     return lines
 
 
-def extract_streams(
+def _extract_streams_core(
     fac_path: str,
     fdr_path: str,
     output_dir: str,

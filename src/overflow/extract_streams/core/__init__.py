@@ -1,6 +1,6 @@
 from .extract_streams import (
+    _extract_streams_core,
     add_downstream_junctions,
-    extract_streams,
     find_node_cells,
     get_downstream_cell,
     get_stream_raster,
@@ -11,7 +11,7 @@ from .extract_streams import (
 )
 
 __all__ = [
-    "extract_streams",
+    "_extract_streams_core",
     "get_downstream_cell",
     "find_node_cells",
     "get_stream_raster",

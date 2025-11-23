@@ -97,7 +97,7 @@ def process_tile(
     return watersheds, local_graph, fdr_perimeter, tile_row, tile_col, tile_index
 
 
-def label_watersheds_tiled(
+def _label_watersheds_tiled(
     fdr_filepath: str,
     drainage_points: dict,
     output_filepath: str,

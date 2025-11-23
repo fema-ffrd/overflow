@@ -193,7 +193,7 @@ def single_tile_flow_accumulation(
     return flow_accumulation, links
 
 
-def flow_accumulation(fdr_path: str, output_fac_path: str) -> None:
+def _flow_accumulation(fdr_path: str, output_fac_path: str) -> None:
     """
     Generates a flow accumulation raster from a flow direction raster.
 

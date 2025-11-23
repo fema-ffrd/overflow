@@ -1,3 +1,3 @@
-from .basins_tiled import label_watersheds_tiled
+from .basins_tiled import _label_watersheds_tiled
 
-__all__ = ["label_watersheds_tiled"]
+__all__ = ["_label_watersheds_tiled"]

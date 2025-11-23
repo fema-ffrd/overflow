@@ -98,7 +98,7 @@ def calculate_slope(
     )
 
 
-def flow_direction(
+def _flow_direction(
     input_path: str,
     output_path: str,
     chunk_size: int = 4000,

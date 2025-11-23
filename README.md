@@ -142,7 +142,7 @@ Overflow provides a comprehensive command line interface for processing DEMs and
 overflow process-dem \
     --dem_file input.tif \
     --output_dir results \
-    --chunk_size 2000 \
+    --chunk_size 512 \
     --search_radius_ft 200 \
     --da_sqmi 1 \
     --basins \
@@ -156,7 +156,7 @@ overflow process-dem \
 overflow breach-single-cell-pits \
     --input_file dem.tif \
     --output_file breached.tif \
-    --chunk_size 2000
+    --chunk_size 512
 ```
 
 #### Breach Paths (Least Cost)
@@ -164,7 +164,7 @@ overflow breach-single-cell-pits \
 overflow breach-paths-least-cost \
     --input_file dem.tif \
     --output_file breached.tif \
-    --chunk_size 2000 \
+    --chunk_size 512 \
     --search_radius 200 \
     --max_cost 100
 ```
@@ -174,7 +174,7 @@ overflow breach-paths-least-cost \
 overflow fill-depressions \
     --dem_file dem.tif \
     --output_file filled.tif \
-    --chunk_size 2000 \
+    --chunk_size 512 \
     --working_dir temp \
     --fill_holes
 ```
@@ -184,7 +184,7 @@ overflow fill-depressions \
 overflow flow-direction \
     --input_file dem.tif \
     --output_file flowdir.tif \
-    --chunk_size 2000
+    --chunk_size 512
 ```
 
 #### Fix Flats in Flow Direction
@@ -193,7 +193,7 @@ overflow fix-flats \
     --dem_file dem.tif \
     --fdr_file flowdir.tif \
     --output_file flowdir_fixed.tif \
-    --chunk_size 2000 \
+    --chunk_size 512 \
     --working_dir temp
 ```
 
@@ -202,7 +202,7 @@ overflow fix-flats \
 overflow flow-accumulation \
     --fdr_file flowdir.tif \
     --output_file flowacc.tif \
-    --chunk_size 2000
+    --chunk_size 512
 ```
 
 #### Extract Stream Network
@@ -212,7 +212,7 @@ overflow extract-streams \
     --fdr_file flowdir.tif \
     --output_dir streams \
     --cell_count_threshold 5 \
-    --chunk_size 2000
+    --chunk_size 512
 ```
 
 #### Delineate Watersheds
@@ -221,13 +221,13 @@ overflow label-watersheds \
     --fdr_file flowdir.tif \
     --dp_file points.gpkg \
     --output_file basins.tif \
-    --chunk_size 2000 \
+    --chunk_size 512 \
     --all_basins
 ```
 
 ### Key Parameters
 
-- `chunk_size`: Controls tile size for processing. Larger values use more memory but may be faster. Default is 2000.
+- `chunk_size`: Controls tile size for processing. Larger values use more memory but may be faster. Default is 512.
 - `search_radius`: Distance to search for breach paths (in cells).
 - `search_radius_ft`: Distance to search for breach paths (in feet, automatically converted to cells).
 - `da_sqmi`: Minimum drainage area in square miles for stream extraction.
@@ -256,14 +256,14 @@ from overflow import breach_single_cell_pits, breach_paths_least_cost
 breach_single_cell_pits(
     input_path="dem.tif",
     output_path="breached_pits.tif",
-    chunk_size=2000
+    chunk_size=512
 )
 
 # Breach paths using least cost algorithm
 breach_paths_least_cost(
     input_path="dem.tif",
     output_path="breached_paths.tif",
-    chunk_size=2000,
+    chunk_size=512,
     search_radius=200,  # cells to search for breach path
     max_cost=100       # maximum elevation that can be removed
 )
@@ -285,7 +285,7 @@ fill_depressions(
 fill_depressions_tiled(
     dem_file="dem.tif",
     output_file="filled.tif",
-    chunk_size=2000,
+    chunk_size=512,
     working_dir="temp",
     fill_holes=True
 )
@@ -302,7 +302,7 @@ from overflow.fix_flats.tiled import fix_flats_tiled
 flow_direction(
     input_path="dem.tif",
     output_path="flowdir.tif",
-    chunk_size=2000
+    chunk_size=512
 )
 
 # Fix flats in-memory
@@ -317,7 +317,7 @@ fix_flats_tiled(
     dem_file="dem.tif",
     fdr_file="flowdir.tif",
     output_file="flowdir_fixed.tif",
-    chunk_size=2000,
+    chunk_size=512,
     working_dir="temp"
 )
 ```
@@ -337,7 +337,7 @@ flow_accumulation(
 flow_accumulation_tiled(
     fdr_file="flowdir.tif",
     output_file="flowacc.tif",
-    chunk_size=2000
+    chunk_size=512
 )
 ```
 
@@ -360,7 +360,7 @@ extract_streams_tiled(
     fdr_file="flowdir.tif",
     output_dir="results",
     cell_count_threshold=1000,
-    chunk_size=2000
+    chunk_size=512
 )
 ```
 
@@ -392,7 +392,7 @@ label_watersheds_tiled(
     fdr_filepath="flowdir.tif",
     drainage_points=drainage_points,
     output_file="basins.tif",
-    chunk_size=2000,
+    chunk_size=512,
     all_basins=True
 )
 ```

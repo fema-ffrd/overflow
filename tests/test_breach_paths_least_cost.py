@@ -7,10 +7,10 @@ from overflow.breach_paths_least_cost import (
     DEFAULT_SEARCH_RADIUS,
     EPSILON_GRADIENT,
     UNVISITED_INDEX,
+    _breach_paths_least_cost,
     breach_all_pits_in_chunk_least_cost,
-    breach_paths_least_cost,
 )
-from overflow.cli import breach_paths_least_cost_cli
+from overflow.cli import breach_cli
 
 
 @pytest.fixture(name="dem_with_pit")
@@ -245,7 +245,7 @@ def test_breach_paths_least_cost_chunk_with_nodata(dem_with_pit_and_nodata):
 def test_dem_from_file(dem_from_file):
     """Same as test_breach_paths_least_cost_chunk but using a file."""
     output_path = "/vsimem/dem_from_file_breached.tif"
-    breach_paths_least_cost(
+    _breach_paths_least_cost(
         dem_from_file,
         output_path,
         chunk_size=7,
@@ -273,7 +273,7 @@ def test_dem_from_file(dem_from_file):
 def test_breach_paths_least_cost_random(random_dem_from_file, random_dem):
     """Test that the expected breach path is created."""
     output_path = "/vsimem/test_raster_breach_path_random.tif"
-    breach_paths_least_cost(
+    _breach_paths_least_cost(
         random_dem_from_file,
         output_path,
         chunk_size=1000,
@@ -286,12 +286,12 @@ def test_breach_paths_least_cost_random(random_dem_from_file, random_dem):
     gdal.Unlink(output_path)
 
 
-def test_breach_paths_least_cost_cli(dem_from_file):
+def test_breach_cli(dem_from_file):
     """Test the CLI."""
-    output_path = "/vsimem/test_breach_paths_least_cost_cli.tif"
+    output_path = "/vsimem/test_breach_cli.tif"
     runner = click.testing.CliRunner()
     result = runner.invoke(
-        breach_paths_least_cost_cli,
+        breach_cli,
         [
             "--input_file",
             dem_from_file,

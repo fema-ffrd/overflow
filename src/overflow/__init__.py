@@ -1,50 +1,320 @@
 """
 Overflow - High-performance Python library for hydrological terrain analysis.
+
+Simplified API:
+- breach: Breach pits using least-cost paths
+- fill: Fill depressions in a DEM
+- flow_direction: Compute D8 flow directions and resolve flats
+- accumulation: Calculate flow accumulation
+- basins: Delineate drainage basins from drainage points
+- streams: Extract stream networks
+- flow_length: Calculate upstream flow length (longest flow path)
 """
 
-# Import core functions to make them available from the top-level package
-from overflow.basins.core import drainage_points_from_file, label_watersheds_from_file
-from overflow.basins.tiled import label_watersheds_tiled
-from overflow.breach_paths_least_cost import breach_paths_least_cost
-from overflow.breach_single_cell_pits import breach_single_cell_pits
-from overflow.extract_streams.core import extract_streams
-from overflow.extract_streams.tiled import extract_streams_tiled
-from overflow.fill_depressions.core import fill_depressions
-from overflow.fill_depressions.tiled import fill_depressions_tiled
-from overflow.fix_flats.core import fix_flats_from_file
-from overflow.fix_flats.tiled import fix_flats_tiled
-from overflow.flow_accumulation.core import flow_accumulation
-from overflow.flow_accumulation.tiled import flow_accumulation_tiled
-from overflow.flow_direction import flow_direction
+from overflow.basins.core import (
+    _drainage_points_from_file,
+    _label_watersheds_core,
+)
+from overflow.basins.tiled import _label_watersheds_tiled
+from overflow.breach_paths_least_cost import _breach_paths_least_cost
+from overflow.codes import FlowDirection
+from overflow.extract_streams.core import _extract_streams_core
+from overflow.extract_streams.tiled import _extract_streams_tiled
+from overflow.fill_depressions.core import _fill_depressions
+from overflow.fill_depressions.tiled import _fill_depressions_tiled
+from overflow.flow_accumulation.core import _flow_accumulation
+from overflow.flow_accumulation.tiled import _flow_accumulation_tiled
+from overflow.flow_direction import _flow_direction
+from overflow.longest_flow_path import _flow_length_core
+from overflow.resolve_flats.core import _resolve_flats_core
+from overflow.resolve_flats.tiled import _resolve_flats_tiled
 from overflow.util.constants import DEFAULT_CHUNK_SIZE, DEFAULT_SEARCH_RADIUS
-from overflow.util.raster import feet_to_cell_count, sqmi_to_cell_count
+from overflow.util.progress import ProgressCallback
+from overflow.util.raster import feet_to_cell_count as _feet_to_cell_count
 
 __version__ = "0.2.5"
 
+
+def breach(
+    input_path: str,
+    output_path: str,
+    chunk_size: int = DEFAULT_CHUNK_SIZE,
+    search_radius: int = DEFAULT_SEARCH_RADIUS,
+    max_cost: float = float("inf"),
+    progress_callback: ProgressCallback | None = None,
+) -> None:
+    """
+    Breach pits in a DEM using least-cost paths.
+
+    This function identifies pits (local minima) in the DEM and creates breach
+    paths to allow water to flow out, minimizing the total elevation change.
+
+    Args:
+        input_path: Path to the input DEM raster file.
+        output_path: Path for the output breached DEM raster file.
+        chunk_size: Size of processing chunks in pixels. Default is 4096.
+        search_radius: Maximum search radius for finding breach paths in cells.
+            Default is 50.
+        max_cost: Maximum allowed cost (total elevation change) for breach paths.
+            Default is infinity (no limit).
+        progress_callback: Optional callback function for progress reporting.
+            Receives a float value between 0 and 1.
+    """
+    _breach_paths_least_cost(
+        input_path, output_path, chunk_size, search_radius, max_cost, progress_callback
+    )
+
+
+def fill(
+    input_path: str,
+    output_path: str | None = None,
+    chunk_size: int = DEFAULT_CHUNK_SIZE,
+    working_dir: str | None = None,
+    fill_holes: bool = False,
+    progress_callback: ProgressCallback | None = None,
+) -> None:
+    """
+    Fill depressions in a DEM using priority flood algorithm.
+
+    This function fills local depressions (sinks) in the DEM to create a
+    hydrologically conditioned surface where water can flow to the edges.
+
+    Args:
+        input_path: Path to the input DEM raster file.
+        output_path: Path for the output filled DEM raster file.
+            If None, the input file is modified in place.
+        chunk_size: Size of processing chunks in pixels. Use chunk_size <= 1 for
+            in-memory processing (suitable for smaller DEMs). Default is 4096.
+        working_dir: Directory for temporary files during tiled processing.
+            If None, uses system temp directory.
+        fill_holes: If True, also fills holes (nodata regions) in the DEM.
+        progress_callback: Optional callback function for progress reporting.
+            Receives a float value between 0 and 1.
+    """
+    if chunk_size <= 1:
+        _fill_depressions(input_path, output_path, fill_holes)
+    else:
+        _fill_depressions_tiled(
+            input_path,
+            output_path,
+            chunk_size,
+            working_dir,
+            fill_holes,
+            progress_callback,
+        )
+
+
+def flow_direction(
+    input_path: str,
+    output_path: str,
+    chunk_size: int = DEFAULT_CHUNK_SIZE,
+    working_dir: str | None = None,
+    resolve_flats: bool = True,
+    progress_callback: ProgressCallback | None = None,
+) -> None:
+    """
+    Compute D8 flow directions from a DEM and optionally resolve flat areas.
+
+    This function calculates the steepest descent direction for each cell using
+    the D8 algorithm, then optionally resolves flat areas to ensure continuous
+    flow paths.
+
+    Args:
+        input_path: Path to the input DEM raster file (should be hydrologically
+            conditioned, e.g., filled or breached).
+        output_path: Path for the output flow direction raster file.
+        chunk_size: Size of processing chunks in pixels. Use chunk_size <= 1 for
+            in-memory processing. Default is 4096.
+        working_dir: Directory for temporary files during tiled processing.
+            If None, uses system temp directory.
+        resolve_flats: If True (default), resolve flat areas in the flow direction
+            raster to ensure water flows toward lower terrain.
+        progress_callback: Optional callback function for progress reporting.
+            Receives a float value between 0 and 1.
+    """
+    # Compute initial flow directions
+    _flow_direction(input_path, output_path, chunk_size, progress_callback)
+
+    # Resolve flat areas if requested
+    if resolve_flats:
+        if chunk_size <= 1:
+            _resolve_flats_core(input_path, output_path, None)
+        else:
+            _resolve_flats_tiled(
+                input_path,
+                output_path,
+                None,
+                chunk_size,
+                working_dir,
+                progress_callback,
+            )
+
+
+def accumulation(
+    input_path: str,
+    output_path: str,
+    chunk_size: int = DEFAULT_CHUNK_SIZE,
+    progress_callback: ProgressCallback | None = None,
+) -> None:
+    """
+    Calculate flow accumulation from a flow direction raster.
+
+    This function computes the number of upstream cells that flow into each
+    cell, representing drainage area in cell units.
+
+    Args:
+        input_path: Path to the input flow direction raster file.
+        output_path: Path for the output flow accumulation raster file.
+        chunk_size: Size of processing chunks in pixels. Use chunk_size <= 1 for
+            in-memory processing. Default is 4096.
+        progress_callback: Optional callback function for progress reporting.
+            Receives a float value between 0 and 1.
+    """
+    if chunk_size <= 1:
+        _flow_accumulation(input_path, output_path)
+    else:
+        _flow_accumulation_tiled(input_path, output_path, chunk_size, progress_callback)
+
+
+def basins(
+    fdr_path: str,
+    drainage_points_path: str,
+    output_path: str,
+    chunk_size: int = DEFAULT_CHUNK_SIZE,
+    all_basins: bool = False,
+    layer_name: str | None = None,
+    progress_callback: ProgressCallback | None = None,
+) -> None:
+    """
+    Delineate drainage basins from a flow direction raster and drainage points.
+
+    This function labels each cell with the ID of its downstream drainage point,
+    effectively delineating basin boundaries.
+
+    Args:
+        fdr_path: Path to the input flow direction raster file.
+        drainage_points_path: Path to the drainage points vector file.
+        output_path: Path for the output basins raster file.
+        chunk_size: Size of processing chunks in pixels. Use chunk_size <= 1 for
+            in-memory processing. Default is 4096.
+        all_basins: If True, label all basins including those not draining to
+            specified points. Default is False.
+        layer_name: Name of the layer in the drainage points file to use.
+            If None, uses the first layer.
+        progress_callback: Optional callback function for progress reporting.
+            Receives a float value between 0 and 1.
+    """
+    if chunk_size <= 1:
+        _label_watersheds_core(
+            fdr_path, drainage_points_path, output_path, all_basins, layer_name
+        )
+    else:
+        drainage_points, _ = _drainage_points_from_file(
+            fdr_path, drainage_points_path, layer_name
+        )
+        _label_watersheds_tiled(
+            fdr_path,
+            drainage_points,
+            output_path,
+            chunk_size,
+            all_basins,
+            progress_callback,
+        )
+
+
+def streams(
+    fac_path: str,
+    fdr_path: str,
+    output_dir: str,
+    threshold: int,
+    chunk_size: int = DEFAULT_CHUNK_SIZE,
+    progress_callback: ProgressCallback | None = None,
+) -> None:
+    """
+    Extract stream networks from flow accumulation and direction rasters.
+
+    This function identifies stream cells based on a flow accumulation threshold
+    and creates vector stream lines and junction points.
+
+    Args:
+        fac_path: Path to the input flow accumulation raster file.
+        fdr_path: Path to the input flow direction raster file.
+        output_dir: Directory for output stream files (streams.gpkg will be created).
+        threshold: Minimum flow accumulation value (cell count) to define a stream.
+            Cells with accumulation >= threshold are considered streams.
+        chunk_size: Size of processing chunks in pixels. Use chunk_size <= 1 for
+            in-memory processing. Default is 4096.
+        progress_callback: Optional callback function for progress reporting.
+            Receives a float value between 0 and 1.
+    """
+    if chunk_size <= 1:
+        _extract_streams_core(
+            fac_path, fdr_path, output_dir, threshold, progress_callback
+        )
+    else:
+        _extract_streams_tiled(
+            fac_path, fdr_path, output_dir, threshold, chunk_size, progress_callback
+        )
+
+
+def flow_length(
+    fdr_path: str,
+    drainage_points_path: str,
+    output_raster: str,
+    output_vector: str | None = None,
+    fac_path: str | None = None,
+    snap_radius_ft: float = 0,
+    layer_name: str | None = None,
+) -> None:
+    """
+    Calculate upstream flow length (longest flow path) from drainage points.
+
+    This function calculates the distance from each cell to its downstream
+    drainage point, measured along the flow path. The cell with the maximum
+    flow length in each basin represents the longest flow path origin.
+
+    Args:
+        fdr_path: Path to the input flow direction raster file.
+        drainage_points_path: Path to the drainage points vector file.
+        output_raster: Path for the output flow length raster file (GeoTIFF).
+            Values represent upstream flow distance in map units (or meters
+            for geographic CRS).
+        output_vector: Path for the output longest flow path vectors (GeoPackage).
+            If None, vector output is not created.
+        fac_path: Path to flow accumulation raster for snapping drainage points.
+            If None, no snapping is performed.
+        snap_radius_ft: Radius in feet to search for maximum flow accumulation
+            when snapping drainage points. If 0 or fac_path is None, no snapping.
+        layer_name: Name of the layer in the drainage points file to use.
+            If None, uses the first layer.
+    """
+    # Convert snap radius from feet to cells
+    snap_radius_cells = 0
+    if fac_path is not None and snap_radius_ft > 0:
+        snap_radius_cells = _feet_to_cell_count(snap_radius_ft, fdr_path)
+
+    _flow_length_core(
+        fdr_path,
+        drainage_points_path,
+        output_raster,
+        output_vector,
+        layer_name,
+        fac_path,
+        snap_radius_cells,
+    )
+
+
 __all__ = [
-    # Breaching
-    "breach_single_cell_pits",
-    "breach_paths_least_cost",
-    # Depression filling
-    "fill_depressions",
-    "fill_depressions_tiled",
-    # Flow direction
+    # Core functions (simplified API)
+    "breach",
+    "fill",
     "flow_direction",
-    "fix_flats_from_file",
-    "fix_flats_tiled",
-    # Flow accumulation
-    "flow_accumulation",
-    "flow_accumulation_tiled",
-    # Stream extraction
-    "extract_streams",
-    "extract_streams_tiled",
-    # Watershed delineation
-    "label_watersheds_from_file",
-    "drainage_points_from_file",
-    "label_watersheds_tiled",
-    # Utilities
-    "sqmi_to_cell_count",
-    "feet_to_cell_count",
-    "DEFAULT_CHUNK_SIZE",
-    "DEFAULT_SEARCH_RADIUS",
+    "accumulation",
+    "basins",
+    "streams",
+    "flow_length",
+    # Enums
+    "FlowDirection",
+    # Types
+    "ProgressCallback",
 ]

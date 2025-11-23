@@ -6,7 +6,7 @@ import pytest
 from osgeo import gdal
 
 from overflow.flow_accumulation.core import single_tile_flow_accumulation
-from overflow.flow_accumulation.tiled import flow_accumulation_tiled
+from overflow.flow_accumulation.tiled import _flow_accumulation_tiled
 from overflow.util.constants import (
     FLOW_ACCUMULATION_NODATA,
     FLOW_DIRECTION_NODATA,
@@ -221,7 +221,7 @@ def test_tiled_flow_accumulation(fdr_file_paths, fdr_arrays, tile_size, fdr_key)
     fdr = fdr_arrays[fdr_key]
 
     with temporary_dataset() as output_path:
-        flow_accumulation_tiled(fdr_path, output_path, tile_size)
+        _flow_accumulation_tiled(fdr_path, output_path, tile_size)
         fac = read_output_dataset(output_path)
 
         expected_fac, _ = single_tile_flow_accumulation(fdr)
@@ -239,7 +239,7 @@ def test_tiled_flow_accumulation_with_nodata(fdr_file_paths):
     fdr_ds = None
 
     with temporary_dataset() as output_path:
-        flow_accumulation_tiled(fdr_path, output_path, 4)
+        _flow_accumulation_tiled(fdr_path, output_path, 4)
         fac = read_output_dataset(output_path)
 
         expected_fac, _ = single_tile_flow_accumulation(fdr)

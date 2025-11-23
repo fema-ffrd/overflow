@@ -6,11 +6,11 @@ from numba.types import UniTuple
 from osgeo import gdal, ogr, osr
 
 from overflow.basins.core import (
-    drainage_points_from_file,
+    _drainage_points_from_file,
     label_watersheds,
     update_drainage_points_file,
 )
-from overflow.basins.tiled import label_watersheds_tiled
+from overflow.basins.tiled import _label_watersheds_tiled
 from overflow.util.constants import FLOW_DIRECTION_NODATA
 
 
@@ -137,7 +137,7 @@ def test_label_watersheds_tiled(
 ):
     """Test the label_watersheds_tiled function."""
     output_path = "/vsimem/watersheds.tif"
-    graph = label_watersheds_tiled(
+    graph = _label_watersheds_tiled(
         test_fdr_with_drainage_points_filepath,
         test_drainage_points,
         output_path,
@@ -214,7 +214,7 @@ def test_drainage_points_from_file_returns_fid_mapping(
     test_fdr_with_drainage_points_filepath, test_drainage_points_gpkg
 ):
     """Test that drainage_points_from_file returns both drainage_points and fid_mapping."""
-    drainage_points, fid_mapping = drainage_points_from_file(
+    drainage_points, fid_mapping = _drainage_points_from_file(
         test_fdr_with_drainage_points_filepath,
         test_drainage_points_gpkg,
     )
@@ -239,7 +239,7 @@ def test_update_drainage_points_file(
 ):
     """Test that update_drainage_points_file adds basin_id and ds_basin_id fields."""
     # Load drainage points from file
-    drainage_points, fid_mapping = drainage_points_from_file(
+    drainage_points, fid_mapping = _drainage_points_from_file(
         test_fdr_with_drainage_points_filepath,
         test_drainage_points_gpkg,
     )

@@ -157,7 +157,7 @@ def raise_tile(
     return dem, tile_row, tile_col
 
 
-def fill_depressions_tiled(
+def _fill_depressions_tiled(
     input_path: str,
     output_path: str | None,
     chunk_size: int,

@@ -7,7 +7,7 @@ from numba.typed import Dict, List
 from numba.types import int64
 from osgeo import gdal, ogr, osr
 
-from overflow.longest_flow_path import longest_flow_path_from_file
+from overflow.longest_flow_path import _flow_length_core
 from overflow.longest_flow_path.core.longest_flow_path import (
     calculate_flow_distance_geographic,
     calculate_flow_distance_projected,
@@ -229,10 +229,11 @@ def read_flow_length(flow_length_filepath: str) -> np.ndarray:
 def test_single_outlet_longest_flow_path(
     single_outlet_fdr_file, single_drainage_point_file
 ):
-    longest_flow_path_from_file(
+    _flow_length_core(
         single_outlet_fdr_file,
         single_drainage_point_file,
-        output_file="/vsimem/output.tif",
+        output_raster="/vsimem/output.tif",
+        output_vector="/vsimem/output_paths.gpkg",
         layer_name="points",
     )
     paths = lines_to_paths("/vsimem/output_paths.gpkg")
@@ -300,10 +301,11 @@ def test_single_outlet_longest_flow_path(
 
 
 def test_two_outlet_longest_flow_path(two_outlet_fdr_file, multi_drainage_point_file):
-    longest_flow_path_from_file(
+    _flow_length_core(
         two_outlet_fdr_file,
         multi_drainage_point_file,
-        output_file="/vsimem/output.tif",
+        output_raster="/vsimem/output.tif",
+        output_vector="/vsimem/output_paths.gpkg",
         layer_name="points",
     )
     paths = lines_to_paths("/vsimem/output_paths.gpkg")

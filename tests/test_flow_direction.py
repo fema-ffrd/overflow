@@ -4,7 +4,7 @@ import pytest
 from osgeo import gdal
 
 from overflow.cli import flow_direction_cli
-from overflow.flow_direction import flow_direction, flow_direction_for_tile
+from overflow.flow_direction import _flow_direction, flow_direction_for_tile
 from overflow.util.constants import (
     FLOW_DIRECTION_EAST,
     FLOW_DIRECTION_NORTH,
@@ -122,7 +122,7 @@ def fixture_expected_fdr():
 def test_flow_direction_from_file(raster_file_path, expected_fdr):
     """Test the flow direction function from a raster file."""
     results_path = "/vsimem/test_flow_direction_results.tif"
-    flow_direction(raster_file_path, results_path, chunk_size=5)
+    _flow_direction(raster_file_path, results_path, chunk_size=5)
     result = gdal.Open(results_path)
     band = result.GetRasterBand(1)
     fdr = band.ReadAsArray()

@@ -4,7 +4,7 @@ from numba import typed, types
 from osgeo import gdal
 
 from overflow.fill_depressions.core import make_sides, priority_flood_tile
-from overflow.fill_depressions.tiled import fill_depressions_tiled
+from overflow.fill_depressions.tiled import _fill_depressions_tiled
 from overflow.fill_depressions.tiled.global_state import handle_corner, handle_edge
 
 
@@ -219,7 +219,7 @@ def test_fill_depressions_tiled(dem_filepath, expected_filled_dem_values):
     working_dir = "/vsimem"
     chunk_size = 2
     output_filepath = "/vsimem/filled_dem.tif"
-    fill_depressions_tiled(dem_filepath, output_filepath, chunk_size, working_dir)
+    _fill_depressions_tiled(dem_filepath, output_filepath, chunk_size, working_dir)
     ds = gdal.Open(output_filepath)
     band = ds.GetRasterBand(1)
     filled_dem = band.ReadAsArray()

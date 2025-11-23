@@ -351,10 +351,20 @@ def fix_flats(
         return flow_dirs_copy
 
 
-def fix_flats_from_file(
+def _resolve_flats_core(
     dem_filepath: str, flow_dirs_filepath: str, output_filepath: str | None
 ) -> None:
-    """Runs fix_flats on a DEM and flow direction raster on disk and writes the output to a new file."""
+    """Resolve flat areas in a flow direction raster using DEM elevations.
+
+    This function reads a DEM and flow direction raster from disk, resolves flat
+    areas by assigning proper flow directions, and writes the result.
+
+    Args:
+        dem_filepath: Path to the input DEM raster file.
+        flow_dirs_filepath: Path to the input flow direction raster file.
+        output_filepath: Path for the output resolved flow direction raster.
+            If None, the input flow direction file is modified in place.
+    """
     dem_ds = open_dataset(dem_filepath)
     fdr_ds = open_dataset(
         flow_dirs_filepath,
