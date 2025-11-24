@@ -72,6 +72,8 @@ Large search radii substantially increase processing time. Profile with typical 
 !!! warning
     For performance reasons, this implementation is **non-deterministic** and may produce slight differences between runs. In practice this is an acceptible behavior. Ideally, all pits would be sorted and breached sequentially from lowest to highest elevation, since some breach paths can be resolved using paths created from other pits. Overflow does not perform this sequencing; it breaches all pits in parallel regardless of their elevations. As a result, race conditions can lead to different breach paths and, in some cases, the creation of new pits. **You must run the `fill` process after breaching** to ensure that no pits remain.
 
+    If you need deterministic behavior, consider using the `fill` method alone instead of in combination with `breach` or setting the environment variable `NUMBA_NUM_THREADS` to 1 (although this will impact performance).
+
 ## See Also
 
 - [Fill](fill.md) - Depression removal method using priority flood fill algorithm

@@ -585,7 +585,7 @@ def pipeline_cli(
                     with progress_display.progress_context("Breaching pits"):
                         breach(
                             dem_file,
-                            f"{output_dir}/dem_corrected.tif",
+                            f"{output_dir}/dem_breached.tif",
                             core_chunk_size,
                             search_radius,
                             max_cost,
@@ -595,8 +595,8 @@ def pipeline_cli(
                 with timer("Filling", spinner=False):
                     with progress_display.progress_context("Filling depressions"):
                         fill(
-                            f"{output_dir}/dem_corrected.tif",
-                            None,
+                            f"{output_dir}/dem_breached.tif",
+                            f"{output_dir}/dem_filled.tif",
                             chunk_size if chunk_size > 0 else 0,
                             output_dir,
                             fill_holes,
@@ -607,7 +607,7 @@ def pipeline_cli(
                     with progress_display.progress_context("Filling depressions"):
                         fill(
                             dem_file,
-                            f"{output_dir}/dem_corrected.tif",
+                            f"{output_dir}/dem_filled.tif",
                             chunk_size if chunk_size > 0 else 0,
                             output_dir,
                             fill_holes,
@@ -615,13 +615,13 @@ def pipeline_cli(
                         )
 
             resource_stats.add_output_file(
-                "Corrected DEM", f"{output_dir}/dem_corrected.tif"
+                "Corrected DEM", f"{output_dir}/dem_filled.tif"
             )
 
             with timer("Flow direction", spinner=False):
                 with progress_display.progress_context("Computing flow direction"):
                     flow_direction(
-                        f"{output_dir}/dem_corrected.tif",
+                        f"{output_dir}/dem_filled.tif",
                         f"{output_dir}/fdr.tif",
                         core_chunk_size,
                         output_dir,

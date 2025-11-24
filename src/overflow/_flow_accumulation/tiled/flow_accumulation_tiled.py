@@ -29,9 +29,6 @@ from overflow._util.raster import (
 
 from .global_state import GlobalState
 
-# TODO: Thre appears to be a race condition bug when solving the tiles in parallel with Numba.
-# This needs to be investigated and fixed. Occurs intermittently and may require multiple runs to reproduce.
-
 
 @njit(nogil=True)
 def calculate_flow_accumulation_tile(
