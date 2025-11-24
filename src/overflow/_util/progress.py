@@ -15,20 +15,29 @@ class ProgressCallback(Protocol):
     * **Message**: Detail within a step (e.g., 'Chunk 28/36').
     * **Progress**: Float (0.0-1.0) representing completion of the current step.
 
-    Args:
-        phase (str | None): The name of the high-level phase. If `None`, the
-            previously set phase is preserved.
-        step_name (str | None): The name of the current step within the phase.
-            If `None`, the previously set step is preserved.
-        step_number (int): The current step number (1-indexed). Defaults to 0.
-        total_steps (int): The total number of steps expected in this phase.
-            Defaults to 0.
-        message (str): A detailed status message regarding the current activity.
-        progress (float): The normalized progress of the current step, ranging
-            from 0.0 to 1.0.
+    Implementations should be callable with the following signature:
 
-    Returns:
-        None
+    ```python
+    def callback(
+        phase: str | None = None,
+        step_name: str | None = None,
+        step_number: int = 0,
+        total_steps: int = 0,
+        message: str = "",
+        progress: float = 0.0,
+    ) -> None: ...
+    ```
+
+    Where:
+
+    * **phase**: The name of the high-level phase. If `None`, the previously
+      set phase is preserved.
+    * **step_name**: The name of the current step within the phase. If `None`,
+      the previously set step is preserved.
+    * **step_number**: The current step number (1-indexed).
+    * **total_steps**: The total number of steps expected in this phase.
+    * **message**: A detailed status message regarding the current activity.
+    * **progress**: The normalized progress of the current step (0.0 to 1.0).
     """
 
     def __call__(
@@ -39,9 +48,7 @@ class ProgressCallback(Protocol):
         total_steps: int = 0,
         message: str = "",
         progress: float = 0.0,
-    ) -> None:
-        """Report progress for an operation."""
-        ...
+    ) -> None: ...
 
 
 def silent_callback(
