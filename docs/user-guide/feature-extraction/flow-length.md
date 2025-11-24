@@ -50,9 +50,9 @@ overflow.flow_length(
 )
 ```
 
-The output raster will contain cell values representing the distance in map units (meters for geographic coordinate systems) along flow paths to the first downstream drainage point. Drainage point cells have value 0. Values increase monotonically following the flow paths upstream. Nodata cells in the flow direction propogate as nodata in the output
+The output raster will contain cell values representing the distance in map units (meters for geographic coordinate systems) along flow paths to the first downstream drainage point. Drainage point cells have value 0. Values increase monotonically following the flow paths upstream. Nodata cells in the flow direction propagate as nodata in the output
 
-The output vector (when generated) contains one LineString feature per drainage point with vertices corresponding to cell centers along the flow path. The same spatial reference as the input is used and the paths are attributed with the feature IDs of teh provided drainage points.
+The output vector (when generated) contains one LineString feature per drainage point with vertices corresponding to cell centers along the flow path. The same spatial reference as the input is used and the paths are attributed with the feature IDs of the provided drainage points.
 
 ## Drainage Point Snapping
 

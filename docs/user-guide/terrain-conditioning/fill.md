@@ -16,7 +16,7 @@ Filling raises depression interiors rather than modifying barrier cells. Use fil
 Filling is typically applied after breaching to handle remaining depressions that breach cannot eliminate within search radius or cost constraints.
 
 !!! note
-    Filling does not resolve undefined flow in flat areas and will in fact create flat areas of undefined flow anywere that it fills. Apply `flow_direction()` with `resolve_flats=True` after breaching and filling.
+    Filling does not resolve undefined flow in flat areas and will in fact create flat areas of undefined flow anywhere that it fills. Apply `flow_direction()` with `resolve_flats=True` after breaching and filling.
 
 ## Parameters
 

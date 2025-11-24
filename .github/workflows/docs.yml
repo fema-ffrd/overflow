@@ -13,6 +13,22 @@ permissions:
   contents: write
 
 jobs:
+  spellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install codespell
+        run: pip install codespell
+
+      - name: Run spell checker
+        run: codespell docs/ *.md
+
   deploy:
     runs-on: ubuntu-latest
     steps:

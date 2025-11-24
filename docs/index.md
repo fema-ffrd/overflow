@@ -14,7 +14,7 @@ Overflow specializes in processing massive Digital Elevation Models (DEMs) throu
 
 ## Why Overflow?
 
-Traditional hydrological tools are often single-threded and rely on virtual-memory tiling (swapping memory to disk) to handle large datasets. This creates inefficient I/O patterns with no garuntees on how many times the same tile may be swapped into and out of memory. Given the wide availability of multi-core processors in modern computers and the increasing size of raster datasets used for hydrological analysis, existing tools are not well-suited for efficient processing of large-scale terrain data today. Overflow was developed to provide a modern solution for large-scale hydrological terrain analysis.
+Traditional hydrological tools are often single-threaded and rely on virtual-memory tiling (swapping memory to disk) to handle large datasets. This creates inefficient I/O patterns with no garuntees on how many times the same tile may be swapped into and out of memory. Given the wide availability of multi-core processors in modern computers and the increasing size of raster datasets used for hydrological analysis, existing tools are not well-suited for efficient processing of large-scale terrain data today. Overflow was developed to provide a modern solution for large-scale hydrological terrain analysis.
 
 Every workflow in Overflow is designed for parallel execution using Numba JIT-compiled algorithms. This is achieved through state-of-the-art tiled, topological approaches that implement efficient IO access patterns even for global operations. Processes in Overflow are guaranteed to complete in a fixed number of passes over the data and create results identical to the authoritative widely used algorithms, regardless of the dataset size.
 

@@ -37,7 +37,7 @@ overflow.accumulation(
 )
 ```
 
-The output raster values represent the total upstream cell count including self. The minimum value is 1 and values monotonically increase folloing flow paths downstream. Nodata cells have value -1 and are propogated down from the input.
+The output raster values represent the total upstream cell count including self. The minimum value is 1 and values monotonically increase following flow paths downstream. Nodata cells have value -1 and are propagated down from the input.
 
 !!! note
     The flow direction raster MUST have all non-nodata cells contain valid defined flow directions (0-7) and must not contain cycles. These requirements are met automatically when using `flow_direction()` with `resolve_flats=True` on properly conditioned DEM.

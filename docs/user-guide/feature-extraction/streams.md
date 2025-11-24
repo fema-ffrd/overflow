@@ -49,7 +49,7 @@ overflow.streams(
 
 The output `streams.gpkg` will contain two layers:
 
-* **streams**: The vectorized stream network of all cells with $\text{accumulation} \geq \text{threshold}$. The verticies of the polylines will be at the grid cell centers.
+* **streams**: The vectorized stream network of all cells with $\text{accumulation} \geq \text{threshold}$. The vertices of the polylines will be at the grid cell centers.
 * **junctions**: Points at the downstream end of each reach and the upstream most points of the stream network.
 
 ## See Also

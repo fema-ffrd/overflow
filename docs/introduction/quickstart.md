@@ -114,7 +114,7 @@ DEM constraints:
 - Single-band float32
 
 !!! warning
-    A projected coordinate system with consistent horizontal and vertical units is reccomended for best results.
+    A projected coordinate system with consistent horizontal and vertical units is recommended for best results.
 
 ## Documentation Structure
 

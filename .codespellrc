@@ -1,0 +1,13 @@
+[codespell]
+# Paths to skip
+skip = .git,*.pyc,__pycache__,.pytest_cache,*.egg-info,dist,build,.venv,.mypy_cache,.ruff_cache,site,*.svg,*.png,*.jpg,*.jpeg,*.gif
+
+# Files to check
+check-filenames =
+check-hidden =
+
+# Ignore specific words (comma-separated)
+ignore-words-list = ba,ans,te,fo,ue,nd,thirdparty,ot,inout,sur,socio-economic,socio,ba
+
+# Skip lines containing these patterns
+ignore-regex = (https?://|github\.com|githubusercontent\.com|pypi\.org)
