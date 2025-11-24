@@ -13,22 +13,22 @@ from overflow import (
     flow_direction,
     streams,
 )
-from overflow.basins.core import (
+from overflow._basins.core import (
     _drainage_points_from_file,
     label_watersheds,
     update_drainage_points_file,
 )
-from overflow.basins.tiled import _label_watersheds_tiled
-from overflow.longest_flow_path import _flow_length_core
-from overflow.util.cli_progress import RichProgressDisplay
-from overflow.util.constants import DEFAULT_CHUNK_SIZE, DEFAULT_SEARCH_RADIUS
-from overflow.util.raster import (
+from overflow._basins.tiled import _label_watersheds_tiled
+from overflow._longest_flow_path import _flow_length_core
+from overflow._util.cli_progress import RichProgressDisplay
+from overflow._util.constants import DEFAULT_CHUNK_SIZE, DEFAULT_SEARCH_RADIUS
+from overflow._util.raster import (
     create_dataset,
     feet_to_cell_count,
     snap_drainage_points,
     sqmi_to_cell_count,
 )
-from overflow.util.timer import console, resource_stats, timer
+from overflow._util.timer import console, resource_stats, timer
 
 # set gdal configuration
 gdal.UseExceptions()

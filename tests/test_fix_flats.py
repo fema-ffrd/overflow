@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from overflow.resolve_flats.core import (
+from overflow._resolve_flats.core import (
     away_from_higher,
     d8_masked_flow_dirs,
     fix_flats,
@@ -10,7 +10,7 @@ from overflow.resolve_flats.core import (
     resolve_flats,
     towards_lower,
 )
-from overflow.util.constants import (
+from overflow._util.constants import (
     FLOW_DIRECTION_EAST,
     FLOW_DIRECTION_NORTH,
     FLOW_DIRECTION_NORTH_EAST,

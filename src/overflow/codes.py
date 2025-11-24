@@ -1,6 +1,6 @@
 from enum import IntEnum, unique
 
-from overflow.util.constants import (
+from overflow._util.constants import (
     FLOW_DIRECTION_EAST,
     FLOW_DIRECTION_NODATA,
     FLOW_DIRECTION_NORTH,
@@ -23,6 +23,12 @@ class FlowDirection(IntEnum):
 
     The numeric values correspond to the index in the neighbor offset array,
     starting from East (0) and going counter-clockwise.
+
+    | 3 | 2 | 1 |
+    | :-: | :-: | :-: |
+    | 4 | 8 | 0 |
+    | 5 | 6 | 7 |
+
     """
 
     EAST = FLOW_DIRECTION_EAST

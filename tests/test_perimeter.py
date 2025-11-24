@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from overflow.util.perimeter import Int64Perimeter, get_tile_perimeter
-from overflow.util.raster import Corner, Side
+from overflow._util.perimeter import Int64Perimeter, get_tile_perimeter
+from overflow._util.raster import Corner, Side
 
 
 @pytest.fixture(name="test_edge_cells")

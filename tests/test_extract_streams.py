@@ -2,9 +2,9 @@ import numpy as np
 import pytest
 from osgeo import gdal, ogr, osr
 
-from overflow.extract_streams.core import _extract_streams_core
-from overflow.extract_streams.tiled import _extract_streams_tiled
-from overflow.util.constants import FLOW_ACCUMULATION_NODATA, FLOW_DIRECTION_NODATA
+from overflow._extract_streams.core import _extract_streams_core
+from overflow._extract_streams.tiled import _extract_streams_tiled
+from overflow._util.constants import FLOW_ACCUMULATION_NODATA, FLOW_DIRECTION_NODATA
 
 
 @pytest.fixture(name="test_rasters")

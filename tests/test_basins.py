@@ -5,13 +5,13 @@ from numba.typed import Dict  # type: ignore[attr-defined]
 from numba.types import UniTuple
 from osgeo import gdal, ogr, osr
 
-from overflow.basins.core import (
+from overflow._basins.core import (
     _drainage_points_from_file,
     label_watersheds,
     update_drainage_points_file,
 )
-from overflow.basins.tiled import _label_watersheds_tiled
-from overflow.util.constants import FLOW_DIRECTION_NODATA
+from overflow._basins.tiled import _label_watersheds_tiled
+from overflow._util.constants import FLOW_DIRECTION_NODATA
 
 
 @pytest.fixture(name="test_fdr")

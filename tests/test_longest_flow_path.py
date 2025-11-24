@@ -7,8 +7,8 @@ from numba.typed import Dict, List
 from numba.types import int64
 from osgeo import gdal, ogr, osr
 
-from overflow.longest_flow_path import _flow_length_core
-from overflow.longest_flow_path.core.longest_flow_path import (
+from overflow._longest_flow_path import _flow_length_core
+from overflow._longest_flow_path.core.longest_flow_path import (
     calculate_flow_distance_geographic,
     calculate_flow_distance_projected,
     calculate_path_distance_geographic,
@@ -23,7 +23,7 @@ from overflow.longest_flow_path.core.longest_flow_path import (
     trace_longest_flow_path,
     trace_path_from_cell,
 )
-from overflow.util.constants import FLOW_DIRECTION_NODATA
+from overflow._util.constants import FLOW_DIRECTION_NODATA
 
 # =============================================================================
 # FDR Fixtures

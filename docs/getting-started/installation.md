@@ -62,11 +62,8 @@ docker pull ghcr.io/fema-ffrd/overflow:latest
 docker run -it -v $(pwd)/data:/mnt/data ghcr.io/fema-ffrd/overflow:latest \
     pipeline \
     --dem_file /mnt/data/dem.tif \
-    --output_dir /mnt/data/results \
-    --chunk_size 512
+    --output_dir /mnt/data/results
 ```
-
-See the Docker Usage Guide (TODO) for more details.
 
 ---
 
@@ -140,8 +137,3 @@ pytest
 
 Alternatively, you can use the devcontainer provided with the repository for a pre-configured development environment (recommended).
 
----
-
-## Next Steps
-
-TODO

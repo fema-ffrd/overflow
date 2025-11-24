@@ -3,9 +3,8 @@ import numpy as np
 import pytest
 from osgeo import gdal
 
-from overflow.cli import flow_direction_cli
-from overflow.flow_direction import _flow_direction, flow_direction_for_tile
-from overflow.util.constants import (
+from overflow._flow_direction import _flow_direction, flow_direction_for_tile
+from overflow._util.constants import (
     FLOW_DIRECTION_EAST,
     FLOW_DIRECTION_NORTH,
     FLOW_DIRECTION_NORTH_EAST,
@@ -16,6 +15,7 @@ from overflow.util.constants import (
     FLOW_DIRECTION_UNDEFINED,
     FLOW_DIRECTION_WEST,
 )
+from overflow.cli import flow_direction_cli
 
 
 @pytest.fixture(name="raster_file_path")

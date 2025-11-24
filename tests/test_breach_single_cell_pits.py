@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from osgeo import gdal
 
-from overflow.breach_single_cell_pits import (
+from overflow._breach_single_cell_pits import (
     breach_single_cell_pits,
     breach_single_cell_pits_in_chunk,
 )

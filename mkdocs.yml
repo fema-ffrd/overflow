@@ -27,14 +27,12 @@ theme:
     - navigation.instant
     - navigation.tracking
     - navigation.tabs
-    - navigation.tabs.sticky
     - navigation.sections
     - navigation.expand
     - navigation.path
     - navigation.top
     - navigation.footer
     - toc.follow
-    - toc.integrate
     - search.suggest
     - search.highlight
     - search.share
@@ -98,14 +96,44 @@ markdown_extensions:
 
 nav:
   - Home: index.md
+  - Introduction:
+      - Overview: introduction/overview.md
+      - Quick Start: introduction/quickstart.md
   - Getting Started:
       - Installation: getting-started/installation.md
+  - User Guide:
+      - Pipeline: user-guide/pipeline.md
+      - Terrain Conditioning:
+          - Breach: user-guide/terrain-conditioning/breach.md
+          - Fill: user-guide/terrain-conditioning/fill.md
+      - Flow Routing:
+          - Flow Direction: user-guide/flow-routing/flow-direction.md
+          - Flow Accumulation: user-guide/flow-routing/flow-accumulation.md
+      - Feature Extraction:
+          - Streams: user-guide/feature-extraction/streams.md
+          - Basins: user-guide/feature-extraction/basins.md
+          - Longest Flow Path: user-guide/feature-extraction/flow-length.md
+  - Algorithm Details:
+      - algorithm-details/index.md
+      - Terrain Conditioning:
+          - Breach: algorithm-details/breach.md
+          - Fill: algorithm-details/fill.md
+      - Flow Routing:
+          - Flow Direction: algorithm-details/flow-direction.md
+          - Flat Resolution: algorithm-details/flat-resolution.md
+          - Flow Accumulation: algorithm-details/flow-accumulation.md
+      - Feature Extraction:
+          - Stream Extraction: algorithm-details/stream-extraction.md
+          - Basin Delineation: algorithm-details/basin-delineation.md
+          - Flow Length: algorithm-details/flow-length.md
+  - Reference:
+      - API Reference: api/index.md
+      - CLI Reference: cli/index.md
 
 extra_javascript:
   - javascripts/katex.js
   - https://unpkg.com/katex@0/dist/katex.min.js
   - https://unpkg.com/katex@0/dist/contrib/auto-render.min.js
-
 
 extra_css:
   - https://unpkg.com/katex@0/dist/katex.min.css
@@ -115,4 +143,5 @@ extra:
     - icon: fontawesome/brands/github
       link: https://github.com/fema-ffrd/overflow
   version:
-    provider: mike
+    provider:
+      provider: mike

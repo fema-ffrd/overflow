@@ -5,9 +5,9 @@ import numpy as np
 import pytest
 from osgeo import gdal
 
-from overflow.flow_accumulation.core import single_tile_flow_accumulation
-from overflow.flow_accumulation.tiled import _flow_accumulation_tiled
-from overflow.util.constants import (
+from overflow._flow_accumulation.core import single_tile_flow_accumulation
+from overflow._flow_accumulation.tiled import _flow_accumulation_tiled
+from overflow._util.constants import (
     FLOW_ACCUMULATION_NODATA,
     FLOW_DIRECTION_NODATA,
     FLOW_EXTERNAL,

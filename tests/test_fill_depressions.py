@@ -3,9 +3,9 @@ import pytest
 from numba import typed, types
 from osgeo import gdal
 
-from overflow.fill_depressions.core import make_sides, priority_flood_tile
-from overflow.fill_depressions.tiled import _fill_depressions_tiled
-from overflow.fill_depressions.tiled.global_state import handle_corner, handle_edge
+from overflow._fill_depressions.core import make_sides, priority_flood_tile
+from overflow._fill_depressions.tiled import _fill_depressions_tiled
+from overflow._fill_depressions.tiled.global_state import handle_corner, handle_edge
 
 
 @pytest.fixture(name="dem_values")

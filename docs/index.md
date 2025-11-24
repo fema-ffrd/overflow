@@ -110,10 +110,7 @@ The `pipeline` command orchestrates the full sequence of conditioning, flow dire
 ```bash
 overflow pipeline \
     --dem_file raw_dem.tif \
-    --output_dir ./results \
-    --chunk_size 512 \
-    --search_radius_ft 200 \
-    --basins
+    --output_dir ./results
 ```
 
 ### Docker Support

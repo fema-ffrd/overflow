@@ -367,8 +367,8 @@ extract_streams_tiled(
 #### Watershed Delineation
 
 ```python
-from overflow.basins.core import label_watersheds_from_file, drainage_points_from_file
-from overflow.basins.tiled import label_watersheds_tiled
+from overflow._basins.core import label_watersheds_from_file, drainage_points_from_file
+from overflow._basins.tiled import label_watersheds_tiled
 
 # Get drainage points from vector file
 # Returns drainage_points dict and fid_mapping for updating the file later
@@ -422,7 +422,7 @@ label_watersheds_tiled(
 ### Unit Conversion Utilities
 
 ```python
-from overflow.util.raster import sqmi_to_cell_count, feet_to_cell_count
+from overflow._util.raster import sqmi_to_cell_count, feet_to_cell_count
 
 # Convert feet to cell count based on DEM resolution
 cells = feet_to_cell_count(200, "dem.tif")  # 200ft to cells

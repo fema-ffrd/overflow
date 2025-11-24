@@ -2,8 +2,8 @@ import numpy as np
 import pytest
 from osgeo import gdal
 
-from overflow.resolve_flats.tiled.resolve_flats_tiled import _resolve_flats_tiled
-from overflow.util.constants import (
+from overflow._resolve_flats.tiled.resolve_flats_tiled import _resolve_flats_tiled
+from overflow._util.constants import (
     FLOW_DIRECTION_EAST,
     FLOW_DIRECTION_NODATA,
     FLOW_DIRECTION_NORTH,

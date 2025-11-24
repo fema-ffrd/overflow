@@ -3,7 +3,7 @@ import numpy as np
 import pytest
 from osgeo import gdal
 
-from overflow.breach_paths_least_cost import (
+from overflow._breach_paths_least_cost import (
     DEFAULT_SEARCH_RADIUS,
     EPSILON_GRADIENT,
     UNVISITED_INDEX,
