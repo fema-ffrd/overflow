@@ -437,26 +437,32 @@
                     "displayName": "FDR File",
                     "name": "fdr_file",
                     "type": "file",
-                    "description": "path to the GDAL supported raster dataset for the flow direction (FDR)"
-                },
-                {
-                    "displayName": "FAC File",
-                    "name": "fac_file",
-                    "type": "file",
-                    "description": "path to the GDAL supported raster dataset for the flow accumulation (FAC)"
+                    "description": "path to the GDAL supported raster dataset for the flow direction"
                 },
                 {
                     "displayName": "Drainage Points File",
                     "name": "dp_file",
                     "type": "file",
-                    "description": "path to the drainage points file (OGR compatible format)"
+                    "description": "path to the drainage points file"
                 },
                 {
-                    "displayName": "Output File",
-                    "name": "output_file",
+                    "displayName": "Output Raster",
+                    "name": "output_raster",
                     "type": "file",
-                    "description": "path to the output file (must be GeoTiff)",
+                    "description": "path to the output raster file (must be GeoTiff)",
                     "direction": "output"
+                },
+                {
+                    "displayName": "Output Vector",
+                    "name": "output_vector",
+                    "type": "file",
+                    "description": "path to the output vector file (GeoPackage) for longest flow paths. If not provided, no vector output is created."
+                },
+                {
+                    "displayName": "FAC File",
+                    "name": "fac_file",
+                    "type": "file",
+                    "description": "path to the flow accumulation raster (optional, for snapping drainage points)"
                 },
                 {
                     "displayName": "Drainage Points Layer",
