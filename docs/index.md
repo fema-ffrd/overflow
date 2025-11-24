@@ -5,6 +5,9 @@ subtitle: Hydrological Terrain Analysis for Massive DEMs
 
 # Overflow
 
+!!! warning "Alpha Software"
+    This software is currently in **alpha** status. While functional, it may contain bugs, have incomplete features, and undergo breaking changes. Use in production environments at your own risk. We welcome feedback and bug reports on our [GitHub Issues](https://github.com/fema-ffrd/overflow/issues) page.
+
 Overflow specializes in processing massive Digital Elevation Models (DEMs) through parallel, tiled algorithms.
 
 ---
