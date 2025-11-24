@@ -34,7 +34,7 @@ from overflow._util.progress import ProgressCallback
 from overflow._util.raster import snap_drainage_points as _snap_drainage_points
 from overflow.codes import FlowDirection
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 
 
 def breach(
@@ -54,7 +54,7 @@ def breach(
     Args:
         input_path: Path to the input DEM raster file.
         output_path: Path for the output breached DEM raster file.
-        chunk_size: Size of processing chunks in pixels. Default is 512.
+        chunk_size: Size of processing chunks in pixels. Default is 2048.
         search_radius: Maximum search radius for finding breach paths in cells.
             Default is 50.
         max_cost: Maximum allowed cost (total elevation change) for breach paths.
@@ -86,7 +86,7 @@ def fill(
         output_path: Path for the output filled DEM raster file.
             If None, the input file is modified in place.
         chunk_size: Size of processing chunks in pixels. Use chunk_size <= 1 for
-            in-memory processing (suitable for smaller DEMs). Default is 512.
+            in-memory processing (suitable for smaller DEMs). Default is 2048.
         working_dir: Directory for temporary files during tiled processing.
             If None, uses system temp directory.
         fill_holes: If True, also fills holes (nodata regions) in the DEM.
@@ -113,6 +113,7 @@ def flow_direction(
     working_dir: str | None = None,
     resolve_flats: bool = True,
     progress_callback: ProgressCallback | None = None,
+    flat_resolution_chunk_size_max: int = 512,
 ) -> None:
     """
     Compute D8 flow directions from a DEM and optionally resolve flat areas.
@@ -126,13 +127,18 @@ def flow_direction(
             conditioned, e.g., filled or breached).
         output_path: Path for the output flow direction raster file.
         chunk_size: Size of processing chunks in pixels. Use chunk_size <= 1 for
-            in-memory processing. Default is 512.
+            in-memory processing. Default is 2048.
         working_dir: Directory for temporary files during tiled processing.
             If None, uses system temp directory.
         resolve_flats: If True (default), resolve flat areas in the flow direction
             raster to ensure water flows toward lower terrain.
         progress_callback: Optional callback function for progress reporting.
             Receives a float value between 0 and 1.
+        flat_resolution_chunk_size_max: Maximum chunk size for flat resolution processing.
+            Default is 512. This caps the chunk size used during flat resolution to prevent
+            performance issues in areas with large undefined flow regions. This is an advanced
+            parameter only available in the Python API. When chunk_size exceeds this value,
+            flat resolution will use this smaller chunk size instead
     """
     # Compute initial flow directions
     _flow_direction(input_path, output_path, chunk_size, progress_callback)
@@ -146,7 +152,7 @@ def flow_direction(
                 input_path,
                 output_path,
                 None,
-                chunk_size,
+                min(chunk_size, flat_resolution_chunk_size_max),
                 working_dir,
                 progress_callback,
             )
@@ -168,7 +174,7 @@ def accumulation(
         input_path: Path to the input flow direction raster file.
         output_path: Path for the output flow accumulation raster file.
         chunk_size: Size of processing chunks in pixels. Use chunk_size <= 1 for
-            in-memory processing. Default is 512.
+            in-memory processing. Default is 2048.
         progress_callback: Optional callback function for progress reporting.
             Receives a float value between 0 and 1.
     """
@@ -200,7 +206,7 @@ def basins(
         drainage_points_path: Path to the drainage points vector file.
         output_path: Path for the output basins raster file.
         chunk_size: Size of processing chunks in pixels. Use chunk_size <= 1 for
-            in-memory processing. Default is 512.
+            in-memory processing. Default is 2048.
         all_basins: If True, label all basins including those not draining to
             specified points. Default is False.
         fac_path: Path to flow accumulation raster for snapping drainage points.
@@ -263,7 +269,7 @@ def streams(
         threshold: Minimum flow accumulation value (cell count) to define a stream.
             Cells with accumulation >= threshold are considered streams.
         chunk_size: Size of processing chunks in pixels. Use chunk_size <= 1 for
-            in-memory processing. Default is 512.
+            in-memory processing. Default is 2048.
         progress_callback: Optional callback function for progress reporting.
             Receives a float value between 0 and 1.
     """

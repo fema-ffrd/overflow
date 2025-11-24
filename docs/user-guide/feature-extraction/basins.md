@@ -16,7 +16,7 @@ Path to drainage points vector file. Any GDAL-readable vector format (Shapefile,
 Path for basin raster output. Written as GeoTIFF. Int64 data type. Inherits projection and geotransform from flow direction input. Cell values have generated basin IDs. Nodata value -1.
 
 ### chunk_size
-Tile dimension in pixels. Default 512. Set to 0 or 1 for in-memory processing.
+Tile dimension in pixels. Default 2048. Set to 0 or 1 for in-memory processing.
 
 ### all_basins
 Boolean flag controlling basin labeling scope. When False (default), only cells draining to specified drainage points are labeled. Cells draining elsewhere receive nodata (-1). When True, all cells labeled including those not draining to specified points (e.g., off map flow).

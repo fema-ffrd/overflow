@@ -13,7 +13,7 @@ Path to flow direction raster. GDAL-readable format. Single band. UInt8 data typ
 Path for accumulation output. Written as GeoTIFF. Int64 data type. Inherits projection and geotransform from input. Nodata value set to -1. Values represent upstream cell count including the cell itself (minimum value 1 for cells with no upstream contributors).
 
 ### chunk_size
-Tile dimension in pixels. Default 512. Set to 0 or 1 for in-memory processing.
+Tile dimension in pixels. Default 2048. Set to 0 or 1 for in-memory processing.
 
 ### progress_callback
 Optional callback for monitoring long operations. See [ProgressCallback API](../../api/index.md#overflow.ProgressCallback).

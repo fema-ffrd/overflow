@@ -19,7 +19,7 @@ Directory for output files. Must exist, the function does not create the directo
 Minimum accumulation value for stream classification. Cells with $\text{accumulation} \geq \text{threshold}$ become stream cells. Controls stream network density. Lower values extract tributaries, higher values extract main channels only.
 
 ### chunk_size
-Tile dimension in pixels. Default 512. Set to 0 or 1 for in-memory processing.
+Tile dimension in pixels. Default 2048. Set to 0 or 1 for in-memory processing.
 
 ### progress_callback
 Optional callback for monitoring long operations. See [ProgressCallback API](../../api/index.md#overflow.ProgressCallback).

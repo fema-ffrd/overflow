@@ -78,7 +78,7 @@ overflow accumulation flowdir.tif flowacc.tif
 docker pull ghcr.io/fema-ffrd/overflow:latest
 
 docker run -v $(pwd):/data ghcr.io/fema-ffrd/overflow:latest \
-    overflow pipeline --dem_file /data/input.tif --output_dir /data/results
+    pipeline --dem_file /data/input.tif --output_dir /data/results
 ```
 
 ## Documentation

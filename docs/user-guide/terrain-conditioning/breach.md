@@ -29,7 +29,7 @@ Path to input DEM raster. Must be GDAL-readable format. Single band. Float32 dat
 Path for output breached DEM. Written as GeoTIFF. Inherits projection, geotransform, and nodata value from input.
 
 ### chunk_size
-Tile dimension in pixels for processing. Default 512. Set to 0 for in-memory processing when DEM fits in available RAM.
+Tile dimension in pixels for processing. Default 2048. Set to 0 for in-memory processing when DEM fits in available RAM.
 
 ### search_radius
 Maximum distance in cells to search for breach targets. Larger values increase computation time but allow breaching larger obstructions.

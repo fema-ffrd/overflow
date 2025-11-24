@@ -31,7 +31,7 @@ overflow [COMMAND] [OPTIONS]
 | :--- | :--- | :--- | :--- | :--- |
 | `--dem_file` | TEXT | - | **Yes** | Path to the GDAL supported raster dataset for the DEM.  |
 | `--output_dir` | TEXT | - | **Yes** | Path to the output directory.  |
-| `--chunk_size` | INTEGER | 512 | No | Chunk size (use \<= 0 for in-memory processing).  |
+| `--chunk_size` | INTEGER | 2048 | No | Chunk size (use \<= 0 for in-memory processing).  |
 | `--search_radius_ft` | FLOAT | 200 | No | Search radius in feet for pit breaching (0 to skip breaching).  |
 | `--max_cost` | FLOAT | inf | No | Maximum cost of breach paths (total sum of elevation removed from each cell in path).  |
 | `--da_sqmi` | FLOAT | 1 | No | Minimum drainage area in square miles for stream extraction.  |
@@ -50,7 +50,7 @@ overflow [COMMAND] [OPTIONS]
 | :--- | :--- | :--- | :--- | :--- |
 | `--input_file` | TEXT | - | **Yes** | Path to the GDAL supported raster dataset for the DEM.  |
 | `--output_file` | TEXT | - | **Yes** | Path to the output file (must be GeoTiff).  |
-| `--chunk_size` | INTEGER | 512 | No | Chunk size.  |
+| `--chunk_size` | INTEGER | 2048 | No | Chunk size.  |
 | `--search_radius` | INTEGER | 200 | No | Search radius in cells.  |
 | `--max_cost` | FLOAT | inf | No | Maximum cost of breach paths.  |
 
@@ -66,7 +66,7 @@ overflow [COMMAND] [OPTIONS]
 | :--- | :--- | :--- | :--- | :--- |
 | `--input_file` | TEXT | - | **Yes** | Path to the GDAL supported raster dataset for the DEM.  |
 | `--output_file` | TEXT | None | No | Path to the output file. If not provided, modifies input in place.  |
-| `--chunk_size` | INTEGER | 512 | No | Chunk size (use \<= 1 for in-memory processing).  |
+| `--chunk_size` | INTEGER | 2048 | No | Chunk size (use \<= 1 for in-memory processing).  |
 | `--working_dir` | TEXT | None | No | Working directory for temporary files.  |
 | `--fill_holes` | FLAG | False | No | If set, fills holes (nodata regions) in the DEM.  |
 
@@ -82,7 +82,7 @@ overflow [COMMAND] [OPTIONS]
 | :--- | :--- | :--- | :--- | :--- |
 | `--input_file` | TEXT | - | **Yes** | Path to the DEM file.  |
 | `--output_file` | TEXT | - | **Yes** | Path to the output file.  |
-| `--chunk_size` | INTEGER | 512 | No | Chunk size (use \<= 1 for in-memory processing).  |
+| `--chunk_size` | INTEGER | 2048 | No | Chunk size (use \<= 1 for in-memory processing).  |
 | `--working_dir` | TEXT | None | No | Working directory for temporary files.  |
 | `--no_resolve_flats` | FLAG | False | No | If set, skip resolving flat areas.  |
 
@@ -98,7 +98,7 @@ overflow [COMMAND] [OPTIONS]
 | :--- | :--- | :--- | :--- | :--- |
 | `--input_file` | TEXT | - | **Yes** | Path to the GDAL supported raster dataset for the flow direction raster.  |
 | `--output_file` | TEXT | - | **Yes** | Path to the output file (must be GeoTiff).  |
-| `--chunk_size` | INTEGER | 512 | No | Chunk size (use \<= 1 for in-memory processing).  |
+| `--chunk_size` | INTEGER | 2048 | No | Chunk size (use \<= 1 for in-memory processing).  |
 
 -----
 
@@ -114,7 +114,7 @@ overflow [COMMAND] [OPTIONS]
 | `--fdr_file` | TEXT | - | **Yes** | Path to the flow direction raster.  |
 | `--output_dir` | TEXT | - | **Yes** | Path to the output directory.  |
 | `--threshold` | INTEGER | 5 | No | Minimum flow accumulation threshold (cell count) to define a stream.  |
-| `--chunk_size` | INTEGER | 512 | No | Chunk size (use \<= 1 for in-memory processing).  |
+| `--chunk_size` | INTEGER | 2048 | No | Chunk size (use \<= 1 for in-memory processing).  |
 
 -----
 
@@ -133,7 +133,7 @@ overflow [COMMAND] [OPTIONS]
 | `--dp_layer` | TEXT | None | No | Name of the layer in the drainage points file.  |
 | `--snap_radius_ft` | FLOAT | 0 | No | Radius in feet to snap drainage points to maximum flow accumulation.  |
 | `--all_basins` | BOOL | False | No | If True, labels all basins. If False, only labels basins upstream of drainage points.  |
-| `--chunk_size` | INTEGER | 512 | No | Chunk size (use \<= 1 for in-memory processing).  |
+| `--chunk_size` | INTEGER | 2048 | No | Chunk size (use \<= 1 for in-memory processing).  |
 
 -----
 

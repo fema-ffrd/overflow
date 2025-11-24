@@ -32,7 +32,7 @@ Path to the input raw DEM raster. GDAL-readable format. Single band. Float32.
 Directory where all output files will be written. The directory must exist. Existing files with generated names (e.g., `fdr.tif`) will be overwritten.
 
 ### chunk_size
-Tile dimension in pixels for processing. Default 512. Set to 0 for in-memory processing.
+Tile dimension in pixels for processing. Default 2048. Set to 0 for in-memory processing.
 
 ### search_radius_ft
 Search radius in **feet** for the pit breaching step. Default: 200. If set to 0, the breaching step is skipped, and the pipeline relies solely on filling. Internal conversion to cell count is performed based on the raster's spatial reference.

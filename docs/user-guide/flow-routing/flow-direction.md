@@ -34,7 +34,7 @@ Path to conditioned DEM raster. GDAL-readable format. Single band. Float32. Must
 Path for flow direction output. Written as GeoTIFF. UInt8 data type. Inherits projection and geotransform from input. Nodata value set to 9.
 
 ### chunk_size
-Tile dimension in pixels. Default 512. Set to 0 or 1 for in-memory processing.
+Tile dimension in pixels. Default 2048. Set to 0 or 1 for in-memory processing.
 
 ### working_dir
 Directory for temporary files during flat resolution in tiled mode. Ignored for in-memory mode. When None, uses system temporary directory.
@@ -44,6 +44,14 @@ Boolean controlling flat resolution. Default True. When False, cells in flat reg
 
 ### progress_callback
 Optional callback for monitoring long operations. See [ProgressCallback API](../../api/index.md#overflow.ProgressCallback).
+
+### flat_resolution_chunk_size_max
+Maximum chunk size for flat resolution processing. Default 512. This parameter is only available in the Python API (not in the CLI) and provides advanced control over flat resolution performance.
+
+When `chunk_size` exceeds this value, flat resolution will automatically use this smaller chunk size instead. This prevents performance issues in areas with large contiguous regions of undefined flow (such as large filled depressions or water bodies), where large chunks can significantly slow down processing.
+
+!!! note "Advanced Python API Only"
+    This parameter is intentionally not exposed in the CLI interface. It's an advanced feature that requires understanding of the performance implications of chunk size during flat resolution.
 
 ## CLI Usage
 
@@ -56,6 +64,8 @@ overflow flow-direction \
 
 ## Python API Usage
 
+Basic usage:
+
 ```python
 import overflow
 
@@ -66,6 +76,23 @@ overflow.flow_direction(
 )
 ```
 
+Advanced usage with custom flat resolution chunk size (Python API only):
+
+```python
+import overflow
+
+# For large DEMs with significant flat areas, you may want to use
+# a larger chunk_size for flow direction computation but limit the
+# chunk size during flat resolution to avoid performance degradation
+overflow.flow_direction(
+    input_path="dem_filled.tif",
+    output_path="fdr.tif",
+    chunk_size=2048,  # Large chunks for flow direction
+    resolve_flats=True,
+    flat_resolution_chunk_size_max=512  # Cap flat resolution chunks
+)
+```
+
 In the output flow direction raster, every non-nodata cell with at least one lower neighbor has a defined flow direction (0-7). There will be no cycles in the flow direction raster. If `resolve_flats` is true, there will also be no undefined flow directions.
 
 !!! note
@@ -73,7 +100,12 @@ In the output flow direction raster, every non-nodata cell with at least one low
 
 ## Performance Considerations
 
-The tiled algorithm for flat resolution is the most computationally intensive process implemented in Overflow. Flow direction rasters with large contiguous areas of undefined flows (e.g., large filled depressions or water bodies) can have a significant performance hit if used with a large `chunk_size`. For this reason it is reccomened to use a `chunk_size` no larger than 512.
+The tiled algorithm for flat resolution is the most computationally intensive process implemented in Overflow. Flow direction rasters with large contiguous areas of undefined flows (e.g., large filled depressions or water bodies) can have a significant performance hit if used with a large `chunk_size`.
+
+By default, the `flat_resolution_chunk_size_max` parameter caps the chunk size used during flat resolution at 512 pixels, even if you specify a larger `chunk_size` for the initial flow direction computation. This provides a good balance between performance and memory usage for most use cases.
+
+!!! tip "Advanced Python API Control"
+    If you're using the Python API and need finer control over performance, you can adjust the `flat_resolution_chunk_size_max` parameter. For example, if processing very large areas with extensive flat regions, you might reduce it further (e.g., to 256) to improve performance at the cost of more I/O operations.
 
 ## See Also
 

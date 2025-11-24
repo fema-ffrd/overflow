@@ -27,7 +27,7 @@ Path to input DEM raster. GDAL-readable format. Single band. Float32 data type. 
 Path for output filled DEM. Written as GeoTIFF. Inherits projection and geotransform from input. When None, modifies input file in place.
 
 ### chunk_size
-Tile dimension in pixels for tiled processing. Default 512. Set to 0 or 1 for in-memory processing.
+Tile dimension in pixels for tiled processing. Default 2048. Set to 0 or 1 for in-memory processing.
 
 ### working_dir
 Directory for temporary files during tiled processing. Ignored for in-memory mode. When None, uses system temporary directory.

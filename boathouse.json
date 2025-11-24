@@ -52,7 +52,7 @@
                     "name": "chunk_size",
                     "type": "integer",
                     "description": "chunk size for tiled operations",
-                    "defaultValue": 512
+                    "defaultValue": 2048
                 },
                 {
                     "displayName": "Search Radius (feet)",
@@ -127,7 +127,7 @@
                     "name": "chunk_size",
                     "type": "integer",
                     "description": "chunk size for tiled operations",
-                    "defaultValue": 512
+                    "defaultValue": 2048
                 },
                 {
                     "displayName": "Search Radius",
@@ -182,7 +182,7 @@
                     "name": "chunk_size",
                     "type": "integer",
                     "description": "chunk size for tiled operations",
-                    "defaultValue": 512
+                    "defaultValue": 2048
                 },
                 {
                     "displayName": "Working Directory",
@@ -236,7 +236,7 @@
                     "name": "chunk_size",
                     "type": "integer",
                     "description": "chunk size for tiled operations",
-                    "defaultValue": 512
+                    "defaultValue": 2048
                 }
             ]
         },
@@ -276,7 +276,7 @@
                     "name": "chunk_size",
                     "type": "integer",
                     "description": "chunk size for tiled operations",
-                    "defaultValue": 512
+                    "defaultValue": 2048
                 }
             ]
         },
@@ -329,7 +329,7 @@
                     "name": "chunk_size",
                     "type": "integer",
                     "description": "chunk size for tiled operations",
-                    "defaultValue": 512
+                    "defaultValue": 2048
                 },
                 {
                     "displayName": "All Basins?",
@@ -403,7 +403,7 @@
                     "name": "chunk_size",
                     "type": "integer",
                     "description": "chunk size for tiled operations",
-                    "defaultValue": 512
+                    "defaultValue": 2048
                 }
             ]
         },

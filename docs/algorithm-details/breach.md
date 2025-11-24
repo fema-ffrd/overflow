@@ -176,7 +176,7 @@ $$
 
 For large DEMs, processing is divided into overlapping tiles:
 
-1. **Chunking**: DEM split into tiles of size $s \times s$ (default $s = 512$)
+1. **Chunking**: DEM split into tiles of size $s \times s$ (default $s = 2048$)
 2. **Buffering**: Each tile includes a buffer of $r$ pixels (search radius) on all edges
 3. **Parallel Execution**: Tiles processed concurrently
 4. **Result Writing**: Only the unbuffered core region written to output
