@@ -506,7 +506,7 @@ For tiled processing, each tile holds $s^2$ cells plus a $r^2$ cost array per pi
 
 The single-cell phase processes tiles in memory. Each tile is a separate memory region (loaded from input), so different threads operate on distinct arrays. When writing to output, threads write to non-overlapping spatial regions determined by tile boundaries (excluding the buffer, which is not written). This prevents data races.
 
-The least-cost phase allocates separate cost and predecessor arrays for each pit. These arrays are not shared between pits, so no synchronization is needed. Each pit's search is completely independent. Reads from the input DEM are thread-safe (GDAL read operations). All write operations aquire a lock before writing to the dataset.
+The least-cost phase allocates separate cost and predecessor arrays for each pit. These arrays are not shared between pits, so no synchronization is needed. Each pit's search is completely independent. Reads from the input DEM are thread-safe (GDAL read operations). All write operations acquire a lock before writing to the dataset.
 
 ### Numerical Precision
 
