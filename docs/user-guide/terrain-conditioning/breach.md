@@ -65,6 +65,12 @@ overflow.breach(
 
 The output DEM will have all depressions within `search_radius` cells of lower terrain breached. Unmodified cells retain their original elevations and no cells are raised. Nodata cells remain unchanged and are considered to be lower than any other cell.
 
+## Visualization
+
+| Before Breach | After Breach |
+|:-------------:|:------------:|
+| ![Before breach](../../algorithm-details/breach_before.png) | ![After breach](../../algorithm-details/breach_after.png) |
+
 ## Performance Considerations
 
 Large search radii substantially increase processing time. Profile with typical data to determine acceptable trade-off between breach capability and runtime.
