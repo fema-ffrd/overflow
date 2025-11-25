@@ -25,7 +25,6 @@ Unlike traditional GIS tools that rely on virtual memory, Overflow uses sophisti
 - **Highly Parallel**: Every algorithm designed for parallel execution using Numba.
 - **Memory Efficient**: Process DEMs larger than RAM through tiled algorithms with efficient I/O patterns.
 - **Scalable**: Fixed number of passes over data regardless of size. Every operation is designed to scale from laptop-sized datasets to continental DEMs without requiring specialized hardware.
-- **Accurate**: Maintains correctness across tile boundaries using graph-based approaches. The algorithms produce results that are equivalent to authoritative methods used throughout the hydrological community.
 - **Modern Algorithms**: Implements state-of-the-art priority-flood filling, least-cost breaching, and flat resolution algorithms
 
 ## Quick Start

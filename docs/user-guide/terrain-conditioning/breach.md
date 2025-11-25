@@ -69,10 +69,10 @@ The output DEM will have all depressions within `search_radius` cells of lower t
 
 Large search radii substantially increase processing time. Profile with typical data to determine acceptable trade-off between breach capability and runtime.
 
-!!! warning
-    For performance reasons, this implementation is **non-deterministic** and may produce slight differences between runs. In practice this is an acceptable behavior since each pit that can be breach will and the filling step will produce a hydrologically conditioned DEM regardless. Ideally, all pits would be sorted and breached sequentially from lowest to highest elevation, since some breach paths can be resolved using paths created from other pits. Overflow does not perform this sequencing; it breaches all pits in parallel regardless of their elevations. As a result, data races can lead to different breach paths and, in some cases, the creation of new pits. **You must run the `fill` process after breaching** to ensure that no pits remain.
+!!! warning "Breaching May Leave Residual Pits"
+    The breach algorithm may leave some pits unresolved, either because they are beyond the search radius or due to tile boundary effects where pits near tile edges may be incompletely breached. **You must run the `fill` process after breaching** to ensure that no pits remain and produce a fully hydrologically conditioned DEM.
 
-    If you need deterministic behavior, consider using the `fill` method alone instead of in combination with `breach` or setting the environment variable `NUMBA_NUM_THREADS` to 1 (although this will impact performance).
+    Within each tile, pits are processed sequentially in a deterministic order, and later breaches can benefit from earlier breach paths through the use of the min() operation. However, tiles are processed in parallel, and pits located at tile boundaries may be processed differently by adjacent tiles, leading to potential artifacts at tile edges. These artifacts are resolved by the subsequent fill operation.
 
 ## See Also
 

@@ -183,12 +183,11 @@ def breach_pits_in_chunk_least_cost(
     max_cost: float = np.inf,
 ):
     """
-    Compute least-cost paths for breach points in parallel within a given search radius.
+    Compute least-cost path for a single breach point within a given search radius.
 
-    This function computes the least-cost paths for breach points in parallel within a specified search radius. It uses
-    Dijkstra's algorithm to explore the neighborhood of each breach point until a breach point is found or the search
-    window is exhausted. Once a breach point is found, it reconstructs the least-cost path from the final breach point
-    back to the pit cell.
+    This function computes the least-cost path for a single pit using Dijkstra's algorithm to explore the neighborhood
+    of the breach point until a drainage point is found or the search window is exhausted. Once a drainage point is found,
+    it reconstructs the least-cost path from the final breach point back to the pit cell.
 
     Parameters:
         pit (np.ndarray): (row, column) representing the starting points for the least-cost
@@ -205,7 +204,7 @@ def breach_pits_in_chunk_least_cost(
 
     Notes:
         - This function modifies the output_dem in-place to create the least-cost paths.
-        - Parallel execution is utilized for processing multiple pits simultaneously.
+        - Tiles are processed in parallel, but pits within each tile are processed sequentially.
         - The search_radius must be a positive integer. Only pits that can be solved within the search radius will be
             breached.
         - The DEM should have valid elevation values, and dem_no_data_value should be set accordingly for nodata cells.
@@ -351,8 +350,8 @@ def _breach_paths_least_cost(
     progress_callback: ProgressCallback | None = None,
 ) -> None:
     """Main function to breach paths in a DEM using least cost algorithm.
-    This function will tile the input DEM into chunks and breach the paths in
-    each chunk in parallel using the least cost algorithm.
+    This function tiles the input DEM into chunks and processes chunks in parallel.
+    Within each chunk, pits are breached sequentially using the least cost algorithm.
 
     Parameters
     ----------

@@ -196,9 +196,9 @@ Tile perimeters are stored as 1D arrays in clockwise order:
 
 ```
 Top edge (left to right)
-  → Right edge (top to bottom)
-    → Bottom edge (right to left)
-      → Left edge (bottom to top)
+  -> Right edge (top to bottom)
+    -> Bottom edge (right to left)
+      -> Left edge (bottom to top)
 ```
 
 Total perimeter size: $2(w + h) - 4$ cells for a $w \times h$ tile.

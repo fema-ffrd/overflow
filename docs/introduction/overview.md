@@ -14,4 +14,4 @@ Users should have basic familiarity with hydrological concepts such as flow dire
 
 ## Design Philosophy
 
-Overflow aims to be scalable, performant, and correct - in that order. There are cases where correctness is sacrificed in favor of the other two so long as it is not a practical issue. In most cases, the algorithms produce results that are mathematically equivalent to authoritative methods used throughout the hydrological community. Every operation is designed to scale from laptop-sized datasets to continental DEMs without requiring specialized hardware.
+Overflow prioritizes scalability and performance while maintaining correctness. The algorithms make practical trade-offs that enable efficient processing of massive datasets. Most of the algorithms produce results that are mathematically equivalent to authoritative methods used throughout the hydrological community.
