@@ -34,7 +34,7 @@ from overflow._util.progress import ProgressCallback
 from overflow._util.raster import snap_drainage_points as _snap_drainage_points
 from overflow.codes import FlowDirection
 
-__version__ = "0.3.2"
+__version__ = "0.3.3"
 
 
 def breach(

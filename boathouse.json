@@ -456,7 +456,8 @@
                     "displayName": "Output Vector",
                     "name": "output_vector",
                     "type": "file",
-                    "description": "path to the output vector file (GeoPackage) for longest flow paths. If not provided, no vector output is created."
+                    "description": "path to the output vector file (GeoPackage) for longest flow paths. If not provided, no vector output is created.",
+                    "direction": "output"
                 },
                 {
                     "displayName": "FAC File",
