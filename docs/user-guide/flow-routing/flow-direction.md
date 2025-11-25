@@ -98,6 +98,18 @@ In the output flow direction raster, every non-nodata cell with at least one low
 !!! note
     In order to guarantee the flow direction raster is free of undefined flow directions, you MUST provide a DEM with no sinks/pits (i.e., the `fill` process has been run) AND set `resolve_flats` to `True`.
 
+## Visualization
+
+| Input DEM | Flow Direction Output |
+|:---------:|:---------------------:|
+| ![Flow direction input](../../img/flow-direction/input.png) | ![Flow direction output](../../img/flow-direction/output.png) |
+
+The input DEM shows elevation values sloping from upper-left (108) to lower-right (90). The flow direction output displays arrows indicating the D8 direction of steepest descent for each cell.
+
+| Input DEM | Flow Direction Output |
+|:---------:|:---------------------:|
+| ![DEM](../../img/dem.png) | ![FDR](../../img/flow-direction/FDR.png) |
+
 ## Performance Considerations
 
 The tiled algorithm for flat resolution is the most computationally intensive process implemented in Overflow. Flow direction rasters with large contiguous areas of undefined flows (e.g., large filled depressions or water bodies) can have a significant performance hit if used with a large `chunk_size`.

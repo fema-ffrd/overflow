@@ -66,6 +66,12 @@ overflow.fill(
 
 All cells in the output DEM will have a flow path to the domain boundary with monotonically decreasing or constant elevation. Unmodified cells retain their original elevations and no cells are lowered.
 
+## Visualization
+
+| Before Fill | After Fill |
+|:-------------:|:------------:|
+| ![Before fill](../../img/fill/before.png) | ![After fill](../../img/fill/after.png) |
+
 ## See Also
 
 - [Breach Operation](breach.md) - Alternative depression removal method

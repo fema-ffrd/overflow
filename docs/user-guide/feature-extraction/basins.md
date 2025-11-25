@@ -58,6 +58,12 @@ overflow.basins(
 
 The output cell values contain generated basin ID corresponding to their downstream drainage point. All cells draining to the same point share the same label. Nodata cells (-1) are propagated from the input. When `all_basins=True` basins draining off map but not to a provided draininge point are also included. The provided drainage points will be attributed with their basin IDs and downstream basin IDs.
 
+## Visualization
+
+| DEM | Basins |
+|:-----------------------:|:------------------------:|
+| ![DEM](../../img/dem.png) | ![Basins](../../img/basins/basins.png) |
+
 ## Drainage Point Snapping
 
 Snapping corrects drainage point locations that fall slightly off stream channels due to digitization error or CRS mismatch.

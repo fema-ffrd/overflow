@@ -42,6 +42,14 @@ The output raster values represent the total upstream cell count including self.
 !!! note
     The flow direction raster MUST have all non-nodata cells contain valid defined flow directions (0-7) and must not contain cycles. These requirements are met automatically when using `flow_direction()` with `resolve_flats=True` on properly conditioned DEM.
 
+## Visualization
+
+| Input Flow Direction | Flow Accumulation Output |
+|:--------------------:|:------------------------:|
+| ![Flow accumulation input](../../img/flow-accumulation/input.png) | ![Flow accumulation output](../../img/flow-accumulation/output.png) |
+
+The input shows flow direction arrows overlaid on terrain with a valley down the center. Arrows converge toward the valley (↓) from both sides (↘ and ↙). The flow accumulation output shows how many upstream cells drain through each location. Higher values (darker blue) indicate greater drainage area, with the valley channel collecting flow from both sides. The pattern clearly identifies potential stream locations where accumulation values are highest.
+
 ## See Also
 
 - [Flow Direction](flow-direction.md) - Computing flow directions before accumulation

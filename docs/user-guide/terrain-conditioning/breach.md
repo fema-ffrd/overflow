@@ -69,7 +69,7 @@ The output DEM will have all depressions within `search_radius` cells of lower t
 
 | Before Breach | After Breach |
 |:-------------:|:------------:|
-| ![Before breach](../../algorithm-details/breach_before.png) | ![After breach](../../algorithm-details/breach_after.png) |
+| ![Before breach](../../img/breach/before.png) | ![After breach](../../img/breach/after.png) |
 
 ## Performance Considerations
 

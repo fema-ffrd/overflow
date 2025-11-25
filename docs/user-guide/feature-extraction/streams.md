@@ -52,6 +52,18 @@ The output `streams.gpkg` will contain two layers:
 * **streams**: The vectorized stream network of all cells with $\text{accumulation} \geq \text{threshold}$. The vertices of the polylines will be at the grid cell centers.
 * **junctions**: Points at the downstream end of each reach and the upstream most points of the stream network.
 
+## Visualization
+
+| Input Flow Accumulation | Stream Classification Output |
+|:-----------------------:|:----------------------------:|
+| ![Streams input](../../img/streams/input.png) | ![Streams output](../../img/streams/output.png) |
+
+The input shows flow accumulation values with higher values (darker blue) indicating greater drainage area. The output shows binary stream classification where cells exceeding the threshold (8 in this example) are marked as streams (blue = 1) versus non-streams (gray = 0). The stream network follows the path of highest flow accumulation down the valley.
+
+| Input DEM | Streams Output |
+|:-----------------------:|:------------------------:|
+| ![DEM](../../img/dem.png) | ![Basins](../../img/streams/streams.png) |
+
 ## See Also
 
 - [Flow Accumulation](../flow-routing/flow-accumulation.md) - Computing accumulation for stream extraction

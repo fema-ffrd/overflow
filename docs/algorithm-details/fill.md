@@ -208,3 +208,11 @@ For tiled processing with $t$ tiles of size $s \times s$:
 - Per-tile: $O(s^2 \log s^2)$
 - Graph connection: $O(t \cdot s)$ (perimeter size)
 - Total: $O(n \log s + t \cdot s)$
+
+## Visual Example
+
+| Before Fill | After Fill |
+|:-------------:|:------------:|
+| ![Before fill](../img/fill/before.png) | ![After fill](../img/fill/after.png) |
+
+The depression (highlighted in red) contains cells with elevations ranging from 94.0 to 96.8. The pour point elevation is 97.0. After filling, all depression cells are raised to the pour point elevation, ensuring water can flow out of the depression without encountering lower cells.

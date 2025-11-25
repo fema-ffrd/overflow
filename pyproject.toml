@@ -53,6 +53,7 @@ dev = [
     "mypy>=1.13.0",
     "ruff>=0.8.0",
     "codespell>=2.4.1",
+    "matplotlib>=3.10.7",
 ]
 docs = [
     "mkdocs>=1.5.0",

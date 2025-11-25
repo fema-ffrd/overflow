@@ -54,6 +54,12 @@ The output raster will contain cell values representing the distance in map unit
 
 The output vector (when generated) contains one LineString feature per drainage point with vertices corresponding to cell centers along the flow path. The same spatial reference as the input is used and the paths are attributed with the feature IDs of the provided drainage points.
 
+## Visualization
+
+| Input DEM | Flow Length Output |
+|:-----------------------:|:------------------------:|
+| ![DEM](../../img/dem.png) | ![Basins](../../img/flow-length/flow-length.png) |
+
 ## Drainage Point Snapping
 
 Snapping corrects drainage point locations that fall slightly off stream channels due to digitization error or CRS mismatch.

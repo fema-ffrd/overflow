@@ -378,7 +378,7 @@ graph TD
 
 | Before Breach | After Breach |
 |:-------------:|:------------:|
-| ![Before breach](breach_before.png) | ![After breach](breach_after.png) |
+| ![Before breach](../img/breach/before.png) | ![After breach](../img/breach/after.png) |
 
 The pit at cell (3,3) has elevation 98.0 and is surrounded by higher terrain. The breach path (highlighted in red) connects the pit diagonally to lower terrain at cell (6,6) with elevation 96.0. After breaching, cells along the path are lowered to create a monotonic descent: 98.0 -> 97.3 -> 96.7 -> 96.0.
 
