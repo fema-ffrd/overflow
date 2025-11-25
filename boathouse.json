@@ -120,7 +120,8 @@
                     "displayName": "Output File",
                     "name": "output_file",
                     "type": "file",
-                    "description": "path to the output file (must be GeoTiff)"
+                    "description": "path to the output file (must be GeoTiff)",
+                    "direction": "output"
                 },
                 {
                     "displayName": "Chunk Size",
@@ -175,7 +176,8 @@
                     "displayName": "Output File",
                     "name": "output_file",
                     "type": "file",
-                    "description": "path to the output file (must be GeoTiff)"
+                    "description": "path to the output file (must be GeoTiff)",
+                    "direction": "output"
                 },
                 {
                     "displayName": "Chunk Size",
@@ -229,7 +231,8 @@
                     "displayName": "Output File",
                     "name": "output_file",
                     "type": "file",
-                    "description": "path to the output file"
+                    "description": "path to the output file",
+                    "direction": "output"
                 },
                 {
                     "displayName": "Chunk Size",
@@ -269,7 +272,8 @@
                     "displayName": "Output File",
                     "name": "output_file",
                     "type": "file",
-                    "description": "path to the output file (must be GeoTiff)"
+                    "description": "path to the output file (must be GeoTiff)",
+                    "direction": "output"
                 },
                 {
                     "displayName": "Chunk Size",
@@ -322,7 +326,8 @@
                     "displayName": "Output File",
                     "name": "output_file",
                     "type": "file",
-                    "description": "path to the output file (must be GeoTiff)"
+                    "description": "path to the output file (must be GeoTiff)",
+                    "direction": "output"
                 },
                 {
                     "displayName": "Chunk Size",
