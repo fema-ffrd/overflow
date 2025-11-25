@@ -90,15 +90,14 @@ The `pipeline` function is primarily a CLI convenience wrapper. To replicate the
 
 ```python
 import overflow
-from overflow._util.raster import sqmi_to_cell_count, feet_to_cell_count
 
 # 1. Setup paths
 dem_file = "raw_dem.tif"
 output_dir = "./results"
 
 # 2. Terrain Conditioning (Breach + Fill)
-# Note: Helper functions required to convert physical units to cell counts
-radius_cells = feet_to_cell_count(200, dem_file)
+# Note: Python API uses cell count
+radius_cells = 50
 
 overflow.breach(dem_file, f"{output_dir}/dem_breached.tif", search_radius=radius_cells)
 overflow.fill(f"{output_dir}/dem_breached.tif", f"{output_dir}/dem_corrected.tif")
@@ -108,8 +107,7 @@ overflow.flow_direction(f"{output_dir}/dem_corrected.tif", f"{output_dir}/fdr.ti
 overflow.accumulation(f"{output_dir}/fdr.tif", f"{output_dir}/accum.tif")
 
 # 4. Feature Extraction
-# Convert 1 sq mile to cell count for threshold
-threshold_cells = sqmi_to_cell_count(1.0, dem_file)
+threshold_cells = 50000
 
 overflow.streams(
     fac_path=f"{output_dir}/accum.tif",
@@ -118,7 +116,7 @@ overflow.streams(
     threshold=threshold_cells
 )
 
-# 5. Basins (Optional)
+# 5. Basins
 # Uses the junctions layer from the generated streams.gpkg
 overflow.basins(
     fdr_path=f"{output_dir}/fdr.tif",

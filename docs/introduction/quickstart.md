@@ -20,7 +20,8 @@ overflow pipeline \
 
 Output files in `./results/`:
 
-- `dem_corrected.tif` - Breached and filled DEM (float32)
+- `dem_breached.tif` - Breached DEM (float32)
+- `dem_filled.tif` - Filled DEM (float32)
 - `fdr.tif` - D8 flow directions (byte)
 - `accum.tif` - Upstream cell count (int64)
 - `streams.gpkg` - Vector stream network with junctions

@@ -104,9 +104,6 @@ The tiled algorithm for flat resolution is the most computationally intensive pr
 
 By default, the `flat_resolution_chunk_size_max` parameter caps the chunk size used during flat resolution at 512 pixels, even if you specify a larger `chunk_size` for the initial flow direction computation. This provides a good balance between performance and memory usage for most use cases.
 
-!!! tip "Advanced Python API Control"
-    If you're using the Python API and need finer control over performance, you can adjust the `flat_resolution_chunk_size_max` parameter. For example, if processing very large areas with extensive flat regions, you might reduce it further (e.g., to 256) to improve performance at the cost of more I/O operations.
-
 ## See Also
 
 - [Flow Accumulation](flow-accumulation.md) - Computing drainage area from flow directions

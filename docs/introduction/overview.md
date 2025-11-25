@@ -8,7 +8,7 @@ Overflow provides a complete suite of tools for deriving hydrographic features f
 
 ## Who Should Use Overflow
 
-Overflow is designed for anyone who need to run these hydrolocial process on large DEMs efficiently. The library is particularly valuable when working with datasets that exceed the practical limits of traditional single-threaded tools or when processing time is a critical constraint.
+Overflow is designed for anyone who needs to run these hydrolocial process on large DEMs efficiently. The library is particularly valuable when working with datasets that exceed the practical limits of traditional single-threaded tools or when processing time is a critical constraint.
 
 Users should have basic familiarity with hydrological concepts such as flow direction, flow accumulation, and drainage networks. The library assumes you are comfortable working with geospatial raster data and understand fundamental GIS concepts. Programming experience with Python is helpful for using the API, though the command-line interface provides access to core functionality without requiring code.
 

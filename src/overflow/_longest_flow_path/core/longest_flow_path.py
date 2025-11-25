@@ -164,7 +164,7 @@ def calculate_upstream_flow_length(
     Calculate upstream flow length from drainage points with proper basin relationships.
 
     Strategy:
-    1. Pre-claim all drainage point locations to prevent race conditions
+    1. Pre-claim all drainage point locations to prevent a race condition
     2. Each drainage point BFS upstream in parallel, stopping at:
        - Already claimed cells (from other basins)
        - nodata/edge

@@ -75,7 +75,7 @@ where $(\lambda_0, \phi_0)$ is the origin and $(\Delta\lambda, \Delta\phi)$ are 
 
 ### Phase 1: Initialize Drainage Points
 
-Pre-claim drainage point cells to prevent race conditions in parallel processing:
+Pre-claim drainage point cells to prevent a race condition in parallel processing:
 
 ```python
 def initialize_drainage_points(drainage_points, flow_length, basin_labels):
