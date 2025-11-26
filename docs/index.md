@@ -1,14 +1,42 @@
 ---
 title: Overflow
 subtitle: Hydrological Terrain Analysis for Massive DEMs
+hide:
+  - navigation
+  - toc
+  - path
 ---
 
-# Overflow
+<div class="hero-section" style="text-align: left;">
+  
+  <div class="cli-banner" aria-label="Overflow Logo">
+   ╔═╗╦  ╦╔═╗╦═╗╔═╗╦  ╔═╗╦ ╦
+<span class="b-dim">░</span><span class="b-mid">▒</span><span class="b-bold">▓</span>║ ║╚╗╔╝║╣ ╠╦╝╠╣ ║  ║ ║║║║<span class="b-bold">▓</span><span class="b-mid">▒</span><span class="b-dim">░</span>
+   ╚═╝ ╚╝ ╚═╝╩╚═╚  ╩═╝╚═╝╚╩╝
+  </div>
+
+  <p style="font-family: 'JetBrains Mono', monospace; color: var(--md-default-fg-color); font-size: 1.2rem; margin-top: 0; margin-bottom: 2rem; opacity: 0.8;">
+    :: HYDROLOGICAL TERRAIN ANALYSIS
+  </p>
+  
+  <div style="font-size: 1rem; max-width: 600px; line-height: 1.6; margin-bottom: 3rem;">
+    A high-performance library for processing massive Digital Elevation Models.
+  </div>
+
+  <div class="grid-buttons">
+    <a href="introduction/quickstart/" class="md-button md-button--primary">
+      > QUICKSTART
+    </a>
+    <a href="getting-started/installation/" class="md-button">
+      INSTALLATION
+    </a>
+  </div>
+</div>
+
+<hr style="border-bottom: 1px solid var(--border-color); margin: 3rem 0;">
 
 !!! warning "Alpha Software"
     This software is currently in **alpha** status. While functional, it may contain bugs, have incomplete features, and undergo breaking changes. Use in production environments at your own risk. We welcome feedback and bug reports on our [GitHub Issues](https://github.com/fema-ffrd/overflow/issues) page.
-
-Overflow specializes in processing massive Digital Elevation Models (DEMs) through parallel, tiled algorithms.
 
 ---
 
@@ -18,63 +46,59 @@ Traditional hydrological tools are often single-threaded and rely on virtual-mem
 
 Every workflow in Overflow is designed for parallel execution using Numba JIT-compiled algorithms. This is achieved through state-of-the-art tiled, topological approaches that implement efficient IO access patterns even for global operations. Processes in Overflow are guaranteed to complete in a fixed number of passes over the data regardless of the dataset size.
 
-## Scaling Global Algorithms
-
-Raster processing algorithms vary significantly in complexity. While most tools can easily parallelize simple tasks, Overflow is specifically engineered to handle the "hard" problems in hydrology. These can be broadly categorized into three classes based on their computational complexity and data dependencies:
-
-### Local Operations
-
-Mathematically, a local operation maps a single input value to a single output value using a function $f$. There are no spatial dependencies. If $I$ is the input raster and $O$ is the output raster, then for each pixel at row $i$ and column $j$:
-
-$$
-O_{i,j} = f(I_{i,j})
-$$
-
-These operations consider each pixel in isolation. They are computationally inexpensive and trivial to parallelize because no information needs to be shared between pixels. These include operations like reclassifying elevation ranges (e.g., converting meters to feet) or calculating NDVI from imagery.
-
-### Focal / Regional Operations
-
-These operations calculate a value based on a pixel and its immediate neighbors (e.g., a 3x3 window). Parallelizing these requires "halo" or buffer regions around tiles to ensure edge pixels can see their neighbors in adjacent tiles. These include operations like calculating flow direction, slope, or local relief. Mathematically, a focal operation can be expressed as:
-
-$$
-O_{i,j} = f\left( \{ I_{u,v} \mid u \in [i-k, i+k], v \in [j-k, j+k] \} \right)
-$$
-
-Where $k$ defines the size of the neighborhood.
-
-### Global Operations
-
-These are the most computationally difficult algorithms to parallelize because the value of a single pixel can depend on **any other pixel** in the entire raster, regardless of distance. A change in elevation at one edge of the map can affect flow accumulation at the opposite edge. Unfortunately, these global operations include most of the useful hydrological processes. Flow accumulation, depression filling, undefined flow direction resolution, basin delineation, longest flow paths and stream network extraction are all global operations.
-
-Most global algorithms in hydrology are defined recursively, making them inherently sequential. The value at a pixel depends on the topology of the flow network.
-
-$$
-O_{i,j} = f\left( \{ I_{u,v} \mid (u,v) \in \mathcal{P}_{(i,j)} \} \right)
-$$
-
-Where $P(i,j)$​ is the set of all pixels forming a directed path ending at $(i,j)$.
-
-You cannot compute $O_{i,j}$ without resolving the state of pixels potentially located at the opposite end of the raster. This necessitates a graph-based approach. Overflow solves these global problems by processing data tile-by-tile to construct a connectivity graph, followed by a finalization pass that resolves dependencies across the entire domain.
-
 ## Core Hydrological Processes
 
 Overflow provides a complete toolchain for deriving hydrographic features from raw elevation data. The core algorithms implemented in Overflow include:
 
-Terrain Conditioning:
+<div class="system-modules">
 
-* Breaching
-* Filling
+  <div class="module-group">
+    <h4 class="module-header">01 // CONDITIONING</h4>
+    <ul class="module-list">
+      <li>
+        <a href="../../user-guide/terrain-conditioning/breach/">Breach</a>
+        <span class="specs">Carve paths through barriers</span>
+      </li>
+      <li>
+        <a href="../../user-guide/terrain-conditioning/fill/">Fill</a>
+        <span class="specs">Fill surface depressions</span>
+      </li>
+    </ul>
+  </div>
 
-Flow Routing:
+  <div class="module-group">
+    <h4 class="module-header">02 // ROUTING</h4>
+    <ul class="module-list">
+      <li>
+        <a href="../../user-guide/flow-routing/flow-direction/">Flow Direction</a>
+        <span class="specs">Determine steepest descent</span>
+      </li>
+      <li>
+        <a href="../../user-guide/flow-routing/flow-accumulation/">Accumulation</a>
+        <span class="specs">Calculate contributing area</span>
+      </li>
+    </ul>
+  </div>
 
-* D8 Flow Direction with Flat/Undefined Flow Resolution
-* Flow Accumulation
+  <div class="module-group">
+    <h4 class="module-header">03 // EXTRACTION</h4>
+    <ul class="module-list">
+      <li>
+        <a href="../../user-guide/feature-extraction/streams/">Streams</a>
+        <span class="specs">Vectorize stream network</span>
+      </li>
+      <li>
+        <a href="../../user-guide/feature-extraction/basins/">Basins</a>
+        <span class="specs">Delineate watersheds</span>
+      </li>
+      <li>
+        <a href="../../user-guide/feature-extraction/flow-length/">Flow Length</a>
+        <span class="specs">Longest Upstream Path</span>
+      </li>
+    </ul>
+  </div>
 
-Feature Extraction:
-
-* Stream Network Extraction
-* Basin Delineation
-* Upstream Flow Length with Longest Flow Path Extraction
+</div>
 
 
 ### Python API
@@ -122,4 +146,7 @@ To ensure reproducibility and eliminate complex dependency management (specifica
 
 The image is built on top of the official `osgeo/gdal` Ubuntu-based images, ensuring binary compatibility with the underlying geospatial libraries.
 
-
+<style>
+  .md-content__inner > h1 { display: none; }
+  .md-header__inner .md-header__title { opacity: 0; }
+</style>
