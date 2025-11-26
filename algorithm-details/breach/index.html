@@ -1,0 +1,3407 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://fema-ffrd.github.io/overflow/algorithm-details/breach/">
+      
+      
+        <link rel="prev" href="../">
+      
+      
+        <link rel="next" href="../fill/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.0">
+    
+    
+      
+        <title>Breach - Overflow</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.618322db.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=IBM+Plex+Sans:300,300i,400,400i,700,700i%7CJetBrains+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"IBM Plex Sans";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../stylesheets/overflow.css">
+    
+      <link rel="stylesheet" href="https://unpkg.com/katex@0/dist/katex.min.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#breach-algorithm" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Overflow" class="md-header__button md-logo" aria-label="Overflow" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M232.5 5.2c14.9-6.9 32.1-6.9 47 0l218.6 101c8.5 3.9 13.9 12.4 13.9 21.8s-5.4 17.9-13.9 21.8l-218.6 101c-14.9 6.9-32.1 6.9-47 0l-218.6-101C5.4 145.8 0 137.3 0 128s5.4-17.9 13.9-21.8zM48.1 218.4l164.3 75.9c27.7 12.8 59.6 12.8 87.3 0L464 218.4l34.1 15.8c8.5 3.9 13.9 12.4 13.9 21.8s-5.4 17.9-13.9 21.8l-218.6 101c-14.9 6.9-32.1 6.9-47 0l-218.6-101C5.4 273.8 0 265.3 0 256s5.4-17.9 13.9-21.8L48 218.4zM13.9 362.2 48 346.4l164.3 75.9c27.7 12.8 59.6 12.8 87.3 0l164.3-75.9 34.1 15.8c8.5 3.9 13.9 12.4 13.9 21.8s-5.4 17.9-13.9 21.8l-218.6 101c-14.9 6.9-32.1 6.9-47 0l-218.5-101C5.4 401.8 0 393.3 0 384s5.4-17.9 13.9-21.8"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Overflow
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Breach
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to Dark Mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to Dark Mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to Light Mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to Light Mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/fema-ffrd/overflow" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    fema-ffrd/overflow
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../introduction/overview/" class="md-tabs__link">
+          
+  
+  
+  Introduction
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../getting-started/installation/" class="md-tabs__link">
+          
+  
+  
+  Getting Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../user-guide/pipeline/" class="md-tabs__link">
+          
+  
+  
+  User Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
+          
+  
+  
+  Algorithm Details
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../api/" class="md-tabs__link">
+          
+  
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Overflow" class="md-nav__button md-logo" aria-label="Overflow" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M232.5 5.2c14.9-6.9 32.1-6.9 47 0l218.6 101c8.5 3.9 13.9 12.4 13.9 21.8s-5.4 17.9-13.9 21.8l-218.6 101c-14.9 6.9-32.1 6.9-47 0l-218.6-101C5.4 145.8 0 137.3 0 128s5.4-17.9 13.9-21.8zM48.1 218.4l164.3 75.9c27.7 12.8 59.6 12.8 87.3 0L464 218.4l34.1 15.8c8.5 3.9 13.9 12.4 13.9 21.8s-5.4 17.9-13.9 21.8l-218.6 101c-14.9 6.9-32.1 6.9-47 0l-218.6-101C5.4 273.8 0 265.3 0 256s5.4-17.9 13.9-21.8L48 218.4zM13.9 362.2 48 346.4l164.3 75.9c27.7 12.8 59.6 12.8 87.3 0l164.3-75.9 34.1 15.8c8.5 3.9 13.9 12.4 13.9 21.8s-5.4 17.9-13.9 21.8l-218.6 101c-14.9 6.9-32.1 6.9-47 0l-218.5-101C5.4 401.8 0 393.3 0 384s5.4-17.9 13.9-21.8"/></svg>
+
+    </a>
+    Overflow
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/fema-ffrd/overflow" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    fema-ffrd/overflow
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+      <br>
+      <small>Hydrological Terrain Analysis for Massive DEMs</small>
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introduction
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Introduction
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../introduction/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../introduction/quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick Start
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pipeline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_2" id="__nav_4_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Terrain Conditioning
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Terrain Conditioning
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/terrain-conditioning/breach/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Breach
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/terrain-conditioning/fill/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fill
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_3" id="__nav_4_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Flow Routing
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Flow Routing
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/flow-routing/flow-direction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Flow Direction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/flow-routing/flow-accumulation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Flow Accumulation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_4" id="__nav_4_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Feature Extraction
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Feature Extraction
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/feature-extraction/streams/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Streams
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/feature-extraction/basins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Basins
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/feature-extraction/flow-length/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Longest Flow Path
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Algorithm Details
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Algorithm Details
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Algorithm Details
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5_2" id="__nav_5_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Terrain Conditioning
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Terrain Conditioning
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Breach
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Breach
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mathematical-foundation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mathematical Foundation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-types-and-structures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data Types and Structures
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Data Types and Structures">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#inputoutput-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Input/Output Types
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#internal-structures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Internal Structures
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#constants" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Constants
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#algorithm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Algorithm
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Algorithm">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#processing-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Processing Model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-1-single-cell-pit-detection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 1: Single-Cell Pit Detection
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-2-single-cell-pit-resolution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 2: Single-Cell Pit Resolution
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-3-least-cost-path-breaching" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 3: Least-Cost Path Breaching
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 3: Least-Cost Path Breaching">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cost-function" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cost Function
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dijkstra-search" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dijkstra Search
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-4-path-reconstruction-and-gradient-application" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 4: Path Reconstruction and Gradient Application
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#multiple-pit-processing-and-path-interactions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multiple Pit Processing and Path Interactions
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#visual-walkthrough" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Visual Walkthrough
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Visual Walkthrough">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#figure-1-single-cell-pit-detection-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Figure 1: Single-Cell Pit Detection Pattern
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#figure-2-least-cost-breach-algorithm-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Figure 2: Least-Cost Breach Algorithm Flow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#figure-3-breach-path-visualization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Figure 3: Breach Path Visualization
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#no-data-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        No-Data Handling
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#edge-cases-and-boundary-conditions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Edge Cases and Boundary Conditions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Edge Cases and Boundary Conditions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#raster-boundaries-and-buffer-zones" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Raster Boundaries and Buffer Zones
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#unsolved-pits-after-single-cell-phase" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Unsolved Pits After Single-Cell Phase
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#search-radius-limitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Search Radius Limitations
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cost-overflow-and-numerical-stability" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cost Overflow and Numerical Stability
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tiled-processing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tiled Processing
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tiled Processing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tile-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tile Structure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#processing-phases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Processing Phases
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#parallel-execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Parallel Execution
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tile-boundary-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tile Boundary Considerations
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#properties-and-guarantees" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Properties and Guarantees
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#complexity-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Complexity Analysis
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Complexity Analysis">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#time-complexity-breakdown" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Time Complexity Breakdown
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#space-complexity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Space Complexity
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#implementation-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Implementation Notes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Implementation Notes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#thread-safety" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Thread Safety
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#numerical-precision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Numerical Precision
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#memory-scaling-with-search-radius" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Memory Scaling with Search Radius
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#additional-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Additional Considerations
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limitations
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#see-also" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        See Also
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fill/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fill
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_3" id="__nav_5_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Flow Routing
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Flow Routing
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../flow-direction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Flow Direction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../flat-resolution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Flat Resolution
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../flow-accumulation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Flow Accumulation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_4" id="__nav_5_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Feature Extraction
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Feature Extraction
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stream-extraction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Stream Extraction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../basin-delineation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Basin Delineation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../flow-length/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Flow Length
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mathematical-foundation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mathematical Foundation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-types-and-structures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data Types and Structures
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Data Types and Structures">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#inputoutput-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Input/Output Types
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#internal-structures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Internal Structures
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#constants" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Constants
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#algorithm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Algorithm
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Algorithm">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#processing-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Processing Model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-1-single-cell-pit-detection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 1: Single-Cell Pit Detection
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-2-single-cell-pit-resolution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 2: Single-Cell Pit Resolution
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-3-least-cost-path-breaching" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 3: Least-Cost Path Breaching
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 3: Least-Cost Path Breaching">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cost-function" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cost Function
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dijkstra-search" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dijkstra Search
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-4-path-reconstruction-and-gradient-application" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 4: Path Reconstruction and Gradient Application
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#multiple-pit-processing-and-path-interactions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multiple Pit Processing and Path Interactions
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#visual-walkthrough" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Visual Walkthrough
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Visual Walkthrough">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#figure-1-single-cell-pit-detection-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Figure 1: Single-Cell Pit Detection Pattern
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#figure-2-least-cost-breach-algorithm-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Figure 2: Least-Cost Breach Algorithm Flow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#figure-3-breach-path-visualization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Figure 3: Breach Path Visualization
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#no-data-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        No-Data Handling
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#edge-cases-and-boundary-conditions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Edge Cases and Boundary Conditions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Edge Cases and Boundary Conditions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#raster-boundaries-and-buffer-zones" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Raster Boundaries and Buffer Zones
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#unsolved-pits-after-single-cell-phase" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Unsolved Pits After Single-Cell Phase
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#search-radius-limitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Search Radius Limitations
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cost-overflow-and-numerical-stability" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cost Overflow and Numerical Stability
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tiled-processing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tiled Processing
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tiled Processing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tile-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tile Structure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#processing-phases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Processing Phases
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#parallel-execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Parallel Execution
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tile-boundary-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tile Boundary Considerations
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#properties-and-guarantees" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Properties and Guarantees
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#complexity-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Complexity Analysis
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Complexity Analysis">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#time-complexity-breakdown" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Time Complexity Breakdown
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#space-complexity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Space Complexity
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#implementation-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Implementation Notes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Implementation Notes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#thread-safety" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Thread Safety
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#numerical-precision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Numerical Precision
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#memory-scaling-with-search-radius" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Memory Scaling with Search Radius
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#additional-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Additional Considerations
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limitations
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#see-also" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        See Also
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+    
+      
+    
+    <a href="https://github.com/fema-ffrd/overflow/raw/master/docs/algorithm-details/breach.md" title="View source of this page" class="md-content__button md-icon">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.2 8.2 0 0 1-1.23-2"/></svg>
+    </a>
+  
+
+
+<h1 id="breach-algorithm">Breach Algorithm<a class="headerlink" href="#breach-algorithm" title="Permanent link">&para;</a></h1>
+<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
+<p>The breach algorithm removes depressions from a DEM by carving flow paths through elevation barriers. The algorithm reads the input DEM and writes a modified output DEM with lowered cell elevations that create monotonic drainage paths from pits to outlets.</p>
+<p>The implementation uses two complementary strategies. First, a fast single-cell method handles simple pits by modifying one intermediate cell. Second, a Dijkstra-based least-cost pathfinding approach handles complex, multi-cell depressions that the single-cell method cannot resolve.</p>
+<p>For large rasters, the algorithm processes the DEM in tiles. Each tile is read with a buffer region to ensure cells near tile edges can access their full neighborhood. Tiles are modified in memory, and only the unbuffered interior is written to the output.</p>
+<h2 id="mathematical-foundation">Mathematical Foundation<a class="headerlink" href="#mathematical-foundation" title="Permanent link">&para;</a></h2>
+<p>A cell <span class="arithmatex">\(c\)</span> with elevation <span class="arithmatex">\(z_c\)</span> is a <strong>pit</strong> if all 8-connected neighbors have elevation greater than or equal to <span class="arithmatex">\(z_c\)</span>, and at least one neighbor is strictly higher:</p>
+<div class="arithmatex">\[
+\text{is\_pit}(c) = \left(\forall n \in N(c): z_n \geq z_c\right) \land \left(\exists n \in N(c): z_n &gt; z_c\right)
+\]</div>
+<p>where <span class="arithmatex">\(N(c)\)</span> denotes the 8-connected neighborhood. This definition excludes flat regions where all neighbors have equal elevation:</p>
+<div class="arithmatex">\[
+\text{is\_flat}(c) = \forall n \in N(c): z_n = z_c
+\]</div>
+<p>A <strong>breach path</strong> is a sequence of cells <span class="arithmatex">\(P = [p_1, p_2, \ldots, p_k]\)</span> connecting a pit to a drainage point. The algorithm modifies elevations along this path to create monotonic descent.</p>
+<h2 id="data-types-and-structures">Data Types and Structures<a class="headerlink" href="#data-types-and-structures" title="Permanent link">&para;</a></h2>
+<h3 id="inputoutput-types">Input/Output Types<a class="headerlink" href="#inputoutput-types" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+<th>No-Data Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>input_dem</td>
+<td>float32</td>
+<td>Input elevation raster</td>
+<td>user-defined or NaN</td>
+</tr>
+<tr>
+<td>output_dem</td>
+<td>float32</td>
+<td>Output elevation raster with breached pits</td>
+<td>user-defined or NaN</td>
+</tr>
+<tr>
+<td>search_radius</td>
+<td>int</td>
+<td>Maximum search distance for least-cost paths (cells)</td>
+<td>N/A</td>
+</tr>
+</tbody>
+</table>
+<h3 id="internal-structures">Internal Structures<a class="headerlink" href="#internal-structures" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Structure</th>
+<th>Type</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>unsolved_pits_raster</td>
+<td>int8 2D array</td>
+<td>Marks cells as pits (1) or solved/non-pit (0)</td>
+</tr>
+<tr>
+<td>costs_array</td>
+<td>float32 2D array</td>
+<td>Accumulated path cost, size <span class="arithmatex">\((2r+1)^2\)</span> per pit</td>
+</tr>
+<tr>
+<td>prev_rows_array</td>
+<td>int64 2D array</td>
+<td>Row index of predecessor in path, size <span class="arithmatex">\((2r+1)^2\)</span> per pit</td>
+</tr>
+<tr>
+<td>prev_cols_array</td>
+<td>int64 2D array</td>
+<td>Column index of predecessor in path, size <span class="arithmatex">\((2r+1)^2\)</span> per pit</td>
+</tr>
+<tr>
+<td>Priority queue (heap)</td>
+<td>GridCell list</td>
+<td>Min-heap storing (cost, row, col) for Dijkstra's algorithm</td>
+</tr>
+</tbody>
+</table>
+<h3 id="constants">Constants<a class="headerlink" href="#constants" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Constant</th>
+<th>Value</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>EPSILON_GRADIENT</td>
+<td><code>1e-5</code></td>
+<td>Minimum elevation drop per cell when breaching to nodata</td>
+</tr>
+<tr>
+<td>DEFAULT_SEARCH_RADIUS</td>
+<td><code>200</code></td>
+<td>Default maximum search distance for least-cost breaching (cells)</td>
+</tr>
+<tr>
+<td>UNVISITED_INDEX</td>
+<td><code>-1</code></td>
+<td>Sentinel value indicating unvisited cell in path reconstruction</td>
+</tr>
+</tbody>
+</table>
+<h2 id="algorithm">Algorithm<a class="headerlink" href="#algorithm" title="Permanent link">&para;</a></h2>
+<p>The breach algorithm operates in two phases. The single-cell phase handles simple pits quickly. Pits that remain unsolved are passed to the least-cost phase.</p>
+<h3 id="processing-model">Processing Model<a class="headerlink" href="#processing-model" title="Permanent link">&para;</a></h3>
+<p>The input DEM is divided into tiles for large rasters. For each tile, both breach phases are applied sequentially on the same in-memory data before writing to output:</p>
+<ol>
+<li>Read tile from input (with buffer sized to search radius)</li>
+<li>Apply single-cell breaching to the tile in memory (modifies tile data)</li>
+<li>Apply least-cost breaching to the same modified tile in memory</li>
+<li>Write the final result to output (unbuffered interior only)</li>
+</ol>
+<p>The loop structure <code>for row in range(2, rows - 2)</code> processes cells starting at index 2 and ending at <code>rows - 3</code> (inclusive). This excludes the buffer on all edges. The same applies for columns. The buffer size for least-cost breaching equals the search radius to ensure pits near tile edges can search their full window.</p>
+<p>Tiles are processed in parallel. Each tile operates on its own memory region, with both phases applied to the same tile data before writing.</p>
+<h3 id="phase-1-single-cell-pit-detection">Phase 1: Single-Cell Pit Detection<a class="headerlink" href="#phase-1-single-cell-pit-detection" title="Permanent link">&para;</a></h3>
+<p>The algorithm scans the interior region of each tile to identify pits. A cell is marked as a pit if all 8 neighbors have elevation greater than or equal to the cell, and at least one neighbor is strictly higher. Flat cells are explicitly excluded from being marked as pits.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">identify_single_cell_pits</span><span class="p">(</span><span class="n">dem</span><span class="p">:</span> <span class="n">float32</span><span class="p">[</span><span class="n">rows</span><span class="p">,</span> <span class="n">cols</span><span class="p">],</span> <span class="n">nodata_value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">int8</span><span class="p">[</span><span class="n">rows</span><span class="p">,</span> <span class="n">cols</span><span class="p">]:</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Identify single-cell pits in interior region (excluding 2-cell border)&quot;&quot;&quot;</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">unsolved_pits</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">((</span><span class="n">rows</span><span class="p">,</span> <span class="n">cols</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">int8</span><span class="p">)</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">rows</span> <span class="o">-</span> <span class="mi">2</span><span class="p">):</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">cols</span> <span class="o">-</span> <span class="mi">2</span><span class="p">):</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>            <span class="n">z</span> <span class="o">=</span> <span class="n">dem</span><span class="p">[</span><span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">]</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>            <span class="k">if</span> <span class="n">z</span> <span class="o">==</span> <span class="n">nodata_value</span> <span class="ow">or</span> <span class="n">isnan</span><span class="p">(</span><span class="n">z</span><span class="p">):</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>                <span class="k">continue</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>            <span class="n">is_flat</span> <span class="o">=</span> <span class="kc">True</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>            <span class="n">is_sink</span> <span class="o">=</span> <span class="kc">True</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>            <span class="c1"># Check 8-connected neighbors</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>            <span class="k">for</span> <span class="p">(</span><span class="n">dy</span><span class="p">,</span> <span class="n">dx</span><span class="p">)</span> <span class="ow">in</span> <span class="n">NEIGHBOR_OFFSETS</span><span class="p">:</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>                <span class="n">zn</span> <span class="o">=</span> <span class="n">dem</span><span class="p">[</span><span class="n">row</span> <span class="o">+</span> <span class="n">dy</span><span class="p">,</span> <span class="n">col</span> <span class="o">+</span> <span class="n">dx</span><span class="p">]</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>                <span class="k">if</span> <span class="n">zn</span> <span class="o">!=</span> <span class="n">z</span><span class="p">:</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>                    <span class="n">is_flat</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>                <span class="c1"># Sink check: any neighbor lower or nodata breaks sink status</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>                <span class="k">if</span> <span class="n">zn</span> <span class="o">==</span> <span class="n">nodata_value</span> <span class="ow">or</span> <span class="n">isnan</span><span class="p">(</span><span class="n">zn</span><span class="p">)</span> <span class="ow">or</span> <span class="n">zn</span> <span class="o">&lt;</span> <span class="n">z</span><span class="p">:</span>
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>                    <span class="n">is_sink</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>                    <span class="k">break</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>            <span class="k">if</span> <span class="ow">not</span> <span class="n">is_flat</span> <span class="ow">and</span> <span class="n">is_sink</span><span class="p">:</span>
+<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>                <span class="n">unsolved_pits</span><span class="p">[</span><span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>
+<a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>    <span class="k">return</span> <span class="n">unsolved_pits</span>
+</code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">Flat Cells Are Not Pits</p>
+<p>Cells where all neighbors have equal elevation are explicitly excluded. Only true pits (all neighbors higher) and cells on the edge of a flat region (some equal, some higher, none lower) are marked as pits.</p>
+</div>
+<p>The function returns an int8 array marking pit cells. The nodata check occurs first. If a cell is nodata or NaN, it is skipped entirely. During neighbor checking, nodata neighbors are treated as being lower than the current cell elevation. This breaks the sink condition, so cells adjacent to nodata are not marked as pits. However, during resolution, nodata cells can be valid breach targets.</p>
+<h3 id="phase-2-single-cell-pit-resolution">Phase 2: Single-Cell Pit Resolution<a class="headerlink" href="#phase-2-single-cell-pit-resolution" title="Permanent link">&para;</a></h3>
+<p>For each identified pit, the algorithm searches a 16-cell neighborhood at radius 2 for a breach target. The target must have elevation less than or equal to the pit elevation, or be nodata. When a target is found, the intermediate cell between the pit and target is modified.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">resolve_single_cell_pits</span><span class="p">(</span><span class="n">dem</span><span class="p">:</span> <span class="n">float32</span><span class="p">[</span><span class="n">rows</span><span class="p">,</span> <span class="n">cols</span><span class="p">],</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>                              <span class="n">unsolved_pits</span><span class="p">:</span> <span class="n">int8</span><span class="p">[</span><span class="n">rows</span><span class="p">,</span> <span class="n">cols</span><span class="p">],</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>                              <span class="n">nodata_value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">int8</span><span class="p">[</span><span class="n">rows</span><span class="p">,</span> <span class="n">cols</span><span class="p">]:</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Breach pits within 16-neighbor window by modifying intermediate cell&quot;&quot;&quot;</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    <span class="c1"># 16-neighbor offsets at radius 2</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="n">dx2</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>    <span class="n">dy2</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>    <span class="c1"># Intermediate cell mapping: breachcell[k] gives 8-neighbor index</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="n">breachcell</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>    <span class="n">pit_indices</span> <span class="o">=</span> <span class="n">argwhere</span><span class="p">(</span><span class="n">unsolved_pits</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>    <span class="k">for</span> <span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">)</span> <span class="ow">in</span> <span class="n">pit_indices</span><span class="p">:</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>        <span class="n">z</span> <span class="o">=</span> <span class="n">dem</span><span class="p">[</span><span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">]</span>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">16</span><span class="p">):</span>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>            <span class="n">zn</span> <span class="o">=</span> <span class="n">dem</span><span class="p">[</span><span class="n">row</span> <span class="o">+</span> <span class="n">dy2</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">col</span> <span class="o">+</span> <span class="n">dx2</span><span class="p">[</span><span class="n">k</span><span class="p">]]</span>
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>            <span class="c1"># Breach target: lower or equal elevation, or nodata</span>
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>            <span class="k">if</span> <span class="n">zn</span> <span class="o">&lt;=</span> <span class="n">z</span> <span class="ow">or</span> <span class="n">zn</span> <span class="o">==</span> <span class="n">nodata_value</span> <span class="ow">or</span> <span class="n">isnan</span><span class="p">(</span><span class="n">zn</span><span class="p">):</span>
+<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>                <span class="k">if</span> <span class="n">zn</span> <span class="o">==</span> <span class="n">nodata_value</span> <span class="ow">or</span> <span class="n">isnan</span><span class="p">(</span><span class="n">zn</span><span class="p">):</span>
+<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>                    <span class="c1"># Breaching to nodata: apply small gradient</span>
+<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>                    <span class="n">zn</span> <span class="o">=</span> <span class="n">z</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">EPSILON_GRADIENT</span>
+<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>
+<a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a>                <span class="c1"># Modify intermediate cell</span>
+<a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a>                <span class="n">intermediate</span> <span class="o">=</span> <span class="n">breachcell</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+<a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a>                <span class="n">dem</span><span class="p">[</span><span class="n">row</span> <span class="o">+</span> <span class="n">dy</span><span class="p">[</span><span class="n">intermediate</span><span class="p">],</span> <span class="n">col</span> <span class="o">+</span> <span class="n">dx</span><span class="p">[</span><span class="n">intermediate</span><span class="p">]]</span> <span class="o">=</span> <span class="p">(</span><span class="n">z</span> <span class="o">+</span> <span class="n">zn</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+<a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a>                <span class="n">unsolved_pits</span><span class="p">[</span><span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># Mark as solved</span>
+<a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a>                <span class="k">break</span>
+<a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a>
+<a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a>    <span class="k">return</span> <span class="n">unsolved_pits</span>
+</code></pre></div>
+<p>The intermediate cell elevation is set to the average of the pit and target elevations: <span class="arithmatex">\((z_c + z_t) / 2\)</span>. This ensures the intermediate cell is lower than the pit but higher than the target, preventing the creation of new pits or uphill flow segments.</p>
+<p>When breaching to a nodata cell, the target elevation is set to <span class="arithmatex">\(z - 2 \cdot \epsilon\)</span>. The factor of 2 ensures that when the intermediate cell takes the average <span class="arithmatex">\((z + (z - 2\epsilon))/2 = z - \epsilon\)</span>, the resulting elevation is below the pit by at least one epsilon. This guarantees flow can continue through the pit.</p>
+<p>If no valid breach target is found within the 16-neighbor window, the pit remains in the unsolved_pits_raster with value 1. These pits are passed to the least-cost phase.</p>
+<p>The <code>for (row, col) in pit_indices</code> loop iterates over all pits identified in phase 1. Within a single tile, <code>argwhere</code> returns indices in row-major order (top-to-bottom, left-to-right), so pit processing is deterministic. This loop executes sequentially (not parallelized within the tile).</p>
+<h3 id="phase-3-least-cost-path-breaching">Phase 3: Least-Cost Path Breaching<a class="headerlink" href="#phase-3-least-cost-path-breaching" title="Permanent link">&para;</a></h3>
+<p>Pits that remain unsolved after single-cell resolution are breached using Dijkstra's algorithm. The algorithm searches within a square window of size <span class="arithmatex">\((2r+1) \times (2r+1)\)</span> centered on the pit, where <span class="arithmatex">\(r\)</span> is the search radius.</p>
+<h4 id="cost-function">Cost Function<a class="headerlink" href="#cost-function" title="Permanent link">&para;</a></h4>
+<p>The cost to move from cell <span class="arithmatex">\(c\)</span> to neighbor <span class="arithmatex">\(n\)</span> is based on elevation difference relative to the pit elevation:</p>
+<div class="arithmatex">\[
+\text{cost}(c \to n) = w_{c,n} \cdot (z_n - z_{\text{pit}})
+\]</div>
+<p>where <span class="arithmatex">\(z_{\text{pit}}\)</span> is the elevation of the pit cell (constant throughout the search), and <span class="arithmatex">\(w_{c,n}\)</span> is the distance weight:</p>
+<div class="arithmatex">\[
+w_{c,n} = \begin{cases}
+1.0 &amp; \text{cardinal directions (N, S, E, W)} \\
+\sqrt{2} &amp; \text{diagonal directions (NE, NW, SE, SW)}
+\end{cases}
+\]</div>
+<p>Descending terrain produces negative edge costs because <span class="arithmatex">\(z_n &lt; z_{\text{pit}}\)</span>. Dijkstra's algorithm handles negative costs correctly as long as there are no negative cycles. Paths preferentially follow valleys (negative costs accumulate to large negative total cost) rather than ridges (positive costs).</p>
+<p>No-data cells are assigned elevation <span class="arithmatex">\(-\infty\)</span>. When a neighbor is nodata, the edge cost calculation checks for this special value and uses zero cost instead of a very large negative number. This makes nodata cells strong attractors for breach paths without causing numerical overflow.</p>
+<h4 id="dijkstra-search">Dijkstra Search<a class="headerlink" href="#dijkstra-search" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">breach_pit_least_cost</span><span class="p">(</span><span class="n">pit_row</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">pit_col</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>                          <span class="n">dem</span><span class="p">:</span> <span class="n">float32</span><span class="p">[</span><span class="n">rows</span><span class="p">,</span> <span class="n">cols</span><span class="p">],</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>                          <span class="n">nodata_value</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>                          <span class="n">search_radius</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Find and apply least-cost breach path using Dijkstra&#39;s algorithm&quot;&quot;&quot;</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="n">initial_elevation</span> <span class="o">=</span> <span class="n">dem</span><span class="p">[</span><span class="n">pit_row</span><span class="p">,</span> <span class="n">pit_col</span><span class="p">]</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    <span class="c1"># Initialize cost grid (size = search window)</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>    <span class="n">window_size</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">search_radius</span> <span class="o">+</span> <span class="mi">1</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>    <span class="n">costs</span> <span class="o">=</span> <span class="n">full</span><span class="p">((</span><span class="n">window_size</span><span class="p">,</span> <span class="n">window_size</span><span class="p">),</span> <span class="n">inf</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">float32</span><span class="p">)</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>    <span class="n">prev_rows</span> <span class="o">=</span> <span class="n">full</span><span class="p">((</span><span class="n">window_size</span><span class="p">,</span> <span class="n">window_size</span><span class="p">),</span> <span class="n">UNVISITED_INDEX</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">int64</span><span class="p">)</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>    <span class="n">prev_cols</span> <span class="o">=</span> <span class="n">full</span><span class="p">((</span><span class="n">window_size</span><span class="p">,</span> <span class="n">window_size</span><span class="p">),</span> <span class="n">UNVISITED_INDEX</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">int64</span><span class="p">)</span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>    <span class="c1"># Offsets to convert global coords to window coords</span>
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>    <span class="n">row_offset</span> <span class="o">=</span> <span class="n">search_radius</span> <span class="o">-</span> <span class="n">pit_row</span>
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>    <span class="n">col_offset</span> <span class="o">=</span> <span class="n">search_radius</span> <span class="o">-</span> <span class="n">pit_col</span>
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>    <span class="c1"># Initialize pit</span>
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>    <span class="n">costs</span><span class="p">[</span><span class="n">pit_row</span> <span class="o">+</span> <span class="n">row_offset</span><span class="p">,</span> <span class="n">pit_col</span> <span class="o">+</span> <span class="n">col_offset</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a>    <span class="n">heap</span> <span class="o">=</span> <span class="n">MinHeap</span><span class="p">()</span>
+<a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a>    <span class="n">heap</span><span class="o">.</span><span class="n">push</span><span class="p">((</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">pit_row</span><span class="p">,</span> <span class="n">pit_col</span><span class="p">))</span>
+<a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a>
+<a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a>    <span class="k">while</span> <span class="ow">not</span> <span class="n">heap</span><span class="o">.</span><span class="n">empty</span><span class="p">():</span>
+<a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a>        <span class="n">cost</span><span class="p">,</span> <span class="n">row</span><span class="p">,</span> <span class="n">col</span> <span class="o">=</span> <span class="n">heap</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+<a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a>
+<a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a>        <span class="c1"># Check termination: found drainage point</span>
+<a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a>        <span class="n">elevation</span> <span class="o">=</span> <span class="n">dem</span><span class="p">[</span><span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">]</span>
+<a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a>        <span class="k">if</span> <span class="n">elevation</span> <span class="o">==</span> <span class="n">nodata_value</span> <span class="ow">or</span> <span class="n">isnan</span><span class="p">(</span><span class="n">elevation</span><span class="p">):</span>
+<a id="__codelineno-2-29" name="__codelineno-2-29" href="#__codelineno-2-29"></a>            <span class="n">elevation</span> <span class="o">=</span> <span class="o">-</span><span class="n">inf</span>
+<a id="__codelineno-2-30" name="__codelineno-2-30" href="#__codelineno-2-30"></a>        <span class="k">if</span> <span class="n">elevation</span> <span class="o">&lt;</span> <span class="n">initial_elevation</span> <span class="ow">or</span> <span class="n">elevation</span> <span class="o">==</span> <span class="o">-</span><span class="n">inf</span><span class="p">:</span>
+<a id="__codelineno-2-31" name="__codelineno-2-31" href="#__codelineno-2-31"></a>            <span class="c1"># Reconstruct and apply path</span>
+<a id="__codelineno-2-32" name="__codelineno-2-32" href="#__codelineno-2-32"></a>            <span class="n">reconstruct_path</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">elevation</span><span class="p">,</span> <span class="n">initial_elevation</span><span class="p">,</span> <span class="n">dem</span><span class="p">,</span>
+<a id="__codelineno-2-33" name="__codelineno-2-33" href="#__codelineno-2-33"></a>                           <span class="n">prev_rows</span><span class="p">,</span> <span class="n">prev_cols</span><span class="p">,</span> <span class="n">row_offset</span><span class="p">,</span> <span class="n">col_offset</span><span class="p">)</span>
+<a id="__codelineno-2-34" name="__codelineno-2-34" href="#__codelineno-2-34"></a>            <span class="k">return</span>
+<a id="__codelineno-2-35" name="__codelineno-2-35" href="#__codelineno-2-35"></a>
+<a id="__codelineno-2-36" name="__codelineno-2-36" href="#__codelineno-2-36"></a>        <span class="c1"># Process 8-connected neighbors</span>
+<a id="__codelineno-2-37" name="__codelineno-2-37" href="#__codelineno-2-37"></a>        <span class="k">for</span> <span class="n">direction</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">8</span><span class="p">):</span>
+<a id="__codelineno-2-38" name="__codelineno-2-38" href="#__codelineno-2-38"></a>            <span class="n">dy</span><span class="p">,</span> <span class="n">dx</span> <span class="o">=</span> <span class="n">NEIGHBOR_OFFSETS</span><span class="p">[</span><span class="n">direction</span><span class="p">]</span>
+<a id="__codelineno-2-39" name="__codelineno-2-39" href="#__codelineno-2-39"></a>            <span class="n">nr</span><span class="p">,</span> <span class="n">nc</span> <span class="o">=</span> <span class="n">row</span> <span class="o">+</span> <span class="n">dy</span><span class="p">,</span> <span class="n">col</span> <span class="o">+</span> <span class="n">dx</span>
+<a id="__codelineno-2-40" name="__codelineno-2-40" href="#__codelineno-2-40"></a>
+<a id="__codelineno-2-41" name="__codelineno-2-41" href="#__codelineno-2-41"></a>            <span class="c1"># Bounds check: within DEM and search window</span>
+<a id="__codelineno-2-42" name="__codelineno-2-42" href="#__codelineno-2-42"></a>            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">nr</span> <span class="o">&lt;</span> <span class="n">rows</span> <span class="ow">and</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">nc</span> <span class="o">&lt;</span> <span class="n">cols</span><span class="p">):</span>
+<a id="__codelineno-2-43" name="__codelineno-2-43" href="#__codelineno-2-43"></a>                <span class="k">continue</span>
+<a id="__codelineno-2-44" name="__codelineno-2-44" href="#__codelineno-2-44"></a>            <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">nr</span> <span class="o">-</span> <span class="n">pit_row</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">search_radius</span> <span class="ow">or</span> <span class="nb">abs</span><span class="p">(</span><span class="n">nc</span> <span class="o">-</span> <span class="n">pit_col</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">search_radius</span><span class="p">:</span>
+<a id="__codelineno-2-45" name="__codelineno-2-45" href="#__codelineno-2-45"></a>                <span class="k">continue</span>
+<a id="__codelineno-2-46" name="__codelineno-2-46" href="#__codelineno-2-46"></a>
+<a id="__codelineno-2-47" name="__codelineno-2-47" href="#__codelineno-2-47"></a>            <span class="c1"># Calculate cost</span>
+<a id="__codelineno-2-48" name="__codelineno-2-48" href="#__codelineno-2-48"></a>            <span class="n">multiplier</span> <span class="o">=</span> <span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="k">if</span> <span class="n">is_diagonal</span><span class="p">(</span><span class="n">direction</span><span class="p">)</span> <span class="k">else</span> <span class="mf">1.0</span>
+<a id="__codelineno-2-49" name="__codelineno-2-49" href="#__codelineno-2-49"></a>            <span class="n">neighbor_elevation</span> <span class="o">=</span> <span class="n">dem</span><span class="p">[</span><span class="n">nr</span><span class="p">,</span> <span class="n">nc</span><span class="p">]</span>
+<a id="__codelineno-2-50" name="__codelineno-2-50" href="#__codelineno-2-50"></a>            <span class="k">if</span> <span class="n">neighbor_elevation</span> <span class="o">==</span> <span class="n">nodata_value</span> <span class="ow">or</span> <span class="n">isnan</span><span class="p">(</span><span class="n">neighbor_elevation</span><span class="p">):</span>
+<a id="__codelineno-2-51" name="__codelineno-2-51" href="#__codelineno-2-51"></a>                <span class="n">neighbor_elevation</span> <span class="o">=</span> <span class="o">-</span><span class="n">inf</span>
+<a id="__codelineno-2-52" name="__codelineno-2-52" href="#__codelineno-2-52"></a>
+<a id="__codelineno-2-53" name="__codelineno-2-53" href="#__codelineno-2-53"></a>            <span class="k">if</span> <span class="n">neighbor_elevation</span> <span class="o">!=</span> <span class="o">-</span><span class="n">inf</span><span class="p">:</span>
+<a id="__codelineno-2-54" name="__codelineno-2-54" href="#__codelineno-2-54"></a>                <span class="n">edge_cost</span> <span class="o">=</span> <span class="n">multiplier</span> <span class="o">*</span> <span class="p">(</span><span class="n">neighbor_elevation</span> <span class="o">-</span> <span class="n">initial_elevation</span><span class="p">)</span>
+<a id="__codelineno-2-55" name="__codelineno-2-55" href="#__codelineno-2-55"></a>            <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-2-56" name="__codelineno-2-56" href="#__codelineno-2-56"></a>                <span class="n">edge_cost</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># No additional cost for nodata</span>
+<a id="__codelineno-2-57" name="__codelineno-2-57" href="#__codelineno-2-57"></a>
+<a id="__codelineno-2-58" name="__codelineno-2-58" href="#__codelineno-2-58"></a>            <span class="n">new_cost</span> <span class="o">=</span> <span class="n">cost</span> <span class="o">+</span> <span class="n">edge_cost</span>
+<a id="__codelineno-2-59" name="__codelineno-2-59" href="#__codelineno-2-59"></a>
+<a id="__codelineno-2-60" name="__codelineno-2-60" href="#__codelineno-2-60"></a>            <span class="c1"># Update if better path found</span>
+<a id="__codelineno-2-61" name="__codelineno-2-61" href="#__codelineno-2-61"></a>            <span class="k">if</span> <span class="n">new_cost</span> <span class="o">&lt;</span> <span class="n">costs</span><span class="p">[</span><span class="n">nr</span> <span class="o">+</span> <span class="n">row_offset</span><span class="p">,</span> <span class="n">nc</span> <span class="o">+</span> <span class="n">col_offset</span><span class="p">]:</span>
+<a id="__codelineno-2-62" name="__codelineno-2-62" href="#__codelineno-2-62"></a>                <span class="n">costs</span><span class="p">[</span><span class="n">nr</span> <span class="o">+</span> <span class="n">row_offset</span><span class="p">,</span> <span class="n">nc</span> <span class="o">+</span> <span class="n">col_offset</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_cost</span>
+<a id="__codelineno-2-63" name="__codelineno-2-63" href="#__codelineno-2-63"></a>                <span class="n">prev_rows</span><span class="p">[</span><span class="n">nr</span> <span class="o">+</span> <span class="n">row_offset</span><span class="p">,</span> <span class="n">nc</span> <span class="o">+</span> <span class="n">col_offset</span><span class="p">]</span> <span class="o">=</span> <span class="n">row</span>
+<a id="__codelineno-2-64" name="__codelineno-2-64" href="#__codelineno-2-64"></a>                <span class="n">prev_cols</span><span class="p">[</span><span class="n">nr</span> <span class="o">+</span> <span class="n">row_offset</span><span class="p">,</span> <span class="n">nc</span> <span class="o">+</span> <span class="n">col_offset</span><span class="p">]</span> <span class="o">=</span> <span class="n">col</span>
+<a id="__codelineno-2-65" name="__codelineno-2-65" href="#__codelineno-2-65"></a>                <span class="n">heap</span><span class="o">.</span><span class="n">push</span><span class="p">((</span><span class="n">new_cost</span><span class="p">,</span> <span class="n">nr</span><span class="p">,</span> <span class="n">nc</span><span class="p">))</span>
+<a id="__codelineno-2-66" name="__codelineno-2-66" href="#__codelineno-2-66"></a>
+<a id="__codelineno-2-67" name="__codelineno-2-67" href="#__codelineno-2-67"></a>    <span class="c1"># No path found within search radius (pit remains)</span>
+</code></pre></div>
+<p>The algorithm terminates when it pops a cell from the heap that has elevation less than the pit elevation, or is nodata. This cell is the breach point. If the heap empties without finding such a cell, the pit cannot be breached within the search radius and remains unmodified.</p>
+<p>Each pit allocates its own cost and predecessor arrays of size <span class="arithmatex">\((2r+1)^2\)</span>. Different pits never share these arrays, even if their search windows overlap spatially in the DEM.</p>
+<p>When multiple paths to a cell have the same cost, Dijkstra's algorithm selects whichever path reaches the cell first based on heap extraction order. All such paths are equally valid by the cost metric.</p>
+<h3 id="phase-4-path-reconstruction-and-gradient-application">Phase 4: Path Reconstruction and Gradient Application<a class="headerlink" href="#phase-4-path-reconstruction-and-gradient-application" title="Permanent link">&para;</a></h3>
+<p>Once a breach point is found, the path from the breach point back to the pit is reconstructed by following the predecessor pointers. The path is then used to apply a linear elevation gradient.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">reconstruct_path</span><span class="p">(</span><span class="n">breach_row</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">breach_col</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>                     <span class="n">final_elevation</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>                     <span class="n">init_elevation</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>                     <span class="n">dem</span><span class="p">:</span> <span class="n">float32</span><span class="p">[</span><span class="n">rows</span><span class="p">,</span> <span class="n">cols</span><span class="p">],</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>                     <span class="n">prev_rows</span><span class="p">:</span> <span class="n">int64</span><span class="p">[</span><span class="n">window</span><span class="p">,</span> <span class="n">window</span><span class="p">],</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>                     <span class="n">prev_cols</span><span class="p">:</span> <span class="n">int64</span><span class="p">[</span><span class="n">window</span><span class="p">,</span> <span class="n">window</span><span class="p">],</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>                     <span class="n">row_offset</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">col_offset</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Trace path and apply gradient&quot;&quot;&quot;</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>    <span class="c1"># Build path from breach point to pit</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>    <span class="n">path</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>    <span class="n">row</span><span class="p">,</span> <span class="n">col</span> <span class="o">=</span> <span class="n">breach_row</span><span class="p">,</span> <span class="n">breach_col</span>
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>    <span class="k">while</span> <span class="n">prev_rows</span><span class="p">[</span><span class="n">row</span> <span class="o">+</span> <span class="n">row_offset</span><span class="p">,</span> <span class="n">col</span> <span class="o">+</span> <span class="n">col_offset</span><span class="p">]</span> <span class="o">!=</span> <span class="n">UNVISITED_INDEX</span><span class="p">:</span>
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>        <span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">))</span>
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>        <span class="n">row</span> <span class="o">=</span> <span class="n">prev_rows</span><span class="p">[</span><span class="n">row</span> <span class="o">+</span> <span class="n">row_offset</span><span class="p">,</span> <span class="n">col</span> <span class="o">+</span> <span class="n">col_offset</span><span class="p">]</span>
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>        <span class="n">col</span> <span class="o">=</span> <span class="n">prev_cols</span><span class="p">[</span><span class="n">row</span> <span class="o">+</span> <span class="n">row_offset</span><span class="p">,</span> <span class="n">col</span> <span class="o">+</span> <span class="n">col_offset</span><span class="p">]</span>
+<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>
+<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a>    <span class="c1"># Remove last cell (pit itself should not be modified)</span>
+<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a>    <span class="n">path</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+<a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a>    <span class="n">path_length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+<a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a>
+<a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a>    <span class="c1"># Apply gradient along path</span>
+<a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a>    <span class="k">if</span> <span class="n">final_elevation</span> <span class="o">==</span> <span class="o">-</span><span class="n">inf</span><span class="p">:</span>
+<a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a>        <span class="c1"># Case A: Breaching to nodata</span>
+<a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a>        <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+<a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a>            <span class="k">if</span> <span class="n">j</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># Skip first cell (already at breach point)</span>
+<a id="__codelineno-3-26" name="__codelineno-3-26" href="#__codelineno-3-26"></a>                <span class="n">gradient_elev</span> <span class="o">=</span> <span class="n">init_elevation</span> <span class="o">-</span> <span class="p">(</span><span class="n">path_length</span> <span class="o">-</span> <span class="n">j</span><span class="p">)</span> <span class="o">*</span> <span class="n">EPSILON_GRADIENT</span>
+<a id="__codelineno-3-27" name="__codelineno-3-27" href="#__codelineno-3-27"></a>                <span class="n">dem</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">gradient_elev</span><span class="p">,</span> <span class="n">dem</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">])</span>
+<a id="__codelineno-3-28" name="__codelineno-3-28" href="#__codelineno-3-28"></a>    <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-3-29" name="__codelineno-3-29" href="#__codelineno-3-29"></a>        <span class="c1"># Case B: Breaching to valid terrain</span>
+<a id="__codelineno-3-30" name="__codelineno-3-30" href="#__codelineno-3-30"></a>        <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+<a id="__codelineno-3-31" name="__codelineno-3-31" href="#__codelineno-3-31"></a>            <span class="c1"># Skip flat areas (already at correct elevation)</span>
+<a id="__codelineno-3-32" name="__codelineno-3-32" href="#__codelineno-3-32"></a>            <span class="k">if</span> <span class="n">dem</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">]</span> <span class="o">==</span> <span class="n">init_elevation</span><span class="p">:</span>
+<a id="__codelineno-3-33" name="__codelineno-3-33" href="#__codelineno-3-33"></a>                <span class="k">continue</span>
+<a id="__codelineno-3-34" name="__codelineno-3-34" href="#__codelineno-3-34"></a>            <span class="c1"># Linear interpolation from breach point to pit</span>
+<a id="__codelineno-3-35" name="__codelineno-3-35" href="#__codelineno-3-35"></a>            <span class="n">gradient_elev</span> <span class="o">=</span> <span class="n">final_elevation</span> <span class="o">+</span> <span class="p">(</span><span class="n">init_elevation</span> <span class="o">-</span> <span class="n">final_elevation</span><span class="p">)</span> <span class="o">*</span> <span class="n">j</span> <span class="o">/</span> <span class="n">path_length</span>
+<a id="__codelineno-3-36" name="__codelineno-3-36" href="#__codelineno-3-36"></a>            <span class="n">dem</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">gradient_elev</span><span class="p">,</span> <span class="n">dem</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">])</span>
+</code></pre></div>
+<p>The gradient is applied using linear interpolation between the breach point elevation and the pit elevation. The path list is ordered from breach point to pit (index 0 is breach point, last index is pit). The interpolation parameter <span class="arithmatex">\(j / \text{path\_length}\)</span> ranges from 0 at the breach point to 1 near the pit.</p>
+<div class="admonition danger">
+<p class="admonition-title">Always Use min() in Gradient Application</p>
+<p>The min() operation <code>dem[r, c] = min(gradient_elev, dem[r, c])</code> is critical. It prevents raising elevations above their original values. This preserves ridges along the path and prevents the creation of uphill flow segments. Without min(), the gradient could raise cells that are already lower than the interpolated value, creating artificial barriers.</p>
+</div>
+<p>When breaching to nodata (final_elevation is <span class="arithmatex">\(-\infty\)</span>), the gradient starts from the pit elevation and decreases by epsilon for each cell along the path away from the pit. The first cell in the path (the nodata cell itself) is skipped because it should not be modified.</p>
+<p>When breaching to valid terrain, cells that already have elevation equal to the pit elevation are skipped. These are flat regions that should not be modified by the gradient. The path may traverse through such flats, and modifying them could create unintended barriers.</p>
+<p>The pit cell itself is excluded from the path before gradient application (via <code>path.pop()</code>). The pit's original elevation is preserved.</p>
+<h3 id="multiple-pit-processing-and-path-interactions">Multiple Pit Processing and Path Interactions<a class="headerlink" href="#multiple-pit-processing-and-path-interactions" title="Permanent link">&para;</a></h3>
+<p>Within a single tile, pits are processed sequentially in row-major order (top-to-bottom, left-to-right). This ordering is deterministic because <code>argwhere</code> always returns indices in the same order for a given input.</p>
+<p>When an earlier pit is breached before a later pit, the later pit's Dijkstra search operates on the DEM that already includes the earlier breach modifications. If an earlier pit creates a breach path that lowers terrain, later pits will see those lowered elevations during their cost calculations. A later pit may find a shorter or cheaper path by routing through terrain already lowered by an earlier breach, as the cost function naturally guides searches toward these lowered areas.</p>
+<p>The <code>min()</code> operation in gradient application ensures that if multiple breach paths cross the same cell, that cell receives the minimum (most lowered) elevation from all breaches. Breaches only lower terrain, never raise it, so no conflicts occur between paths.</p>
+<p>Different pit orderings could produce different final DEMs. However, row-major ordering is consistent across runs, making results fully reproducible. All breach paths remain valid (monotonically decreasing from pit to outlet) regardless of order.</p>
+<p>This sequential processing within tiles is distinct from tile-level parallelism, where different tiles process independently and write to non-overlapping output regions.</p>
+<h2 id="visual-walkthrough">Visual Walkthrough<a class="headerlink" href="#visual-walkthrough" title="Permanent link">&para;</a></h2>
+<h3 id="figure-1-single-cell-pit-detection-pattern">Figure 1: Single-Cell Pit Detection Pattern<a class="headerlink" href="#figure-1-single-cell-pit-detection-pattern" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>8-neighbor pit detection:
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    Neighbor indices:     Elevation check:
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>     3  |  2  |  1           &gt;= | &gt;= | &gt;=
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>    ----|-----|----         ----|----|----
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>     4  |  c  |  0           &gt;= | zc | &gt;=
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>    ----|-----|----         ----|----|----
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>     5  |  6  |  7           &gt;= | &gt;= | &gt;=
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>    Pit: ALL neighbors &gt;= zc AND at least one &gt; zc
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>16-neighbor breach search:
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>     .  .  .  .  .
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>     .  x  x  x  .
+<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a>     .  x  c  x  .
+<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a>     .  x  x  x  .
+<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a>     .  .  .  .  .
+<a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a>
+<a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a>    Search 16 outer cells (.) for elevation &lt;= zc
+<a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a>    Modify intermediate cell (x) to create path
+</code></pre></div>
+<h3 id="figure-2-least-cost-breach-algorithm-flow">Figure 2: Least-Cost Breach Algorithm Flow<a class="headerlink" href="#figure-2-least-cost-breach-algorithm-flow" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>graph TD
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>    A[Start: Pit at zc] --&gt; B[Initialize cost grid to ∞]
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    B --&gt; C[Set pit cost = 0]
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    C --&gt; D[Push pit to heap]
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>    D --&gt; E{Heap empty?}
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>    E --&gt;|Yes| F[No path found within radius]
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>    E --&gt;|No| G[Pop min cost cell]
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>    G --&gt; H{Cell elevation &lt; zc OR nodata?}
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>    H --&gt;|Yes| I[Reconstruct path]
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>    I --&gt; J[Apply linear gradient]
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>    J --&gt; K[End: Pit breached]
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>    H --&gt;|No| L[Process 8 neighbors]
+<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>    L --&gt; M{Better path found?}
+<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>    M --&gt;|Yes| N[Update cost &amp; prev]
+<a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>    N --&gt; O[Push to heap]
+<a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a>    M --&gt;|No| P[Skip neighbor]
+<a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a>    O --&gt; E
+<a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a>    P --&gt; E
+</code></pre></div>
+<h3 id="figure-3-breach-path-visualization">Figure 3: Breach Path Visualization<a class="headerlink" href="#figure-3-breach-path-visualization" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">Before Breach</th>
+<th style="text-align: center;">After Breach</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;"><img alt="Before breach" src="../../img/breach/before.png" /></td>
+<td style="text-align: center;"><img alt="After breach" src="../../img/breach/after.png" /></td>
+</tr>
+</tbody>
+</table>
+<p>The pit at cell (3,3) has elevation 98.0 and is surrounded by higher terrain. The breach path (highlighted in red) connects the pit diagonally to lower terrain at cell (6,6) with elevation 96.0. After breaching, cells along the path are lowered to create a monotonic descent: 98.0 -&gt; 97.3 -&gt; 96.7 -&gt; 96.0.</p>
+<h2 id="no-data-handling">No-Data Handling<a class="headerlink" href="#no-data-handling" title="Permanent link">&para;</a></h2>
+<p>The algorithm checks for both explicit nodata values and NaN at every operation: <code>z == nodata_value or np.isnan(z)</code>. Both representations are treated identically throughout.</p>
+<p>During pit detection, nodata cells are skipped entirely. They are never marked as pits. When checking neighbors of a cell to determine if the cell is a pit, nodata neighbors are treated as being lower than the current cell. This breaks the sink condition, so cells adjacent to nodata are not marked as pits during detection.</p>
+<p>During pit resolution, nodata cells can be valid breach targets. If a nodata cell is found within the 16-neighbor window, the algorithm uses the target elevation <span class="arithmatex">\(z - 2\epsilon\)</span> when computing the intermediate cell elevation. This ensures proper gradient even when breaching toward nodata.</p>
+<p>During least-cost search, nodata cells are assigned elevation <span class="arithmatex">\(-\infty\)</span>. This makes them strong attractors for breach paths. The edge cost to a nodata cell is set to zero (rather than attempting to compute a cost from <span class="arithmatex">\(-\infty\)</span>) to avoid numerical issues.</p>
+<p>Input nodata cells are copied to the output unchanged. The output DEM preserves all nodata cells from the input in their original locations. Breached cells receive modified float32 elevations in the output.</p>
+<h2 id="edge-cases-and-boundary-conditions">Edge Cases and Boundary Conditions<a class="headerlink" href="#edge-cases-and-boundary-conditions" title="Permanent link">&para;</a></h2>
+<h3 id="raster-boundaries-and-buffer-zones">Raster Boundaries and Buffer Zones<a class="headerlink" href="#raster-boundaries-and-buffer-zones" title="Permanent link">&para;</a></h3>
+<p>The single-cell algorithm processes only the interior region of each tile. The loop <code>for row in range(2, rows - 2)</code> starts at row 2 and ends at row <code>rows - 3</code> (inclusive). This excludes a 2-cell border on all edges. The buffer must be at least 2 cells because the 16-neighbor search window extends 2 cells in each direction. In practice, the buffer size equals the search radius (typically much larger than 2) to accommodate the least-cost phase.</p>
+<p>When tiles are read from the raster, a buffer equal to the search radius is included on all sides. For tiles in the interior of the raster, this buffer is populated with actual DEM data from adjacent regions. For tiles at the global raster boundary, portions of the buffer that extend beyond the raster extent are filled with nodata values. These out-of-bounds cells are not treated specially by the algorithm; they exist as regular array cells with nodata values.</p>
+<p>Cells near the global raster boundary that are pits may breach to the nodata-filled buffer regions. Since nodata is treated as the lowest possible elevation (see Phase 2), pits near raster edges naturally drain toward the boundary. This is hydrologically correct for most DEMs where the raster edge represents a drainage outlet or boundary condition. After both breach phases complete, only the unbuffered interior is written to the output.</p>
+<h3 id="unsolved-pits-after-single-cell-phase">Unsolved Pits After Single-Cell Phase<a class="headerlink" href="#unsolved-pits-after-single-cell-phase" title="Permanent link">&para;</a></h3>
+<p>If a pit has no valid breach target within its 16-neighbor window, it remains marked in the unsolved_pits_raster with value 1. These pits are passed to the least-cost phase. In practice, complex depressions spanning many cells, and large flat areas, cannot be resolved by the single-cell method and require the least-cost approach.</p>
+<h3 id="search-radius-limitations">Search Radius Limitations<a class="headerlink" href="#search-radius-limitations" title="Permanent link">&para;</a></h3>
+<p>The least-cost search operates within a square window of size <span class="arithmatex">\((2r+1) \times (2r+1)\)</span> centered on the pit. If no drainage point is found within this window, the algorithm terminates and the pit remains unbreached. Increasing the search radius provides more completeness but consumes more memory. Each pit allocates <span class="arithmatex">\((2r+1)^2\)</span> cells for cost and predecessor arrays. For very large radii or many pits, memory usage can become substantial.</p>
+<p>For depressions larger than the search radius, the fill algorithm may be more appropriate, as it guarantees complete removal of all depressions.</p>
+<h3 id="cost-overflow-and-numerical-stability">Cost Overflow and Numerical Stability<a class="headerlink" href="#cost-overflow-and-numerical-stability" title="Permanent link">&para;</a></h3>
+<p>Cost calculations use float32. For very large search radii or extreme elevation ranges, the accumulated cost can overflow or lose precision. Intermediate cost calculations may use float64 for stability, but the final stored cost is float32. Elevation differences near machine epsilon (approximately <span class="arithmatex">\(10^{-7}\)</span> for float32) may produce unexpected behavior due to rounding.</p>
+<h2 id="tiled-processing">Tiled Processing<a class="headerlink" href="#tiled-processing" title="Permanent link">&para;</a></h2>
+<p>The DEM is divided into square tiles for large rasters. Each tile is processed independently with a buffer region to ensure correct results near tile boundaries.</p>
+<h3 id="tile-structure">Tile Structure<a class="headerlink" href="#tile-structure" title="Permanent link">&para;</a></h3>
+<p>A tile of size <span class="arithmatex">\(s \times s\)</span> is read with a buffer of size <span class="arithmatex">\(r\)</span> (the search radius) on all edges. The full tile including buffer has size <span class="arithmatex">\((s + 2r) \times (s + 2r)\)</span>. The buffer size equals the search radius to ensure that least-cost searches from pits near tile edges can access their full search window. After both phases complete, only the interior region (excluding buffer) is written to output.</p>
+<p>The buffer is populated with actual DEM data from the input raster. For tiles at the global raster boundary, buffer regions that extend beyond the raster extent are filled with nodata values. These cells are not inaccessible or out-of-bounds in the implementation; they exist in the tile array as valid cells with nodata values. This allows neighbor checks and searches to proceed uniformly without special boundary logic.</p>
+<h3 id="processing-phases">Processing Phases<a class="headerlink" href="#processing-phases" title="Permanent link">&para;</a></h3>
+<p>Each tile follows a four-step pipeline. The tile is read from input with a buffer equal to the search radius. Then <code>breach_single_cell_pits_in_chunk</code> modifies the tile data in memory and returns an unsolved pits array. Next, <code>breach_all_pits_in_chunk_least_cost</code> operates on the same (now modified) tile data in memory, breaching remaining pits. Finally, the result is written to output, but only the unbuffered interior is written.</p>
+<p>Both phases work on the same in-memory tile. The single-cell phase modifies the tile first, then the least-cost phase works on that modified data. Only after both phases complete is the tile written to disk.</p>
+<h3 id="parallel-execution">Parallel Execution<a class="headerlink" href="#parallel-execution" title="Permanent link">&para;</a></h3>
+<p>Tiles are processed concurrently using a thread pool. Each tile is read from input, processed in its own memory region, and written to output independently. Different threads may write to the same output file, but they write to non-overlapping spatial regions (tile boundaries do not overlap). The least-cost phase allocates separate cost and predecessor arrays for each pit, eliminating shared state between threads.</p>
+<p>No synchronization is required between tiles during processing. Each tile can be processed completely independently. However, pits located near tile boundaries require careful consideration.</p>
+<div class="admonition note">
+<p class="admonition-title">Buffer Size Equals Search Radius</p>
+<p>The tile buffer size equals the search radius. This ensures pits near tile edges have access to their full search window within the buffered tile. The search window for any pit in the interior fits entirely within the tile plus buffer.</p>
+</div>
+<h3 id="tile-boundary-considerations">Tile Boundary Considerations<a class="headerlink" href="#tile-boundary-considerations" title="Permanent link">&para;</a></h3>
+<p>Pits located near tile boundaries present a special case. A pit at the edge of one tile's interior may also appear in a neighboring tile's buffer region. Both tiles will independently identify and breach this pit, potentially finding different paths.</p>
+<p>The same pit is breached independently by both tiles, with each breach operating on its own copy of the DEM data. Only the tile where the pit is located in the interior writes that pit's breach to output. The neighboring tile does not write its buffer region, so its version of the breach is partially discarded.</p>
+<p>If a pit near a tile boundary breaches toward the neighboring tile, the breach path may extend into the buffer region, but the portion in the buffer is not written. If the neighboring tile also breaches toward its interior from its buffer region (where the same terrain appears), different breach decisions may result in artifacts at the tile boundary.</p>
+<p>These edge effects can produce incomplete breach paths or elevation discontinuities at tile boundaries where breach paths cross from one tile's interior to another's. Pits near boundaries that breach in one direction may have only partial paths written, leaving residual depressions. This is one reason why depression filling is applied after breaching to ensure a complete, hydrologically-connected surface.</p>
+<p>Different chunk sizes will produce different tile boundary locations, which can result in different breach paths for pits near those boundaries. However, for a given chunk size, results are deterministic and reproducible across runs.</p>
+<h2 id="properties-and-guarantees">Properties and Guarantees<a class="headerlink" href="#properties-and-guarantees" title="Permanent link">&para;</a></h2>
+<p>Every breached cell has a non-increasing path to a drainage point. Following steepest descent from any breached cell leads to a cell with elevation less than or equal to the current cell at each step. Only cells on breach paths are modified, with elevations lowered via the min() operation, never raised. Cells not on any breach path retain their original elevations.</p>
+<p>Least-cost paths minimize <span class="arithmatex">\(\sum w \cdot (z - z_{\text{pit}})\)</span> within the search radius. The path selected is optimal by this metric among all paths within the search window. However, pits beyond the search radius may remain unbreached. The algorithm does not guarantee a depression-free DEM, which is by design to limit memory usage and computation time.</p>
+<p>Formally, for breached elevation <span class="arithmatex">\(z'\)</span>:</p>
+<div class="arithmatex">\[
+z'_c \leq z_c \quad \forall c \in \text{modified cells}
+\]</div>
+<p>For cells on breach paths:</p>
+<div class="arithmatex">\[
+\exists \text{ path } P = [c, p_1, \ldots, p_k] : z'_{p_i} \leq z'_{p_{i-1}} \quad \forall i
+\]</div>
+<h2 id="complexity-analysis">Complexity Analysis<a class="headerlink" href="#complexity-analysis" title="Permanent link">&para;</a></h2>
+<p>Let <span class="arithmatex">\(n\)</span> be the total number of cells, <span class="arithmatex">\(p\)</span> the number of pits, and <span class="arithmatex">\(r\)</span> the search radius.</p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Single-Tile</th>
+<th>Tiled</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Time</td>
+<td><span class="arithmatex">\(O(n + p \cdot r^2 \log r)\)</span></td>
+<td><span class="arithmatex">\(O(n + p \cdot r^2 \log r)\)</span></td>
+</tr>
+<tr>
+<td>Space</td>
+<td><span class="arithmatex">\(O(n + r^2)\)</span></td>
+<td><span class="arithmatex">\(O(s^2 + r^2)\)</span> per tile</td>
+</tr>
+</tbody>
+</table>
+<h3 id="time-complexity-breakdown">Time Complexity Breakdown<a class="headerlink" href="#time-complexity-breakdown" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Operation</th>
+<th>Time Complexity</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Single-cell pit detection</td>
+<td><span class="arithmatex">\(O(n)\)</span></td>
+<td>8-neighbor check per cell</td>
+</tr>
+<tr>
+<td>Single-cell resolution</td>
+<td><span class="arithmatex">\(O(p)\)</span></td>
+<td>16-neighbor search per pit (amortized constant)</td>
+</tr>
+<tr>
+<td>Least-cost per pit</td>
+<td><span class="arithmatex">\(O(r^2 \log r)\)</span></td>
+<td>Dijkstra on <span class="arithmatex">\((2r+1)^2\)</span> window</td>
+</tr>
+<tr>
+<td>Path reconstruction</td>
+<td><span class="arithmatex">\(O(r)\)</span></td>
+<td>Linear trace per pit</td>
+</tr>
+<tr>
+<td><strong>Total</strong></td>
+<td><span class="arithmatex">\(O(n + p \cdot r^2 \log r)\)</span></td>
+<td>Dominated by Dijkstra when many pits exist</td>
+</tr>
+</tbody>
+</table>
+<p>The worst case occurs when every cell is a pit (<span class="arithmatex">\(p = n\)</span>), yielding <span class="arithmatex">\(O(n \cdot r^2 \log r)\)</span>. In practice, pits are rare and <span class="arithmatex">\(p \ll n\)</span> (typically less than 1% of cells).</p>
+<h3 id="space-complexity">Space Complexity<a class="headerlink" href="#space-complexity" title="Permanent link">&para;</a></h3>
+<p>Each pit allocates <span class="arithmatex">\((2r+1)^2\)</span> cells for cost and predecessor arrays. For large <span class="arithmatex">\(r\)</span>, memory usage is <span class="arithmatex">\(O(p \cdot r^2)\)</span>. If memory is constrained, pits can be processed sequentially rather than in parallel, reducing the peak memory requirement to <span class="arithmatex">\(O(r^2)\)</span> (one pit at a time).</p>
+<p>For tiled processing, each tile holds <span class="arithmatex">\(s^2\)</span> cells plus a <span class="arithmatex">\(r^2\)</span> cost array per pit being processed. Multiple tiles in memory simultaneously scales this.</p>
+<h2 id="implementation-notes">Implementation Notes<a class="headerlink" href="#implementation-notes" title="Permanent link">&para;</a></h2>
+<h3 id="thread-safety">Thread Safety<a class="headerlink" href="#thread-safety" title="Permanent link">&para;</a></h3>
+<p>The single-cell phase processes tiles in memory. Each tile is a separate memory region (loaded from input), so different threads operate on distinct arrays. When writing to output, threads write to non-overlapping spatial regions determined by tile boundaries (excluding the buffer, which is not written). This prevents data races.</p>
+<p>The least-cost phase allocates separate cost and predecessor arrays for each pit. These arrays are not shared between pits, so no synchronization is needed. Each pit's search is completely independent. Reads from the input DEM are thread-safe (GDAL read operations). All write operations acquire a lock before writing to the dataset.</p>
+<h3 id="numerical-precision">Numerical Precision<a class="headerlink" href="#numerical-precision" title="Permanent link">&para;</a></h3>
+<p>Intermediate calculations for cost and gradient use float64 for stability, but the input and output DEM is float32. Elevation differences smaller than float32 epsilon (approximately <span class="arithmatex">\(10^{-7}\)</span>) may be rounded to zero, causing unexpected behavior when determining whether a neighbor is lower than the current cell.</p>
+<p>The epsilon gradient (1e-5) is several orders of magnitude larger than float32 epsilon, so gradient application is numerically stable for typical elevation ranges.</p>
+<h3 id="memory-scaling-with-search-radius">Memory Scaling with Search Radius<a class="headerlink" href="#memory-scaling-with-search-radius" title="Permanent link">&para;</a></h3>
+<p>Cost arrays scale as <span class="arithmatex">\((2r+1)^2\)</span>. For <span class="arithmatex">\(r=100\)</span>, each pit allocates approximately 160 KB (float32 costs plus two int64 predecessor arrays). For <span class="arithmatex">\(r=1000\)</span>, each pit requires approximately 16 MB. When processing many pits in parallel, total memory usage can be substantial. For large radii, consider processing pits sequentially or using a smaller search radius.</p>
+<h3 id="additional-considerations">Additional Considerations<a class="headerlink" href="#additional-considerations" title="Permanent link">&para;</a></h3>
+<p>Breaching typically leaves residual small pits or flat regions that were beyond the search radius or required more complex resolution. Following breach with the fill algorithm ensures complete depression removal.</p>
+<p>The epsilon gradient magnitude (1e-5) assumes elevation units are meters or feet. For elevation data in other units (e.g., millimeters), adjust the constant proportionally.</p>
+<h2 id="limitations">Limitations<a class="headerlink" href="#limitations" title="Permanent link">&para;</a></h2>
+<p>Pits beyond the search radius remain unbreached. The algorithm does not guarantee a depression-free DEM. For applications requiring complete depression removal, use the fill algorithm or increase the search radius (with corresponding memory cost).</p>
+<p>The search radius is constant for all pits. Adaptive search (varying radius based on pit depth or context) could improve efficiency but is not implemented.</p>
+<p>The algorithm assumes each pit has one primary drainage point. Complex depressions with multiple potential outlets may produce suboptimal results depending on which outlet is found first.</p>
+<h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../fill/">Fill Algorithm</a> - Alternative approach that raises elevations to remove all depressions completely</li>
+<li><a href="../flow-direction/">Flow Direction</a> - Downstream processing that requires a depression-free DEM</li>
+<li><a href="../flat-resolution/">Flat Resolution</a> - Resolves undefined flow in flat regions created by breaching</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      FEMA FFRD // Hydrological Terrain Analysis
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.tracking", "navigation.sections", "toc.follow", "content.code.copy", "content.action.view"], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.e71a0d61.min.js"></script>
+      
+        <script src="../../javascripts/katex.js"></script>
+      
+        <script src="https://unpkg.com/katex@0/dist/katex.min.js"></script>
+      
+        <script src="https://unpkg.com/katex@0/dist/contrib/auto-render.min.js"></script>
+      
+    
+  </body>
+</html>
