@@ -411,18 +411,30 @@ def create_dataset(
     """
     try:
         driver = gdal.GetDriverByName("GTiff")
+        options = [
+            "COMPRESS=ZSTD",
+            "TILED=YES",
+            "BIGTIFF=YES",
+            "NUM_THREADS=ALL_CPUS",
+        ]
+        if data_type in (
+            gdal.GDT_Float16,
+            gdal.GDT_Float32,
+            gdal.GDT_Float64,
+            gdal.GDT_CFloat16,
+            gdal.GDT_CFloat32,
+            gdal.GDT_CFloat64,
+        ):
+            options.append("PREDICTOR=3")
+        elif data_type != gdal.GDT_Unknown:
+            options.append("PREDICTOR=2")
         dataset = driver.Create(
             filepath,
             x_size,
             y_size,
             1,
             data_type,
-            options=[
-                "COMPRESS=ZSTD",
-                "TILED=YES",
-                "BIGTIFF=YES",
-                "NUM_THREADS=ALL_CPUS",
-            ],
+            options=options,
         )
         if geotransform:
             dataset.SetGeoTransform(geotransform)

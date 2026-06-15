@@ -145,51 +145,64 @@ def _resolve_flats_tiled(
     if working_dir is None:
         working_dir = tempfile.mkdtemp()
         cleanup_working_dir = True
-    dem_ds, fdr_ds, fixed_fdr_ds, labels_ds, flat_mask_ds = setup_datasets(
-        dem_filepath, fdr_filepath, output_filepath, working_dir
-    )
-    dem_band = dem_ds.GetRasterBand(1)
-    fdr_band = fdr_ds.GetRasterBand(1)
-    fixed_fdr_band = fixed_fdr_ds.GetRasterBand(1)
-    labels_band = labels_ds.GetRasterBand(1)
-    flat_mask_band = flat_mask_ds.GetRasterBand(1)
+    try:
+        dem_ds, fdr_ds, fixed_fdr_ds, labels_ds, flat_mask_ds = setup_datasets(
+            dem_filepath, fdr_filepath, output_filepath, working_dir
+        )
+        dem_band = dem_ds.GetRasterBand(1)
+        fdr_band = fdr_ds.GetRasterBand(1)
+        fixed_fdr_band = fixed_fdr_ds.GetRasterBand(1)
+        labels_band = labels_ds.GetRasterBand(1)
+        flat_mask_band = flat_mask_ds.GetRasterBand(1)
 
-    tracker.update(1, step_name="Create global state")
+        tracker.update(1, step_name="Create global state")
 
-    global_state = create_global_state(
-        dem_band, fdr_band, labels_band, chunk_size, tracker.callback
-    )
+        global_state = create_global_state(
+            dem_band, fdr_band, labels_band, chunk_size, tracker.callback
+        )
 
-    tracker.update(2, step_name="Solve graph")
-    dist_to_low_edge_tiles, dist_to_high_edge_tiles = global_state.graph.solve_graph()
+        tracker.update(2, step_name="Solve graph")
+        dist_to_low_edge_tiles, dist_to_high_edge_tiles = (
+            global_state.graph.solve_graph()
+        )
 
-    tracker.update(3, step_name="Create flat mask")
+        tracker.update(3, step_name="Create flat mask")
 
-    create_flat_mask(
-        chunk_size,
-        flat_mask_band,
-        labels_band,
-        fdr_band,
-        global_state,
-        dist_to_high_edge_tiles,
-        dist_to_low_edge_tiles,
-        tracker.callback,
-    )
+        create_flat_mask(
+            chunk_size,
+            flat_mask_band,
+            labels_band,
+            fdr_band,
+            global_state,
+            dist_to_high_edge_tiles,
+            dist_to_low_edge_tiles,
+            tracker.callback,
+        )
 
-    tracker.update(4, step_name="Update flow direction")
+        tracker.update(4, step_name="Update flow direction")
 
-    update_fdr(
-        dem_band,
-        fdr_band,
-        fixed_fdr_band,
-        flat_mask_band,
-        chunk_size,
-        tracker.callback,
-    )
-    if cleanup_working_dir:
-        shutil.rmtree(working_dir)
-    dem_ds = None
-    fdr_ds = None
-    fixed_fdr_ds = None
-    labels_ds = None
-    flat_mask_ds = None
+        update_fdr(
+            dem_band,
+            fdr_band,
+            fixed_fdr_band,
+            flat_mask_band,
+            chunk_size,
+            tracker.callback,
+        )
+    finally:
+        # Close bands and datasets before deleting the temp folder to prevent locks/file leakage
+        dem_band = None
+        fdr_band = None
+        fixed_fdr_band = None
+        labels_band = None
+        flat_mask_band = None
+        dem_ds = None
+        fdr_ds = None
+        fixed_fdr_ds = None
+        labels_ds = None
+        flat_mask_ds = None
+        if cleanup_working_dir:
+            try:
+                shutil.rmtree(working_dir)
+            except Exception:
+                pass

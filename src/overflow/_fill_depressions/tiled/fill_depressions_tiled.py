@@ -230,110 +230,120 @@ def _fill_depressions_tiled(
 
     # setup
     working_dir, cleanup_working_dir = setup_working_dir(working_dir)
-    dem_ds, output_ds, labels_ds, no_data_value = setup_datasets(
-        input_path, output_path, working_dir
-    )
-    global_state, input_band, output_band, labels_band = init_global_state(
-        dem_ds, output_ds, labels_ds, no_data_value, chunk_size
-    )
+    try:
+        dem_ds, output_ds, labels_ds, no_data_value = setup_datasets(
+            input_path, output_path, working_dir
+        )
+        global_state, input_band, output_band, labels_band = init_global_state(
+            dem_ds, output_ds, labels_ds, no_data_value, chunk_size
+        )
 
-    # Threading setup
-    max_workers = numba.config.NUMBA_NUM_THREADS  # type: ignore[attr-defined]
-    task_queue: queue.Queue[int] = queue.Queue(max_workers)
-    lock = Lock()
+        # Threading setup
+        max_workers = numba.config.NUMBA_NUM_THREADS  # type: ignore[attr-defined]
+        task_queue: queue.Queue[int] = queue.Queue(max_workers)
+        lock = Lock()
 
-    # Fill depressions in each tile
-    chunk_counter = [0]  # Use list for mutability in closure
-    total_chunks = math.ceil(input_band.YSize / chunk_size) * math.ceil(
-        input_band.XSize / chunk_size
-    )
+        # Fill depressions in each tile
+        chunk_counter = [0]  # Use list for mutability in closure
+        total_chunks = math.ceil(input_band.YSize / chunk_size) * math.ceil(
+            input_band.XSize / chunk_size
+        )
 
-    def handle_fill_tile_result(future):
-        labels, dem, graph, tile_row, tile_col = future.result()
-        with lock:
-            global_state.graph.update(graph)
-            labels_tile = RasterChunk(tile_row, tile_col, chunk_size, 0)
-            labels_tile.from_numpy(labels)
-            labels_tile.write(labels_band)
-            dem_tile = RasterChunk(tile_row, tile_col, chunk_size, 0)
-            dem_tile.from_numpy(dem)
-            dem_tile.write(output_band)
-            task_queue.get()
-            # Report progress as tiles complete
-            chunk_counter[0] += 1
-            tracker.callback(message=f"Chunk {chunk_counter[0]}/{total_chunks}")
+        def handle_fill_tile_result(future):
+            labels, dem, graph, tile_row, tile_col = future.result()
+            with lock:
+                global_state.graph.update(graph)
+                labels_tile = RasterChunk(tile_row, tile_col, chunk_size, 0)
+                labels_tile.from_numpy(labels)
+                labels_tile.write(labels_band)
+                dem_tile = RasterChunk(tile_row, tile_col, chunk_size, 0)
+                dem_tile.from_numpy(dem)
+                dem_tile.write(output_band)
+                task_queue.get()
+                # Report progress as tiles complete
+                chunk_counter[0] += 1
+                tracker.callback(message=f"Chunk {chunk_counter[0]}/{total_chunks}")
 
-    tracker.update(1, step_name="Fill locally")
+        tracker.update(1, step_name="Fill locally")
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        for dem_tile in raster_chunker(input_band, chunk_size):
-            while task_queue.full():
-                time.sleep(0.1)
-            task_queue.put(0)
-            future = executor.submit(
-                fill_tile,
-                dem_tile.data,
-                dem_tile.row,
-                dem_tile.col,
-                global_state,
-                fill_holes,
-            )
-            future.add_done_callback(handle_fill_tile_result)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+            for dem_tile in raster_chunker(input_band, chunk_size):
+                while task_queue.full():
+                    time.sleep(0.1)
+                task_queue.put(0)
+                future = executor.submit(
+                    fill_tile,
+                    dem_tile.data,
+                    dem_tile.row,
+                    dem_tile.col,
+                    global_state,
+                    fill_holes,
+                )
+                future.add_done_callback(handle_fill_tile_result)
 
-    # wait for all tasks to finish
-    while not task_queue.empty():
-        time.sleep(0.1)
+        # wait for all tasks to finish
+        while not task_queue.empty():
+            time.sleep(0.1)
 
-    # flush cache between writing and reading
-    labels_band.FlushCache()
-    labels_ds.FlushCache()
-    output_band.FlushCache()
-    output_ds.FlushCache()
+        # flush cache between writing and reading
+        labels_band.FlushCache()
+        labels_ds.FlushCache()
+        output_band.FlushCache()
+        output_ds.FlushCache()
 
-    # connect tile edges and corners and solve the graph
-    tracker.update(2, step_name="Solve graph")
-    global_state.connect_tile_edges_and_corners()
-    label_min_elevations = global_state.solve_graph()
+        # connect tile edges and corners and solve the graph
+        tracker.update(2, step_name="Solve graph")
+        global_state.connect_tile_edges_and_corners()
+        label_min_elevations = global_state.solve_graph()
 
-    # raise elevation of dem to match global labels
-    chunk_counter_raise = [0]  # Use list for mutability in closure
+        # raise elevation of dem to match global labels
+        chunk_counter_raise = [0]  # Use list for mutability in closure
 
-    def handle_raise_tile_result(future):
-        with lock:
-            dem, tile_row, tile_col = future.result()
-            dem_tile = RasterChunk(tile_row, tile_col, chunk_size, 0)
-            dem_tile.from_numpy(dem)
-            dem_tile.write(output_band)
-            task_queue.get()
-            # Report progress as tiles complete
-            chunk_counter_raise[0] += 1
-            tracker.callback(message=f"Chunk {chunk_counter_raise[0]}/{total_chunks}")
+        def handle_raise_tile_result(future):
+            with lock:
+                dem, tile_row, tile_col = future.result()
+                dem_tile = RasterChunk(tile_row, tile_col, chunk_size, 0)
+                dem_tile.from_numpy(dem)
+                dem_tile.write(output_band)
+                task_queue.get()
+                # Report progress as tiles complete
+                chunk_counter_raise[0] += 1
+                tracker.callback(
+                    message=f"Chunk {chunk_counter_raise[0]}/{total_chunks}"
+                )
 
-    tracker.update(3, step_name="Apply elevations")
+        tracker.update(3, step_name="Apply elevations")
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        for dem_tile in raster_chunker(output_band, chunk_size, lock=lock):
-            while task_queue.full():
-                time.sleep(0.1)
-            task_queue.put(0)
-            tile_labels = RasterChunk(dem_tile.row, dem_tile.col, chunk_size, 0)
-            tile_labels.read(labels_band)
-            future = executor.submit(
-                raise_tile,
-                dem_tile.data,
-                tile_labels.data,
-                label_min_elevations,
-                dem_tile.row,
-                dem_tile.col,
-                global_state.no_data,
-            )
-            future.add_done_callback(handle_raise_tile_result)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+            for dem_tile in raster_chunker(output_band, chunk_size, lock=lock):
+                while task_queue.full():
+                    time.sleep(0.1)
+                task_queue.put(0)
+                tile_labels = RasterChunk(dem_tile.row, dem_tile.col, chunk_size, 0)
+                tile_labels.read(labels_band)
+                future = executor.submit(
+                    raise_tile,
+                    dem_tile.data,
+                    tile_labels.data,
+                    label_min_elevations,
+                    dem_tile.row,
+                    dem_tile.col,
+                    global_state.no_data,
+                )
+                future.add_done_callback(handle_raise_tile_result)
 
-    while not task_queue.empty():
-        time.sleep(0.1)
+        while not task_queue.empty():
+            time.sleep(0.1)
 
-    # tear down
-    if cleanup_working_dir:
-        shutil.rmtree(working_dir)
-    output_ds = None
-    labels_ds = None
+    finally:
+        # Close datasets/bands to release file locks before deleting the folder
+        labels_band = None
+        labels_ds = None
+        output_band = None
+        output_ds = None
+        dem_ds = None
+        if cleanup_working_dir:
+            try:
+                shutil.rmtree(working_dir)
+            except Exception:
+                pass
