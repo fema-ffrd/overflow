@@ -331,6 +331,10 @@ def _fill_depressions_tiled(
 
     while not task_queue.empty():
         time.sleep(0.1)
+        
+    labels_ds.Close()
+    dem_ds.Close()
+    output_ds.Close()
 
     # tear down
     if cleanup_working_dir:
