@@ -333,11 +333,10 @@ def _fill_depressions_tiled(
         time.sleep(0.1)
 
     labels_ds.Close()
-    dem_ds.Close()
     output_ds.Close()
+    if output_ds is not dem_ds:
+        dem_ds.Close()
 
     # tear down
     if cleanup_working_dir:
         shutil.rmtree(working_dir)
-    output_ds = None
-    labels_ds = None

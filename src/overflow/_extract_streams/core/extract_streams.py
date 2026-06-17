@@ -430,6 +430,8 @@ def _extract_streams_core(
     write_lines(lines_layer, lines)
 
     # Clean up
+    points_layer = None
+    lines_layer = None
     del output_ds
     fac_ds = None
     fdr_ds = None
