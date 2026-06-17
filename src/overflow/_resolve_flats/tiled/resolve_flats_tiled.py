@@ -186,10 +186,12 @@ def _resolve_flats_tiled(
         chunk_size,
         tracker.callback,
     )
+    labels_ds.Close()
+    flat_mask_ds.Close()
+    fixed_fdr_ds.Close()
+    if fixed_fdr_ds is not fdr_ds:
+        fdr_ds.Close()
+    dem_ds.Close()
+
     if cleanup_working_dir:
         shutil.rmtree(working_dir)
-    dem_ds = None
-    fdr_ds = None
-    fixed_fdr_ds = None
-    labels_ds = None
-    flat_mask_ds = None

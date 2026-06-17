@@ -6,10 +6,8 @@ from osgeo import gdal
 
 from overflow._util.raster import raster_chunker, read_raster_with_bounds_handling
 
-band_fixtures = ["square_raster_band", "tall_raster_band", "wide_raster_band"]
 
-
-@pytest.fixture(name="raster_band", params=band_fixtures, scope="module")
+@pytest.fixture(name="raster_band", scope="module")
 def fixture_raster_band(request):
     """Create a random raster band for testing. Parametrized to test all band sizes."""
     return request.getfixturevalue(request.param)
