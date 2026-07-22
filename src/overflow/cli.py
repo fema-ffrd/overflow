@@ -211,12 +211,19 @@ def fill_cli(
     help="If set, skip resolving flat areas",
     is_flag=True,
 )
+@click.option(
+    "--flat_resolution_chunk_size_max",
+    help="maximum chunk size used during flat resolution "
+    "(caps chunk_size to limit memory in areas with large flats)",
+    default=512,
+)
 def flow_direction_cli(
     input_file: str,
     output_file: str,
     chunk_size: int,
     working_dir: str | None,
     no_resolve_flats: bool,
+    flat_resolution_chunk_size_max: int,
 ):
     """
     Compute D8 flow directions from a DEM and resolve flat areas.
@@ -236,6 +243,7 @@ def flow_direction_cli(
                     working_dir,
                     resolve_flats=not no_resolve_flats,
                     progress_callback=progress_display.callback,
+                    flat_resolution_chunk_size_max=flat_resolution_chunk_size_max,
                 )
                 resource_stats.add_output_file("Flow Direction", output_file)
                 success = True
@@ -544,6 +552,12 @@ def streams_cli(
     help="If set, fills holes in the DEM",
     is_flag=True,
 )
+@click.option(
+    "--flat_resolution_chunk_size_max",
+    help="maximum chunk size used during flat resolution "
+    "(caps chunk_size to limit memory in areas with large flats)",
+    default=512,
+)
 def pipeline_cli(
     dem_file: str,
     output_dir: str,
@@ -553,6 +567,7 @@ def pipeline_cli(
     da_sqmi: float,
     basins: bool,
     fill_holes: bool,
+    flat_resolution_chunk_size_max: int,
 ):
     """
     Run complete DEM processing pipeline.
@@ -627,6 +642,7 @@ def pipeline_cli(
                         output_dir,
                         resolve_flats=True,
                         progress_callback=progress_display.callback,
+                        flat_resolution_chunk_size_max=flat_resolution_chunk_size_max,
                     )
 
             resource_stats.add_output_file("Flow Direction", f"{output_dir}/fdr.tif")

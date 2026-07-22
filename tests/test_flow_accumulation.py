@@ -244,3 +244,40 @@ def test_tiled_flow_accumulation_with_nodata(fdr_file_paths):
 
         expected_fac, _ = single_tile_flow_accumulation(fdr)
         np.testing.assert_array_equal(fac, expected_fac)
+
+
+def test_tiled_flow_accumulation_with_cycle(capfd):
+    """A flow direction raster containing a two-cell cycle (an invalid input
+    that upstream bugs can produce) must not corrupt cells outside the cycle,
+    must not inflate the cycle cells by repeatedly applying global offsets,
+    and must print a warning with tile and cell coordinates."""
+    # every cell flows east off the raster, except (1, 5) which points west,
+    # forming a cycle with (1, 4); with chunk 4 the pair sits inside tile
+    # (0, 1) and receives inflow 4 across the tile seam from row 1 of tile
+    # (0, 0)
+    fdr = np.zeros((8, 8), dtype=np.ubyte)
+    fdr[1, 5] = 4
+    fdr_path = generate_unique_filepath()
+    driver = gdal.GetDriverByName("GTiff")
+    dataset = driver.Create(fdr_path, 8, 8, 1, gdal.GDT_Byte)
+    band = dataset.GetRasterBand(1)
+    band.WriteArray(fdr)
+    band.SetNoDataValue(FLOW_DIRECTION_NODATA)
+    dataset.FlushCache()
+    dataset = None
+
+    with temporary_dataset() as output_path:
+        _flow_accumulation_tiled(fdr_path, output_path, 4)
+        fac = read_output_dataset(output_path)
+    gdal.Unlink(fdr_path)
+
+    expected = np.tile(np.arange(1, 9, dtype=np.int64), (8, 1))
+    # the cycle swallows row 1: its cells get the upstream inflow exactly
+    # once, nothing propagates past the pair, and cells east of the pair
+    # restart at 1
+    expected[1] = [1, 2, 3, 4, 4, 4, 1, 2]
+    np.testing.assert_array_equal(fac, expected)
+
+    captured = capfd.readouterr()
+    assert "Cycle detected" in captured.out
+    assert "tile:" in captured.out
