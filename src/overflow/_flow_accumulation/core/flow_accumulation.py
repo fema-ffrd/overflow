@@ -71,7 +71,7 @@ def perimeter_indices(shape):
 
 
 @njit
-def follow_path(flow_direction, row, col, links):
+def follow_path(flow_direction, row, col, links, tile_row=0, tile_col=0):
     """Follow the flow path from a cell on the perimeter of the tile and
     populate the links array with the row and col of the perimeter cell that each cell drains to.
     If the cell drains directly to the edge of the tile, the FLOW_EXTERNAL value is used.
@@ -84,9 +84,14 @@ def follow_path(flow_direction, row, col, links):
         row (int): the row of the cell on the perimeter
         col (int): the col of the cell on the perimeter
         links (np.ndarray): 3D array of shape (rows, cols, 2)
+        tile_row (int): tile row index, used only in warning messages
+        tile_col (int): tile col index, used only in warning messages
     """
     init_row = row
     init_col = col
+    # sentinel must not collide with out-of-tile coordinates like (-1, -1)
+    prev_row = -9999
+    prev_col = -9999
     rows, cols = flow_direction.shape
     # Cycle detection: no valid path should exceed total cells in tile
     max_iterations = rows * cols
@@ -97,9 +102,31 @@ def follow_path(flow_direction, row, col, links):
             # Cycle detected - mark as terminating to prevent infinite loop
             links[init_row, init_col, 0] = FLOW_TERMINATES[0]
             links[init_row, init_col, 1] = FLOW_TERMINATES[1]
-            print("Warning: Cycle detected in flow direction data.")
+            print(
+                "Warning: Cycle detected in flow direction data. tile:",
+                tile_row,
+                tile_col,
+                "cell:",
+                row,
+                col,
+            )
             break
         next_row, next_col, next_val = get_next_cell(flow_direction, row, col)
+        if next_row == prev_row and next_col == prev_col:
+            # The current cell and the previous cell point at each other:
+            # a two-cell cycle. Terminate immediately instead of spinning
+            # until max_iterations.
+            links[init_row, init_col, 0] = FLOW_TERMINATES[0]
+            links[init_row, init_col, 1] = FLOW_TERMINATES[1]
+            print(
+                "Warning: Cycle detected in flow direction data. tile:",
+                tile_row,
+                tile_col,
+                "cell:",
+                row,
+                col,
+            )
+            break
         is_outside_tile = (
             next_row < 0 or next_row >= rows or next_col < 0 or next_col >= cols
         )
@@ -118,12 +145,16 @@ def follow_path(flow_direction, row, col, links):
             links[init_row, init_col, 0] = FLOW_TERMINATES[0]
             links[init_row, init_col, 1] = FLOW_TERMINATES[1]
             break
+        prev_row, prev_col = row, col
         row, col = next_row, next_col
 
 
 @njit
 def single_tile_flow_accumulation(
-    flow_direction: np.ndarray, create_links: bool = True
+    flow_direction: np.ndarray,
+    create_links: bool = True,
+    tile_row: int = 0,
+    tile_col: int = 0,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Calculate flow accumulation for a single tile.
        This is Algorithm 1 from https://arxiv.org/pdf/1608.04431.pdf R. Barnes
@@ -189,7 +220,7 @@ def single_tile_flow_accumulation(
         shape=(flow_direction.shape[0], flow_direction.shape[1], 2), dtype=np.int64
     )
     for row, col in perimeter_indices(flow_direction.shape):
-        follow_path(flow_direction, row, col, links)
+        follow_path(flow_direction, row, col, links, tile_row, tile_col)
     return flow_accumulation, links
 
 

@@ -90,6 +90,7 @@ target/
 
 # data folder
 data/
+scripts/
 /*.vscode*/
 
 # mkdocs site folder

@@ -49,7 +49,9 @@ def calculate_flow_accumulation_tile(
         tuple: Contains flow accumulation data and perimeter information.
     """
     # Compute flow accumulation and links for the tile
-    flow_accumulation, links = single_tile_flow_accumulation(flow_direction)
+    flow_accumulation, links = single_tile_flow_accumulation(
+        flow_direction, True, tile_row, tile_col
+    )
 
     # Extract perimeter information for global processing
     flow_acc_perimeter = get_tile_perimeter(flow_accumulation)
@@ -111,6 +113,8 @@ def finalize_flow_accumulation(
         if 0 <= local_row < rows and 0 <= local_col < cols:
             # Propagate the additional accumulation downstream
             current_row, current_col = local_row, local_col
+            # sentinel must not collide with out-of-tile coordinates
+            prev_row, prev_col = -9999, -9999
             current_dir = flow_dir[current_row, current_col]
             # Cycle detection: no valid path should exceed total cells in tile
             max_iterations = rows * cols
@@ -120,16 +124,36 @@ def finalize_flow_accumulation(
                 if iterations > max_iterations:
                     # Cycle detected - stop propagation
                     print(
-                        "Warning: Cycle detected in flow direction data during finalization."
+                        "Warning: Cycle detected in flow direction data during finalization. tile:",
+                        tile_row,
+                        tile_col,
+                        "cell:",
+                        current_row,
+                        current_col,
                     )
                     break
                 # Bounds check: ensure we're still within the tile
                 if not (0 <= current_row < rows and 0 <= current_col < cols):
                     break
                 flow_acc[current_row, current_col] += global_offset[global_index]
-                current_row, current_col, current_dir = get_next_cell(
+                next_row, next_col, next_dir = get_next_cell(
                     flow_dir, current_row, current_col
                 )
+                if next_row == prev_row and next_col == prev_col:
+                    # The current cell and the previous cell point at each
+                    # other: a two-cell cycle. Stop before applying the offset
+                    # to the pair again and again until max_iterations.
+                    print(
+                        "Warning: Cycle detected in flow direction data during finalization. tile:",
+                        tile_row,
+                        tile_col,
+                        "cell:",
+                        current_row,
+                        current_col,
+                    )
+                    break
+                prev_row, prev_col = current_row, current_col
+                current_row, current_col, current_dir = next_row, next_col, next_dir
                 next_global_index = global_state.get_global_cell_index(
                     tile_row, tile_col, current_row, current_col
                 )

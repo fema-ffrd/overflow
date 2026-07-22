@@ -184,6 +184,8 @@ def _resolve_flats_tiled(
         fixed_fdr_band,
         flat_mask_band,
         chunk_size,
+        dist_to_high_edge_tiles,
+        dist_to_low_edge_tiles,
         tracker.callback,
     )
     labels_ds.Close()

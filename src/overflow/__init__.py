@@ -34,7 +34,7 @@ from overflow._util.progress import ProgressCallback
 from overflow._util.raster import snap_drainage_points as _snap_drainage_points
 from overflow.codes import FlowDirection
 
-__version__ = "0.3.5"
+__version__ = "0.3.6"
 
 
 def breach(
@@ -136,9 +136,8 @@ def flow_direction(
             Receives a float value between 0 and 1.
         flat_resolution_chunk_size_max: Maximum chunk size for flat resolution processing.
             Default is 512. This caps the chunk size used during flat resolution to prevent
-            performance issues in areas with large undefined flow regions. This is an advanced
-            parameter only available in the Python API. When chunk_size exceeds this value,
-            flat resolution will use this smaller chunk size instead
+            performance issues in areas with large undefined flow regions. When chunk_size
+            exceeds this value, flat resolution will use this smaller chunk size instead.
     """
     # Compute initial flow directions
     _flow_direction(input_path, output_path, chunk_size, progress_callback)
