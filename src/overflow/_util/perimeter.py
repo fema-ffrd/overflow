@@ -1,5 +1,5 @@
 import numpy as np
-from numba import float32, int64, njit, uint8  # type: ignore[attr-defined]
+from numba import float32, float64, int64, njit, uint8  # type: ignore[attr-defined]
 from numba.experimental import jitclass
 from numba.types import ListType
 
@@ -150,10 +150,12 @@ def create_perimeter_class(numba_type):
 
 
 Float32Perimeter = create_perimeter_class(float32)
+Float64Perimeter = create_perimeter_class(float64)
 Int64Perimeter = create_perimeter_class(int64)
 UInt8Perimeter = create_perimeter_class(uint8)
 
 
 Float32PerimeterList = ListType(Float32Perimeter.class_type.instance_type)
+Float64PerimeterList = ListType(Float64Perimeter.class_type.instance_type)
 Int64PerimeterList = ListType(Int64Perimeter.class_type.instance_type)
 UInt8PerimeterList = ListType(UInt8Perimeter.class_type.instance_type)

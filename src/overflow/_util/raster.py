@@ -435,6 +435,39 @@ def create_dataset(
         raise ValueError(f"Error creating dataset '{filepath}': {e}") from e
 
 
+def validate_raster_compatibility(primary_path: str, secondary_path: str) -> None:
+    """
+    Verify that a secondary raster is co-registered with a primary raster:
+    same dimensions and geotransform. Raises before any tile-by-tile
+    processing assumes the two rasters can be read in lockstep.
+
+    Args:
+        primary_path (str): Path to the primary (driving) raster dataset.
+        secondary_path (str): Path to the secondary raster dataset that must
+            match the primary raster's shape and geotransform.
+
+    Raises:
+        ValueError: If either dataset cannot be opened, or their raster
+            dimensions or geotransforms differ.
+    """
+    primary_ds = open_dataset(primary_path)
+    secondary_ds = open_dataset(secondary_path)
+    primary_shape = (primary_ds.RasterYSize, primary_ds.RasterXSize)
+    secondary_shape = (secondary_ds.RasterYSize, secondary_ds.RasterXSize)
+    if primary_shape != secondary_shape:
+        raise ValueError(
+            f"Raster '{secondary_path}' has shape {secondary_shape}, expected "
+            f"{primary_shape} to match '{primary_path}'"
+        )
+    primary_transform = primary_ds.GetGeoTransform()
+    secondary_transform = secondary_ds.GetGeoTransform()
+    if primary_transform != secondary_transform:
+        raise ValueError(
+            f"Raster '{secondary_path}' has geotransform {secondary_transform}, "
+            f"expected {primary_transform} to match '{primary_path}'"
+        )
+
+
 def read_tile(filepath: str) -> np.ndarray:
     """
     Reads a raster tile from the specified file path and returns its data as a numpy array.

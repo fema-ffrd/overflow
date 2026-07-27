@@ -9,6 +9,9 @@ from overflow._util.constants import (
     FLOW_EXTERNAL,
     FLOW_TERMINATES,
     NEIGHBOR_OFFSETS,
+    WEIGHTED_ACCUMULATION_NODATA,
+    WEIGHTS_NODATA_MODE_PROPAGATE,
+    WEIGHTS_NODATA_MODE_ZERO,
 )
 from overflow._util.queue import Int64PairQueue as Queue
 from overflow._util.raster import create_dataset
@@ -222,6 +225,189 @@ def single_tile_flow_accumulation(
     for row, col in perimeter_indices(flow_direction.shape):
         follow_path(flow_direction, row, col, links, tile_row, tile_col)
     return flow_accumulation, links
+
+
+@njit
+def single_tile_flow_accumulation_weighted(
+    flow_direction: np.ndarray,
+    weights: np.ndarray,
+    weights_nodata: float,
+    nodata_mode: int,
+    create_links: bool = True,
+    tile_row: int = 0,
+    tile_col: int = 0,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Calculate weighted flow accumulation for a single tile: instead of
+       counting cells, sums the weights raster over each cell's upstream
+       contributing area. This is Algorithm 1 from
+       https://arxiv.org/pdf/1608.04431.pdf R. Barnes, generalized to
+       accumulate an arbitrary per-cell weight instead of 1.
+
+    Args:
+        flow_direction (np.ndarray): Flow direction raster with codes from FlowDirection constants
+        weights (np.ndarray): Per-cell weight raster, same shape as flow_direction
+        weights_nodata (float): The nodata value used in the weights raster
+        nodata_mode (int): WEIGHTS_NODATA_MODE_ZERO or WEIGHTS_NODATA_MODE_PROPAGATE,
+            controlling how nodata weight cells are handled
+
+    Returns:
+        tuple[np.ndarray, np.ndarray]: (flow_accumulation, links)
+         - flow_accumulation: The weighted flow accumulation raster (float64)
+         - links: The link raster identifying where each perimeter cell drains to
+    """
+    # substitute nodata weight cells with 0.0 (contribute nothing) or NaN
+    # (poison this cell and everything downstream of it), once per tile,
+    # so the main loop below stays a simple, branch-free `+=`
+    effective_weights = np.empty(weights.shape, dtype=np.float64)
+    for row, col in np.ndindex(weights.shape):
+        value = weights[row, col]
+        if value == weights_nodata:
+            if nodata_mode == WEIGHTS_NODATA_MODE_PROPAGATE:
+                effective_weights[row, col] = np.nan
+            else:
+                effective_weights[row, col] = 0.0
+        else:
+            effective_weights[row, col] = value
+
+    # the output flow accumulation raster
+    flow_accumulation = np.zeros_like(flow_direction, dtype=np.float64)
+    # a dependency raster (number of neighbors that flow into each cell)
+    inflow_count = np.zeros_like(flow_direction, dtype=np.uint8)
+
+    # Calculate inflow count
+    for row, col in np.ndindex(flow_direction.shape):
+        value = flow_direction[row, col]
+        next_row, next_col, next_value = get_next_cell(flow_direction, row, col)
+        if value == FLOW_DIRECTION_NODATA:
+            flow_accumulation[row, col] = WEIGHTED_ACCUMULATION_NODATA
+            continue
+        if next_value == FLOW_DIRECTION_NODATA:
+            continue
+        inflow_count[next_row, next_col] += 1
+
+    queue = Queue([(0, 0)])
+    queue.pop()
+
+    # Populate initial queue with cells that have no inflow
+    for row, col in np.ndindex(inflow_count.shape):
+        _, _, next_value = get_next_cell(flow_direction, row, col)
+        if inflow_count[row, col] == 0 and not np.isnan(flow_accumulation[row, col]):
+            queue.push((row, col))
+
+    # main loop
+    while queue:
+        row, col = queue.pop()
+        flow_accumulation[row, col] += effective_weights[row, col]
+        next_row, next_col, next_value = get_next_cell(flow_direction, row, col)
+        if next_value == FLOW_DIRECTION_NODATA:
+            continue
+        flow_accumulation[next_row, next_col] += flow_accumulation[row, col]
+        inflow_count[next_row, next_col] -= 1
+        if inflow_count[next_row, next_col] == 0:
+            queue.push((next_row, next_col))
+
+    if not create_links:
+        return flow_accumulation, None  # type: ignore[return-value]
+    # links is a 3d numpy array containing the row and col on the
+    # perimeter that each cell utlimatly drains to.
+    # Only cells on the perimeter of the tile are considered.
+    # Cells that drain directly to the edge of the tile are
+    # marked with FLOW_EXTERNAL. Cells that terminate within the tile
+    # are marked with FLOW_TERMINATES. Cells that drain through the tile
+    # are marked with the row and col of the perimeter cell they drain to.
+    links = np.empty(
+        shape=(flow_direction.shape[0], flow_direction.shape[1], 2), dtype=np.int64
+    )
+    for row, col in perimeter_indices(flow_direction.shape):
+        follow_path(flow_direction, row, col, links, tile_row, tile_col)
+    return flow_accumulation, links
+
+
+def _parse_weights_nodata_mode(mode: str) -> int:
+    """Translate the public string weights_nodata_mode API into the internal
+    int flags consumed by the njit-compiled weighted accumulation functions.
+
+    Args:
+        mode (str): "zero" or "propagate"
+
+    Returns:
+        int: WEIGHTS_NODATA_MODE_ZERO or WEIGHTS_NODATA_MODE_PROPAGATE
+
+    Raises:
+        ValueError: If mode is not "zero" or "propagate"
+    """
+    if mode == "zero":
+        return WEIGHTS_NODATA_MODE_ZERO
+    if mode == "propagate":
+        return WEIGHTS_NODATA_MODE_PROPAGATE
+    raise ValueError(
+        f"Invalid weights_nodata_mode: {mode!r}. Must be 'zero' or 'propagate'."
+    )
+
+
+def _flow_accumulation_weighted(
+    fdr_path: str,
+    weights_path: str,
+    output_fac_path: str,
+    weights_nodata_mode: str = "zero",
+) -> None:
+    """
+    Generates a weighted flow accumulation raster from a flow direction raster
+    and a co-registered weights raster.
+
+    Parameters
+    ----------
+    fdr_path : str
+        Path to the input flow direction raster file.
+    weights_path : str
+        Path to the input weights raster file, co-registered with the flow direction raster.
+    output_fac_path : str
+        Path to the output flow accumulation raster file.
+    weights_nodata_mode : str
+        "zero" (nodata weight cells contribute 0) or "propagate" (nodata weight
+        cells poison their own and all downstream accumulation with NaN).
+
+    Returns
+    -------
+    None
+    """
+    nodata_mode = _parse_weights_nodata_mode(weights_nodata_mode)
+    fdr_ds = gdal.Open(fdr_path)
+    projection = fdr_ds.GetProjection()
+    transform = fdr_ds.GetGeoTransform()
+
+    fdr_ds_band = fdr_ds.GetRasterBand(1)
+    fdr_array = fdr_ds_band.ReadAsArray().astype("uint8")
+
+    weights_ds = gdal.Open(weights_path)
+    weights_band = weights_ds.GetRasterBand(1)
+    weights_nodata = weights_band.GetNoDataValue()
+    if weights_nodata is None:
+        raise ValueError("Weights raster must have a no data value")
+    weights_array = weights_band.ReadAsArray().astype(np.float64)
+
+    fac_ds = create_dataset(
+        output_fac_path,
+        WEIGHTED_ACCUMULATION_NODATA,
+        gdal.GDT_Float64,
+        fdr_ds.RasterXSize,
+        fdr_ds.RasterYSize,
+        transform,
+        projection,
+    )
+    fac_band = fac_ds.GetRasterBand(1)
+    fac_array, _ = single_tile_flow_accumulation_weighted(
+        fdr_array, weights_array, weights_nodata, nodata_mode, False
+    )
+    fac_band.WriteArray(fac_array)
+    fac_band.FlushCache()
+    fac_ds.FlushCache()
+    fac_band = None
+    fac_ds = None
+    fdr_ds_band = None
+    fdr_ds = None
+    weights_band = None
+    weights_ds = None
 
 
 def _flow_accumulation(fdr_path: str, output_fac_path: str) -> None:

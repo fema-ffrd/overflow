@@ -274,16 +274,41 @@ def flow_direction_cli(
     help="chunk size (use <= 1 for in-memory processing)",
     default=DEFAULT_CHUNK_SIZE,
 )
+@click.option(
+    "--weights_file",
+    help=(
+        "path to an optional GDAL supported raster dataset of per-cell weights, "
+        "co-registered with the flow direction raster. When given, the output "
+        "sums weights over each cell's upstream contributing area instead of "
+        "counting cells."
+    ),
+    required=False,
+    default=None,
+)
+@click.option(
+    "--weights_nodata_mode",
+    help=(
+        "only used with --weights_file: 'zero' treats a nodata weight cell as "
+        "contributing 0; 'propagate' poisons that cell's accumulation and "
+        "everything downstream of it with NaN"
+    ),
+    type=click.Choice(["zero", "propagate"]),
+    default="zero",
+)
 def accumulation_cli(
     input_file: str,
     output_file: str,
     chunk_size: int,
+    weights_file: str | None,
+    weights_nodata_mode: str,
 ):
     """
     Calculate flow accumulation from a flow direction raster.
 
     This command computes the number of upstream cells that flow into each
-    cell, representing drainage area in cell units.
+    cell, representing drainage area in cell units. If --weights_file is given,
+    it instead sums the weights raster over each cell's upstream contributing
+    area.
     """
     success = False
     try:
@@ -291,7 +316,12 @@ def accumulation_cli(
         with timer("Accumulation", spinner=False):
             with progress_display.progress_context("Flow Accumulation"):
                 accumulation(
-                    input_file, output_file, chunk_size, progress_display.callback
+                    input_file,
+                    output_file,
+                    chunk_size,
+                    weights_file,
+                    weights_nodata_mode,
+                    progress_display.callback,
                 )
                 resource_stats.add_output_file("Flow Accumulation", output_file)
                 success = True
@@ -653,7 +683,7 @@ def pipeline_cli(
                         f"{output_dir}/fdr.tif",
                         f"{output_dir}/accum.tif",
                         chunk_size if chunk_size > 0 else 0,
-                        progress_display.callback,
+                        progress_callback=progress_display.callback,
                     )
 
             resource_stats.add_output_file(

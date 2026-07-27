@@ -23,8 +23,14 @@ from overflow._extract_streams.core import _extract_streams_core
 from overflow._extract_streams.tiled import _extract_streams_tiled
 from overflow._fill_depressions.core import _fill_depressions
 from overflow._fill_depressions.tiled import _fill_depressions_tiled
-from overflow._flow_accumulation.core import _flow_accumulation
-from overflow._flow_accumulation.tiled import _flow_accumulation_tiled
+from overflow._flow_accumulation.core import (
+    _flow_accumulation,
+    _flow_accumulation_weighted,
+)
+from overflow._flow_accumulation.tiled import (
+    _flow_accumulation_tiled,
+    _flow_accumulation_weighted_tiled,
+)
 from overflow._flow_direction import _flow_direction
 from overflow._longest_flow_path import _flow_length_core
 from overflow._resolve_flats.core import _resolve_flats_core
@@ -32,9 +38,12 @@ from overflow._resolve_flats.tiled import _resolve_flats_tiled
 from overflow._util.constants import DEFAULT_CHUNK_SIZE, DEFAULT_SEARCH_RADIUS
 from overflow._util.progress import ProgressCallback
 from overflow._util.raster import snap_drainage_points as _snap_drainage_points
+from overflow._util.raster import (
+    validate_raster_compatibility as _validate_raster_compatibility,
+)
 from overflow.codes import FlowDirection
 
-__version__ = "0.3.6"
+__version__ = "0.4.0"
 
 
 def breach(
@@ -161,23 +170,50 @@ def accumulation(
     input_path: str,
     output_path: str,
     chunk_size: int = DEFAULT_CHUNK_SIZE,
+    weights_path: str | None = None,
+    weights_nodata_mode: str = "zero",
     progress_callback: ProgressCallback | None = None,
 ) -> None:
     """
     Calculate flow accumulation from a flow direction raster.
 
     This function computes the number of upstream cells that flow into each
-    cell, representing drainage area in cell units.
+    cell, representing drainage area in cell units. If a weights raster is
+    given, it instead sums the weights raster over each cell's upstream
+    contributing area (e.g. precipitation depth, imperviousness fraction).
 
     Args:
         input_path: Path to the input flow direction raster file.
         output_path: Path for the output flow accumulation raster file.
         chunk_size: Size of processing chunks in pixels. Use chunk_size <= 1 for
             in-memory processing. Default is 2048.
+        weights_path: Optional path to a weights raster, co-registered with the
+            flow direction raster (same shape and geotransform). When given,
+            the output is a float64 weighted-sum accumulation raster instead
+            of the default int64 cell-count raster.
+        weights_nodata_mode: Only used when weights_path is given. "zero"
+            (default) treats a nodata weight cell as contributing 0. "propagate"
+            poisons that cell's accumulation and everything downstream of it
+            with NaN.
         progress_callback: Optional callback function for progress reporting.
             Receives a float value between 0 and 1.
     """
-    if chunk_size <= 1:
+    if weights_path is not None:
+        _validate_raster_compatibility(input_path, weights_path)
+        if chunk_size <= 1:
+            _flow_accumulation_weighted(
+                input_path, weights_path, output_path, weights_nodata_mode
+            )
+        else:
+            _flow_accumulation_weighted_tiled(
+                input_path,
+                weights_path,
+                output_path,
+                chunk_size,
+                weights_nodata_mode,
+                progress_callback,
+            )
+    elif chunk_size <= 1:
         _flow_accumulation(input_path, output_path)
     else:
         _flow_accumulation_tiled(input_path, output_path, chunk_size, progress_callback)

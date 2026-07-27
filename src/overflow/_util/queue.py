@@ -3,7 +3,7 @@ from numba.experimental import jitclass
 from numba.typed import List  # type: ignore[attr-defined]
 from numba.types import ListType
 
-from overflow._util.numba_types import Int64Pair
+from overflow._util.numba_types import IndexOffsetPair, Int64Pair
 from overflow._util.raster import GridCellFloat32, GridCellInt64
 
 
@@ -130,3 +130,5 @@ Int64PairQueue = create_queue_class(Int64Pair)
 GridCellInt64Queue = create_queue_class(GridCellInt64.class_type.instance_type)
 
 GridCellFloat32Queue = create_queue_class(GridCellFloat32.class_type.instance_type)
+
+IndexOffsetPairQueue = create_queue_class(IndexOffsetPair)
