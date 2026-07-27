@@ -88,6 +88,7 @@ nav:
       - Pipeline: user-guide/pipeline.md
       - Terrain Conditioning:
           - Breach: user-guide/terrain-conditioning/breach.md
+          - Burn: user-guide/terrain-conditioning/burn.md
           - Fill: user-guide/terrain-conditioning/fill.md
       - Flow Routing:
           - Flow Direction: user-guide/flow-routing/flow-direction.md
@@ -100,6 +101,7 @@ nav:
       - algorithm-details/index.md
       - Terrain Conditioning:
           - Breach: algorithm-details/breach.md
+          - Burn: algorithm-details/burn.md
           - Fill: algorithm-details/fill.md
       - Flow Routing:
           - Flow Direction: algorithm-details/flow-direction.md

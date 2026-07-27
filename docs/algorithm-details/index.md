@@ -7,6 +7,7 @@ This section provides in-depth documentation of the algorithms implemented in Ov
 Prepare raw DEMs for hydrological analysis by removing artificial depressions:
 
 - [Breach Algorithm](breach.md) - Remove depressions by carving least-cost flow paths
+- [Burn Algorithm](burn.md) - Impose elevations on contiguous regions of a mask raster
 - [Fill Algorithm](fill.md) - Fill depressions using priority-flood
 
 ## Flow Routing

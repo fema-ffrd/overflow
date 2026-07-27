@@ -227,3 +227,55 @@ def test_fill_depressions_tiled(dem_filepath, expected_filled_dem_values):
     band = None
     ds = None
     gdal.Unlink(output_filepath)
+
+
+@pytest.mark.parametrize("transpose", [False, True], ids=["1xN grid", "Nx1 grid"])
+def test_fill_depressions_tiled_degenerate_tile_grid(transpose):
+    """Seams must be joined when the tile grid is a single tile row or column.
+
+    Regression test. Joining seams by walking a 2x2 tile block over
+    range(rows - 1) x range(cols - 1) iterates zero times on a 1xN or Nx1 tile
+    grid, which leaves every seam unjoined. Nothing raises; the fill is simply
+    wrong, and only for rasters that are smaller than chunk_size in one dimension
+    and larger in the other.
+
+    The DEM is a plateau at 10 holding a depression at elevation 1 that straddles
+    the tile seam. Its only outlet is a pass at elevation 5 lying wholly inside the
+    second tile, so filling the first tile's half correctly is impossible without
+    the seam graph. Correct output raises the whole depression to 5; an unjoined
+    seam raises the first tile's half to 10 instead.
+    """
+    chunk_size = 8
+    dem = np.full((8, 16), 10.0, dtype=np.float32)
+    dem[2:6, 5:11] = 1.0  # depression straddling the seam at column 8
+    dem[3, 11:16] = 5.0  # spill channel reaching the right edge, inside tile 2
+    if transpose:
+        dem = np.ascontiguousarray(dem.T)
+
+    dem_path = "/vsimem/degenerate_grid_dem.tif"
+    output_path = "/vsimem/degenerate_grid_filled.tif"
+    driver = gdal.GetDriverByName("GTiff")
+    dataset = driver.Create(dem_path, dem.shape[1], dem.shape[0], 1, gdal.GDT_Float32)
+    band = dataset.GetRasterBand(1)
+    band.WriteArray(dem)
+    band.SetNoDataValue(-9999.0)
+    dataset.FlushCache()
+    band = None
+    dataset = None
+
+    try:
+        _fill_depressions_tiled(dem_path, output_path, chunk_size, "/vsimem")
+        ds = gdal.Open(output_path)
+        filled = ds.GetRasterBand(1).ReadAsArray()
+        ds = None
+
+        expected = dem.copy()
+        if transpose:
+            expected[5:11, 2:6] = 5.0
+        else:
+            expected[2:6, 5:11] = 5.0
+        assert np.allclose(filled, expected)
+    finally:
+        for path in (dem_path, output_path):
+            if gdal.VSIStatL(path) is not None:
+                gdal.Unlink(path)

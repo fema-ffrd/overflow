@@ -9,6 +9,7 @@ from overflow import (
     __version__,
     accumulation,
     breach,
+    burn,
     fill,
     flow_direction,
     streams,
@@ -252,6 +253,141 @@ def flow_direction_cli(
     except Exception as exc:
         console.print(
             f"[bold red]Error:[/bold red] flow-direction failed with the following exception: {str(exc)}"
+        )
+        if not success:
+            console.print(resource_stats.get_summary_panel(success=False))
+        raise click.Abort()
+
+
+@main.command(name="burn")
+@click.option(
+    "--dem_file",
+    help="path to the GDAL supported raster dataset for the input DEM",
+    required=True,
+)
+@click.option(
+    "--mask_file",
+    help=(
+        "path to a binary or classified GDAL supported raster dataset, "
+        "co-registered with the DEM, whose regions are burned into the DEM"
+    ),
+    required=True,
+)
+@click.option(
+    "--output_file",
+    help="path to the output file (must be GeoTiff)",
+    required=True,
+)
+@click.option(
+    "--method",
+    help=(
+        "how to choose the elevation to burn: 'constant' writes the burn value "
+        "for the cell's mask value; 'relative' subtracts the burn value from the "
+        "DEM, preserving relief; 'statistic' writes each contiguous region's own "
+        "statistic of the DEM beneath it"
+    ),
+    type=click.Choice(["constant", "relative", "statistic"]),
+    required=True,
+)
+@click.option(
+    "--burn_values",
+    help=(
+        "required for --method constant and relative: a mapping of mask value to "
+        "burn value such as '1:225.5,3:210.0', or a single number applied to "
+        "every selected mask value"
+    ),
+    required=False,
+    default=None,
+)
+@click.option(
+    "--mask_values",
+    help=(
+        "comma separated mask values identifying regions, such as '1,3'. Defaults "
+        "to the keys of --burn_values, or to every non zero, non nodata mask value"
+    ),
+    required=False,
+    default=None,
+)
+@click.option(
+    "--statistic",
+    help="only used with --method statistic: the statistic computed per region",
+    type=click.Choice(["min", "max", "mean"]),
+    default="min",
+)
+@click.option(
+    "--burn_offset",
+    help=(
+        "only used with --method statistic: subtracted from each region's "
+        "statistic, so --statistic min --burn_offset 1.0 writes each region's "
+        "minimum elevation less one"
+    ),
+    type=float,
+    default=0.0,
+)
+@click.option(
+    "--connectivity",
+    help=("8 treats diagonally touching cells as one region, 4 requires a shared edge"),
+    type=click.Choice(["4", "8"]),
+    default="8",
+)
+@click.option(
+    "--chunk_size",
+    help="chunk size (use <= 1 for in-memory processing)",
+    default=DEFAULT_CHUNK_SIZE,
+)
+@click.option(
+    "--working_dir",
+    help="path to the working directory used for temporary files",
+    required=False,
+    default=None,
+)
+def burn_cli(
+    dem_file: str,
+    mask_file: str,
+    output_file: str,
+    method: str,
+    burn_values: str | None,
+    mask_values: str | None,
+    statistic: str,
+    burn_offset: float,
+    connectivity: str,
+    chunk_size: int,
+    working_dir: str | None,
+):
+    """
+    Burn elevations into a DEM inside the regions of a mask raster.
+
+    This command rewrites the DEM inside regions identified by a binary or
+    classified mask raster, either to a constant elevation, to the DEM lowered by
+    a fixed amount, or to a statistic of the DEM beneath each contiguous region.
+    Regions are recognized as whole even where they straddle processing tiles.
+    """
+    success = False
+    try:
+        progress_display = RichProgressDisplay()
+        with timer("Burn", spinner=False):
+            with progress_display.progress_context("Burn Mask Regions"):
+                burn(
+                    dem_file,
+                    mask_file,
+                    output_file,
+                    method,
+                    mask_values,
+                    burn_values,
+                    statistic,
+                    burn_offset,
+                    int(connectivity),
+                    chunk_size,
+                    working_dir,
+                    progress_display.callback,
+                )
+                resource_stats.add_output_file("Burned DEM", output_file)
+                success = True
+
+        console.print(resource_stats.get_summary_panel(success=success))
+    except Exception as exc:
+        console.print(
+            f"[bold red]Error:[/bold red] burn failed with the following exception: {str(exc)}"
         )
         if not success:
             console.print(resource_stats.get_summary_panel(success=False))

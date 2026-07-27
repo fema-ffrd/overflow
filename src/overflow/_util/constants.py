@@ -70,6 +70,16 @@ WEIGHTED_ACCUMULATION_NODATA = float("nan")
 WEIGHTS_NODATA_MODE_ZERO = 0
 WEIGHTS_NODATA_MODE_PROPAGATE = 1
 EDGE_LABEL = np.int64(1)  # edge label of fill depressions algorithm
+# burn methods, see the burn tool
+BURN_METHOD_CONSTANT = 0
+BURN_METHOD_RELATIVE = 1
+BURN_METHOD_STATISTIC = 2
+# per region statistics available to BURN_METHOD_STATISTIC
+BURN_STAT_MIN = 0
+BURN_STAT_MAX = 1
+BURN_STAT_MEAN = 2
+# label used by the burn tool for cells that are not part of any masked region
+BURN_NO_REGION_LABEL = 0
 # Define flags for each side
 TOP = 0b0001  # Binary representation of 1
 RIGHT = 0b0010  # Binary representation of 2

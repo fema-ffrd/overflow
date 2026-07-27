@@ -72,6 +72,36 @@ overflow [COMMAND] [OPTIONS]
 
 -----
 
+### `burn`
+
+**Description:** Burn elevations into a DEM inside the regions of a mask raster. This command rewrites the DEM inside regions identified by a binary or classified mask raster, either to a constant elevation, to the DEM lowered by a fixed amount, or to a statistic of the DEM beneath each contiguous region. Regions are recognized as whole even where they straddle processing tiles.
+
+**Options:**
+
+| Option | Type | Default | Required | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `--dem_file` | TEXT | - | **Yes** | Path to the GDAL supported raster dataset for the input DEM.  |
+| `--mask_file` | TEXT | - | **Yes** | Path to a binary or classified raster, co-registered with the DEM, whose regions are burned into the DEM.  |
+| `--output_file` | TEXT | - | **Yes** | Path to the output file (must be GeoTiff).  |
+| `--method` | CHOICE | - | **Yes** | One of `constant`, `relative`, `statistic`. See below.  |
+| `--burn_values` | TEXT | None | No | Required for `constant` and `relative`: a mapping of mask value to burn value such as `"1:225.5,3:210.0"`, or a single number applied to every selected mask value.  |
+| `--mask_values` | TEXT | None | No | Comma separated mask values identifying regions, such as `"1,3"`. Defaults to the keys of `--burn_values`, or to every non zero, non nodata mask value.  |
+| `--statistic` | CHOICE | min | No | Only used with `--method statistic`: one of `min`, `max`, `mean`.  |
+| `--burn_offset` | FLOAT | 0.0 | No | Only used with `--method statistic`: subtracted from each region's statistic.  |
+| `--connectivity` | CHOICE | 8 | No | `8` treats diagonally touching cells as one region, `4` requires a shared edge.  |
+| `--chunk_size` | INTEGER | 2048 | No | Chunk size (use \<= 1 for in-memory processing).  |
+| `--working_dir` | TEXT | None | No | Working directory for temporary files.  |
+
+**Methods:**
+
+| `--method` | Cell value written |
+| :--- | :--- |
+| `constant` | The burn value configured for the cell's mask value |
+| `relative` | `dem - burn_value`, applied per cell so relief inside the region is preserved |
+| `statistic` | The region's own `min`, `max` or `mean` of the DEM beneath it, less `--burn_offset` |
+
+-----
+
 ### `flow-direction`
 
 **Description:** Compute D8 flow directions from a DEM and resolve flat areas. This command calculates the steepest descent direction for each cell using the D8 algorithm, then resolves flat areas to ensure continuous flow paths. 

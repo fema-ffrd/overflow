@@ -171,6 +171,68 @@ def test_label_watersheds_tiled(
     gdal.Unlink(gpkg_path)
 
 
+@pytest.mark.parametrize("transpose", [False, True], ids=["1xN grid", "Nx1 grid"])
+def test_label_watersheds_tiled_degenerate_tile_grid(transpose):
+    """Seams must be joined when the tile grid is a single tile row or column.
+
+    Regression test. Joining seams by walking a 2x2 tile block over
+    range(rows - 1) x range(cols - 1) iterates zero times on a 1xN or Nx1 tile
+    grid, leaving every seam unjoined so the watershed graph never links a tile to
+    its neighbor.
+
+    Every cell here drains west along its row to column 0, then along column 0 to a
+    single outlet at (4, 0), so the whole raster is one basin. With seams unjoined,
+    only the tile holding the outlet reaches it and the rest of the raster is left
+    unlabeled.
+    """
+    fdr = np.full((8, 32), 4, dtype=np.ubyte)  # west
+    fdr[:4, 0] = 6  # south, down column 0 toward the outlet
+    fdr[5:, 0] = 2  # north, up column 0 toward the outlet
+    fdr[4, 0] = 4  # west, off the raster edge: the outlet
+    outlet = (4, 0)
+    if transpose:
+        # rotate the whole flow field a quarter turn: west becomes north
+        fdr = np.full((32, 8), 2, dtype=np.ubyte)  # north
+        fdr[0, :4] = 0  # east, along row 0 toward the outlet
+        fdr[0, 5:] = 4  # west, along row 0 toward the outlet
+        fdr[0, 4] = 2  # north, off the raster edge: the outlet
+        outlet = (0, 4)
+
+    fdr_path = "/vsimem/degenerate_grid_fdr.tif"
+    output_path = "/vsimem/degenerate_grid_basins.tif"
+    gpkg_path = "/vsimem/degenerate_grid_basins.gpkg"
+    driver = gdal.GetDriverByName("GTiff")
+    rows, cols = fdr.shape
+    dataset = driver.Create(fdr_path, cols, rows, 1, gdal.GDT_Byte)
+    dataset.SetGeoTransform([0, 1, 0, 0, 0, 1])
+    srs = osr.SpatialReference()
+    srs.ImportFromEPSG(4326)
+    dataset.SetProjection(srs.ExportToWkt())
+    band = dataset.GetRasterBand(1)
+    band.SetNoDataValue(FLOW_DIRECTION_NODATA)
+    band.WriteArray(fdr)
+    band.FlushCache()
+    dataset.FlushCache()
+    band = None
+    dataset = None
+
+    drainage_points = Dict.empty(UniTuple(int64, 2), int64)
+    drainage_points[outlet] = 0
+
+    try:
+        _label_watersheds_tiled(fdr_path, drainage_points, output_path, chunk_size=8)
+        ds = gdal.Open(output_path)
+        watersheds = ds.GetRasterBand(1).ReadAsArray()
+        ds = None
+        # the entire raster drains to the one outlet, so it is a single basin
+        assert np.all(watersheds != 0), "cells beyond the outlet's tile went unlabeled"
+        assert len(np.unique(watersheds)) == 1
+    finally:
+        for path in (fdr_path, output_path, gpkg_path):
+            if gdal.VSIStatL(path) is not None:
+                gdal.Unlink(path)
+
+
 @pytest.fixture(name="test_drainage_points_gpkg")
 def fixture_test_drainage_points_gpkg(test_fdr_with_drainage_points_filepath):
     """Create a GeoPackage file with drainage points."""

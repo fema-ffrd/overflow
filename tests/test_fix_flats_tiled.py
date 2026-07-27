@@ -444,6 +444,34 @@ def test_resolve_flats_tiled_no_seam_artifacts(seed, chunk_size):
     )
 
 
+@pytest.mark.parametrize("seed", range(8))
+@pytest.mark.parametrize("shape", [(8, 48), (48, 8)], ids=["1xN grid", "Nx1 grid"])
+def test_resolve_flats_tiled_degenerate_tile_grid(seed, shape):
+    """Seams must be joined when the tile grid is a single tile row or column.
+
+    Regression test. Joining seams by walking a 2x2 tile block over
+    range(rows - 1) x range(cols - 1) iterates zero times on a 1xN or Nx1 tile
+    grid, leaving every seam unjoined so flats straddling a tile boundary are
+    resolved as if they ended there. The shapes here are smaller than chunk_size
+    in one dimension and larger in the other, which is exactly the case the block
+    walk misses.
+    """
+    rng = np.random.default_rng(seed)
+    dem = priority_flood_fill(rng.integers(0, 4, size=shape).astype(np.float32))
+    initial_fdr = make_initial_fdr(dem)
+
+    fixed_tiled = _run_resolve_flats_tiled(dem, initial_fdr, chunk_size=8)
+
+    assert find_reciprocal_pairs(fixed_tiled) == []
+    assert_valid_drainage(fixed_tiled)
+
+    fixed_core = fix_flats(dem, initial_fdr.copy(), inplace=False)
+    np.testing.assert_array_equal(
+        fixed_tiled == FLOW_DIRECTION_UNDEFINED,
+        fixed_core == FLOW_DIRECTION_UNDEFINED,
+    )
+
+
 def test_seam_scale_mismatch_regression():
     """Regression for a real-data bug: per-tile flat masks are on
     non-comparable numeric scales across a tile seam (the neighboring tile
