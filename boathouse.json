@@ -147,6 +147,101 @@
             ]
         },
         {
+            "name": "Burn",
+            "path": "overflow",
+            "cmd": [
+                "burn"
+            ],
+            "readme": "https://fema-ffrd.github.io/overflow/",
+            "description": "Burn elevations into a DEM inside the contiguous regions of a binary or classified mask raster, either as a constant, relative to the existing surface, or as a per region statistic.",
+            "category": "Hydrology",
+            "keywords": [
+                "dem",
+                "burn",
+                "mask",
+                "region",
+                "waterbody",
+                "terrain",
+                "preprocessing",
+                "hydrology",
+                "raster"
+            ],
+            "args": [
+                {
+                    "displayName": "DEM File",
+                    "name": "dem_file",
+                    "type": "file",
+                    "description": "path to the GDAL supported raster dataset for the input DEM"
+                },
+                {
+                    "displayName": "Mask File",
+                    "name": "mask_file",
+                    "type": "file",
+                    "description": "path to a binary or classified raster, co-registered with the DEM, whose regions are burned into the DEM"
+                },
+                {
+                    "displayName": "Output File",
+                    "name": "output_file",
+                    "type": "file",
+                    "description": "path to the output file (must be GeoTiff)",
+                    "direction": "output"
+                },
+                {
+                    "displayName": "Method",
+                    "name": "method",
+                    "type": "string",
+                    "description": "how to choose the elevation to burn: constant, relative, or statistic",
+                    "defaultValue": "statistic"
+                },
+                {
+                    "displayName": "Burn Values",
+                    "name": "burn_values",
+                    "type": "string",
+                    "description": "required for the constant and relative methods: a mapping of mask value to burn value such as '1:225.5,3:210.0', or a single number applied to every selected mask value"
+                },
+                {
+                    "displayName": "Mask Values",
+                    "name": "mask_values",
+                    "type": "string",
+                    "description": "comma separated mask values identifying regions, such as '1,3'. Defaults to the keys of burn values, or to every non zero, non nodata mask value"
+                },
+                {
+                    "displayName": "Statistic",
+                    "name": "statistic",
+                    "type": "string",
+                    "description": "only used with the statistic method: the statistic computed per region, one of min, max, mean",
+                    "defaultValue": "min"
+                },
+                {
+                    "displayName": "Burn Offset",
+                    "name": "burn_offset",
+                    "type": "float",
+                    "description": "only used with the statistic method: subtracted from each region's statistic",
+                    "defaultValue": 0.0
+                },
+                {
+                    "displayName": "Connectivity",
+                    "name": "connectivity",
+                    "type": "string",
+                    "description": "8 treats diagonally touching cells as one region, 4 requires a shared edge",
+                    "defaultValue": "8"
+                },
+                {
+                    "displayName": "Chunk Size",
+                    "name": "chunk_size",
+                    "type": "integer",
+                    "description": "chunk size for tiled operations",
+                    "defaultValue": 2048
+                },
+                {
+                    "displayName": "Working Directory",
+                    "name": "working_dir",
+                    "type": "directory",
+                    "description": "path to the working directory used for temporary files"
+                }
+            ]
+        },
+        {
             "name": "Fill",
             "path": "overflow",
             "cmd": [

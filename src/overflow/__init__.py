@@ -2,6 +2,7 @@
 Overflow - High-performance Python library for hydrological terrain analysis.
 
 - breach: Breach pits using least-cost paths
+- burn: Burn mask regions into a DEM
 - fill: Fill depressions in a DEM
 - flow_direction: Compute D8 flow directions and resolve flats
 - accumulation: Calculate flow accumulation
@@ -19,6 +20,11 @@ from overflow._basins.core import (
 )
 from overflow._basins.tiled import _label_watersheds_tiled
 from overflow._breach_paths_least_cost import _breach_paths_least_cost
+from overflow._burn_mask.core import _burn_mask_core
+from overflow._burn_mask.core import (
+    resolve_burn_arguments as _resolve_burn_arguments,
+)
+from overflow._burn_mask.tiled import _burn_mask_tiled
 from overflow._extract_streams.core import _extract_streams_core
 from overflow._extract_streams.tiled import _extract_streams_tiled
 from overflow._fill_depressions.core import _fill_depressions
@@ -43,7 +49,7 @@ from overflow._util.raster import (
 )
 from overflow.codes import FlowDirection
 
-__version__ = "0.4.0"
+__version__ = "0.5.0"
 
 
 def breach(
@@ -74,6 +80,102 @@ def breach(
     _breach_paths_least_cost(
         input_path, output_path, chunk_size, search_radius, max_cost, progress_callback
     )
+
+
+def burn(
+    dem_path: str,
+    mask_path: str,
+    output_path: str,
+    method: str,
+    mask_values: str | list | tuple | None = None,
+    burn_values: str | float | dict | None = None,
+    statistic: str = "min",
+    burn_offset: float = 0.0,
+    connectivity: int = 8,
+    chunk_size: int = DEFAULT_CHUNK_SIZE,
+    working_dir: str | None = None,
+    progress_callback: ProgressCallback | None = None,
+) -> None:
+    """
+    Burn elevations into a DEM inside the regions of a mask raster.
+
+    A region is a maximal connected set of cells that share the same mask value and
+    whose value is selected. Cells of two different selected values stay in separate
+    regions even where they touch. The statistic method gives each contiguous region
+    its own statistic, computed over whole regions even when they straddle tiles.
+
+    Args:
+        dem_path: Path to the input DEM raster file.
+        mask_path: Path to a binary or classified mask raster, co-registered with
+            the DEM (same shape and geotransform).
+        output_path: Path for the output burned DEM raster file. Its data type and
+            nodata value are carried over from the input DEM, so fractional burn
+            values are truncated when the DEM has an integer type.
+        method: How to choose the elevation to burn. "constant" writes the burn
+            value for the cell's mask value. "relative" subtracts the burn value
+            from the DEM, preserving relief inside the region. "statistic" writes
+            each region's own statistic of the DEM beneath it.
+        mask_values: Which mask values identify regions, as a comma separated
+            string such as "1,3" or a sequence. If None, the keys of burn_values
+            are used; if those are absent too, every non zero, non nodata mask
+            value is selected and each distinct value still forms its own regions.
+        burn_values: Required for the constant and relative methods, ignored by the
+            statistic method. Either a mapping of mask value to burn value, given
+            as a string such as "1:225.5,3:210.0" or as a dict, or a single number
+            applied to every selected mask value.
+        statistic: Which statistic the statistic method computes per region, one of
+            "min", "max" or "mean". Default is "min".
+        burn_offset: Subtracted from each computed statistic, so
+            statistic="min" with burn_offset=1.0 writes each region's minimum
+            elevation less one. Only used by the statistic method. Default is 0.0.
+        connectivity: 8 (default) to treat diagonally touching cells as one region,
+            or 4 to require a shared edge.
+        chunk_size: Size of processing chunks in pixels. Use chunk_size <= 1 for
+            in-memory processing. Default is 2048.
+        working_dir: Directory for temporary files during tiled processing with the
+            statistic method. If None, uses system temp directory.
+        progress_callback: Optional callback function for progress reporting.
+            Receives a float value between 0 and 1.
+
+    Raises:
+        ValueError: If the DEM and mask are not co-registered, if the DEM has no
+            nodata value, or if any of the method, statistic, connectivity, mask
+            value or burn value arguments are unrecognized or inconsistent.
+
+    Note:
+        DEM nodata cells are never written and are excluded from region statistics.
+        A region lying entirely over DEM nodata is left untouched.
+    """
+    _validate_raster_compatibility(dem_path, mask_path)
+    method_flag, selection, statistic_flag, neighbor_offsets = _resolve_burn_arguments(
+        mask_path, method, mask_values, burn_values, statistic, connectivity
+    )
+    if chunk_size <= 1:
+        _burn_mask_core(
+            dem_path,
+            mask_path,
+            output_path,
+            method_flag,
+            selection,
+            statistic_flag,
+            burn_offset,
+            neighbor_offsets,
+        )
+    else:
+        _burn_mask_tiled(
+            dem_path,
+            mask_path,
+            output_path,
+            method_flag,
+            selection,
+            statistic_flag,
+            burn_offset,
+            neighbor_offsets,
+            connectivity,
+            chunk_size,
+            working_dir,
+            progress_callback,
+        )
 
 
 def fill(
@@ -363,6 +465,7 @@ def flow_length(
 __all__ = [
     # Core functions
     "breach",
+    "burn",
     "fill",
     "flow_direction",
     "accumulation",

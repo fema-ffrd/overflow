@@ -218,49 +218,70 @@ class GlobalState:
         return PerimeterData(labels, elevations)
 
     def connect_tile_edges_and_corners(self):
-        """Combine the spillover graphs of all tiles into a single global graph."""
-        for row_index in range(self.num_rows - 1):
-            for col_index in range(self.num_cols - 1):
-                # + - - + - - +
-                # |  A  |  B  |
-                # + - - * - - +
-                # |  C  |  D  |
-                # + - - + - - +
-                tile_index_a = self._row_col_to_tile_index(row_index, col_index)
-                tile_index_b = self._row_col_to_tile_index(row_index, col_index + 1)
-                tile_index_c = self._row_col_to_tile_index(row_index + 1, col_index)
-                tile_index_d = self._row_col_to_tile_index(row_index + 1, col_index + 1)
-                perimeter_data_a = self._get_tile_perimeter(tile_index_a)
-                perimeter_data_b = self._get_tile_perimeter(tile_index_b)
-                perimeter_data_c = self._get_tile_perimeter(tile_index_c)
-                perimeter_data_d = self._get_tile_perimeter(tile_index_d)
+        """Combine the spillover graphs of all tiles into a single global graph.
 
-                # Connect A-B, A-C, D-B, D-C edges
-                self._combine_edge(
-                    perimeter_data_a, Side.RIGHT, perimeter_data_b, Side.LEFT
-                )
-                self._combine_edge(
-                    perimeter_data_a, Side.BOTTOM, perimeter_data_c, Side.TOP
-                )
-                self._combine_edge(
-                    perimeter_data_d, Side.TOP, perimeter_data_b, Side.BOTTOM
-                )
-                self._combine_edge(
-                    perimeter_data_d, Side.LEFT, perimeter_data_c, Side.RIGHT
-                )
-                # Connect A-D and B-C corners
-                self._combine_corner(
-                    perimeter_data_a,
-                    Corner.BOTTOM_RIGHT,
-                    perimeter_data_d,
-                    Corner.TOP_LEFT,
-                )
-                self._combine_corner(
-                    perimeter_data_b,
-                    Corner.BOTTOM_LEFT,
-                    perimeter_data_c,
-                    Corner.TOP_RIGHT,
-                )
+        Walks every tile and joins it to the tile on its east and the tile on its
+        south, plus the two diagonal pairs meeting at its southeastern corner:
+
+        + - - + - - +
+        |  A  |  B  |
+        + - - * - - +
+        |  C  |  D  |
+        + - - + - - +
+
+        A joins B across a vertical seam and C across a horizontal one; the corner
+        joins A-D and B-C cover the diagonal adjacencies at the point marked *,
+        which no edge scan reaches. Every adjacency in the tile grid is covered
+        exactly once.
+
+        The bounds guards are load bearing. Iterating a 2x2 block over
+        range(num_rows - 1) x range(num_cols - 1) instead visits nothing at all
+        when the tile grid is a single tile row or column, which silently leaves
+        every seam unjoined and fills straddling depressions to the wrong level.
+        """
+        for row_index in range(self.num_rows):
+            for col_index in range(self.num_cols):
+                tile_index_a = self._row_col_to_tile_index(row_index, col_index)
+                perimeter_data_a = self._get_tile_perimeter(tile_index_a)
+                has_east = col_index + 1 < self.num_cols
+                has_south = row_index + 1 < self.num_rows
+
+                if has_east:
+                    perimeter_data_b = self._get_tile_perimeter(
+                        self._row_col_to_tile_index(row_index, col_index + 1)
+                    )
+                    self._combine_edge(
+                        perimeter_data_a, Side.RIGHT, perimeter_data_b, Side.LEFT
+                    )
+                if has_south:
+                    perimeter_data_c = self._get_tile_perimeter(
+                        self._row_col_to_tile_index(row_index + 1, col_index)
+                    )
+                    self._combine_edge(
+                        perimeter_data_a, Side.BOTTOM, perimeter_data_c, Side.TOP
+                    )
+                if has_east and has_south:
+                    perimeter_data_b = self._get_tile_perimeter(
+                        self._row_col_to_tile_index(row_index, col_index + 1)
+                    )
+                    perimeter_data_c = self._get_tile_perimeter(
+                        self._row_col_to_tile_index(row_index + 1, col_index)
+                    )
+                    perimeter_data_d = self._get_tile_perimeter(
+                        self._row_col_to_tile_index(row_index + 1, col_index + 1)
+                    )
+                    self._combine_corner(
+                        perimeter_data_a,
+                        Corner.BOTTOM_RIGHT,
+                        perimeter_data_d,
+                        Corner.TOP_LEFT,
+                    )
+                    self._combine_corner(
+                        perimeter_data_b,
+                        Corner.BOTTOM_LEFT,
+                        perimeter_data_c,
+                        Corner.TOP_RIGHT,
+                    )
 
     def _combine_edge(
         self,

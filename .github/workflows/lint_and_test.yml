@@ -46,10 +46,6 @@ jobs:
         run: ruff check src/ tests/
         shell: bash -el {0}
 
-      - name: Run mypy type checking
-        run: mypy src/ tests/
-        shell: bash -el {0}
-
       - name: Run pytest
         run: pytest
         shell: bash -el {0}

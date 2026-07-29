@@ -8,6 +8,10 @@ This reference documents the Python API for the `overflow` library.
     options:
       heading_level: 3
 
+::: overflow.burn
+    options:
+      heading_level: 3
+
 ::: overflow.fill
     options:
       heading_level: 3

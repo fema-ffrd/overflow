@@ -44,7 +44,12 @@ def gdal_data_type_to_numpy_data_type(gdal_dtype: int) -> np.dtype:
 
 
 def read_raster_with_bounds_handling(
-    x_offset: int, y_offset: int, x_size: int, y_size: int, raster_band: gdal.Band
+    x_offset: int,
+    y_offset: int,
+    x_size: int,
+    y_size: int,
+    raster_band: gdal.Band,
+    fill_value: float | None = None,
 ) -> np.ndarray:
     """Read a chunk of a raster band and return it as a numpy array. This function allows for reading
        out of bounds regions. If the window, or part of the window, extends beyond the edge of the raster,
@@ -56,6 +61,10 @@ def read_raster_with_bounds_handling(
         x_size (int): The number of columns in the chunk.
         y_size (int): The number of rows in the chunk.
         raster_band (gdal.Band): The raster band to read from.
+        fill_value (float | None): Value used to pad out of bounds regions. If None
+            (the default) the band's nodata value is used and the band is required to
+            have one. Pass an explicit value to read bands without a nodata value,
+            such as binary mask rasters.
 
     Returns:
         np.ndarray: The chunk of the raster band as a numpy array. The shape of the array will be: (y_size, x_size).
@@ -63,7 +72,7 @@ def read_raster_with_bounds_handling(
     assert x_size >= 0, "x_size must be positive"
     assert y_size >= 0, "y_size must be positive"
     # Get the no data value from the raster band
-    no_data_value = raster_band.GetNoDataValue()
+    no_data_value = raster_band.GetNoDataValue() if fill_value is None else fill_value
     assert no_data_value is not None, "The raster band has no no data value"
     # Get the GDAL data type from the raster band
     gdal_dtype = raster_band.DataType
@@ -135,7 +144,7 @@ class RasterChunk:
         """
         self.data = data
 
-    def read(self, band: gdal.Band):
+    def read(self, band: gdal.Band, fill_value: float | None = None):
         """Read a chunk of a raster band including an overlapping buffer region on all edges.
            If part of the chunk, including the buffer region, extends beyond the edge of the raster,
            the out of bounds region will be filled with nodata. The chunk will be stored as a numpy array
@@ -143,13 +152,16 @@ class RasterChunk:
 
         Args:
             band (gdal.Band): The raster band to read from.
+            fill_value (float | None): Value used to pad out of bounds regions. If None
+                (the default) the band's nodata value is used and the band is required
+                to have one.
         """
         x_offset = self.col * self.size - self.buffer_size
         y_offset = self.row * self.size - self.buffer_size
         x_size = self.size + 2 * self.buffer_size
         y_size = self.size + 2 * self.buffer_size
         self.data = read_raster_with_bounds_handling(
-            x_offset, y_offset, x_size, y_size, band
+            x_offset, y_offset, x_size, y_size, band, fill_value
         )
 
     def _get_unbuffered_data(self, band: gdal.Band) -> np.ndarray:

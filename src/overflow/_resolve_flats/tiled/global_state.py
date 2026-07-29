@@ -62,8 +62,9 @@ class GlobalState:
         """
         Complete the global graph by joining adjacent tiles.
 
-        This method iterates over each pair of adjacent tiles in the DEM and joins their
-        edges and corners using the `join_adjacent_tiles` method of the global graph.
+        This method walks every tile and joins it to the tile on its east and the
+        tile on its south, plus the two diagonal pairs meeting at its southeastern
+        corner. Every adjacency in the tile grid is covered exactly once.
 
         The adjacent tiles are represented as follows:
         + - - + - - +
@@ -71,22 +72,38 @@ class GlobalState:
         + - - * - - +
         |  C  |  D  |
         + - - + - - +
+
+        The bounds guards are load bearing. Iterating a 2x2 block over
+        range(tile_rows - 1) x range(tile_cols - 1) instead visits nothing at all
+        when the tile grid is a single tile row or column, silently leaving every
+        seam unjoined so flats straddling a tile boundary are resolved as if they
+        ended there.
         """
-        for tile_row in range(self.graph.tile_rows - 1):
-            for tile_col in range(self.graph.tile_cols - 1):
+        for tile_row in range(self.graph.tile_rows):
+            for tile_col in range(self.graph.tile_cols):
                 elevations_a = self.elevations[self._get_tile_index(tile_row, tile_col)]
-                elevations_b = self.elevations[
-                    self._get_tile_index(tile_row, tile_col + 1)
-                ]
-                elevations_c = self.elevations[
-                    self._get_tile_index(tile_row + 1, tile_col)
-                ]
-                elevations_d = self.elevations[
-                    self._get_tile_index(tile_row + 1, tile_col + 1)
-                ]
-                self.graph.join_adjacent_tiles(
-                    elevations_a, elevations_b, elevations_c, elevations_d
-                )
+                has_east = tile_col + 1 < self.graph.tile_cols
+                has_south = tile_row + 1 < self.graph.tile_rows
+
+                if has_east:
+                    self.graph.join_east_neighbor(
+                        elevations_a,
+                        self.elevations[self._get_tile_index(tile_row, tile_col + 1)],
+                    )
+                if has_south:
+                    self.graph.join_south_neighbor(
+                        elevations_a,
+                        self.elevations[self._get_tile_index(tile_row + 1, tile_col)],
+                    )
+                if has_east and has_south:
+                    self.graph.join_diagonal_neighbors(
+                        elevations_a,
+                        self.elevations[self._get_tile_index(tile_row, tile_col + 1)],
+                        self.elevations[self._get_tile_index(tile_row + 1, tile_col)],
+                        self.elevations[
+                            self._get_tile_index(tile_row + 1, tile_col + 1)
+                        ],
+                    )
 
 
 @njit(nogil=True)

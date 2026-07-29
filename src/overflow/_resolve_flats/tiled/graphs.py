@@ -242,7 +242,33 @@ class GlobalGraph:
             )
             self._join_neighbors(global_index_a, global_index_b)
 
-    def join_adjacent_tiles(
+    def join_east_neighbor(
+        self, elevations_a: Float32Perimeter, elevations_b: Float32Perimeter
+    ):
+        """
+        Join a tile to the tile on its east across their shared vertical edge.
+
+        Args:
+            elevations_a (Float32Perimeter): The elevation perimeter of the tile.
+            elevations_b (Float32Perimeter): The elevation perimeter of its eastern
+                neighbor.
+        """
+        self._handle_edge(elevations_a, elevations_b, Side.RIGHT, Side.LEFT)
+
+    def join_south_neighbor(
+        self, elevations_a: Float32Perimeter, elevations_c: Float32Perimeter
+    ):
+        """
+        Join a tile to the tile on its south across their shared horizontal edge.
+
+        Args:
+            elevations_a (Float32Perimeter): The elevation perimeter of the tile.
+            elevations_c (Float32Perimeter): The elevation perimeter of its southern
+                neighbor.
+        """
+        self._handle_edge(elevations_a, elevations_c, Side.BOTTOM, Side.TOP)
+
+    def join_diagonal_neighbors(
         self,
         elevations_a: Float32Perimeter,
         elevations_b: Float32Perimeter,
@@ -250,7 +276,7 @@ class GlobalGraph:
         elevations_d: Float32Perimeter,
     ):
         """
-        Join adjacent tiles in the global graph.
+        Join the two diagonal pairs meeting at the point where four tiles touch.
 
         Args:
             elevations_a (Float32Perimeter): The elevation perimeter of tile A.
@@ -264,15 +290,11 @@ class GlobalGraph:
         + - - * - - +
         |  C  |  D  |
         + - - + - - +
+
+        Only the A-D and B-C diagonals at the point marked * need handling here.
+        Every other diagonal adjacency along a seam is already covered by the edge
+        joins, which compare each cell against its neighbor's i-1, i and i+1.
         """
-        # connect edge A-B
-        self._handle_edge(elevations_a, elevations_b, Side.RIGHT, Side.LEFT)
-        # connect edge B-D
-        self._handle_edge(elevations_b, elevations_d, Side.BOTTOM, Side.TOP)
-        # connect edge D-C
-        self._handle_edge(elevations_d, elevations_c, Side.LEFT, Side.RIGHT)
-        # connect edge C-A
-        self._handle_edge(elevations_c, elevations_a, Side.TOP, Side.BOTTOM)
         # connect corner A-D
         self._handle_corner(
             elevations_a, elevations_d, Corner.BOTTOM_RIGHT, Corner.TOP_LEFT

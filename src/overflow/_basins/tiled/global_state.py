@@ -72,9 +72,12 @@ class GlobalState:
         Handles the flow direction and watershed connections at a corner between two tiles.
     - _handle_edge(self, tile_a: TileEdgeData, tile_b: TileEdgeData, side_a: Side):
         Handles the flow direction and watershed connections at an edge between two tiles.
-    - _join_adjacent_tiles(self, tile_a: TileEdgeData, tile_b: TileEdgeData, tile_c: TileEdgeData,
-        tile_d: TileEdgeData): Joins the adjacent tiles by handling the flow direction and watershed connections at
-        their edges and corners.
+    - _join_east_neighbor(self, tile_a: TileEdgeData, tile_b: TileEdgeData):
+        Joins a tile to the tile on its east across their shared vertical edge.
+    - _join_south_neighbor(self, tile_a: TileEdgeData, tile_c: TileEdgeData):
+        Joins a tile to the tile on its south across their shared horizontal edge.
+    - _join_diagonal_neighbors(self, tile_a: TileEdgeData, tile_b: TileEdgeData, tile_c: TileEdgeData,
+        tile_d: TileEdgeData): Joins the two diagonal pairs meeting where four tiles touch.
     - complete_graph(self):
         Completes the graph of watershed connections by iterating over all tiles and joining adjacent tiles.
     """
@@ -194,7 +197,24 @@ class GlobalState:
                     tile_b.watershed.get_side(side_b)[i - 1]
                 )
 
-    def _join_adjacent_tiles(
+    def _join_east_neighbor(self, tile_a: TileEdgeData, tile_b: TileEdgeData):
+        """
+        Connect a tile to the tile on its east across their shared vertical edge.
+
+        Handled in both directions because a watershed link is directional: it is
+        recorded only where a cell's flow direction actually crosses the seam.
+        """
+        self._handle_edge(tile_a, tile_b, Side.RIGHT)
+        self._handle_edge(tile_b, tile_a, Side.LEFT)
+
+    def _join_south_neighbor(self, tile_a: TileEdgeData, tile_c: TileEdgeData):
+        """
+        Connect a tile to the tile on its south across their shared horizontal edge.
+        """
+        self._handle_edge(tile_a, tile_c, Side.BOTTOM)
+        self._handle_edge(tile_c, tile_a, Side.TOP)
+
+    def _join_diagonal_neighbors(
         self,
         tile_a: TileEdgeData,
         tile_b: TileEdgeData,
@@ -202,41 +222,53 @@ class GlobalState:
         tile_d: TileEdgeData,
     ):
         """
-        Connect the edges and corners of adjacent tiles.
-        Between the four adjacent tiles, the connections are as follows:
+        Connect the two diagonal pairs meeting where four tiles touch.
+
         + - - + - - +
         |  A  |  B  |
         + - - * - - +
         |  C  |  D  |
         + - - + - - +
-        A and B are connected at their adjacent edge.
-        B and D are connected at their adjacent edge.
-        D and C are connected at their adjacent edge.
-        C and A are connected at their adjacent edge.
-        A and D are connected at their corners.
-        C and B are connected at their corners.
+
+        A and D are connected at their corners, as are C and B. Every other
+        diagonal adjacency is already covered by the edge joins.
         """
         self._handle_corner(tile_a, tile_d, Corner.BOTTOM_RIGHT)
         self._handle_corner(tile_d, tile_a, Corner.TOP_LEFT)
         self._handle_corner(tile_b, tile_c, Corner.BOTTOM_LEFT)
         self._handle_corner(tile_c, tile_b, Corner.TOP_RIGHT)
-        self._handle_edge(tile_a, tile_b, Side.RIGHT)
-        self._handle_edge(tile_b, tile_a, Side.LEFT)
-        self._handle_edge(tile_c, tile_d, Side.RIGHT)
-        self._handle_edge(tile_d, tile_c, Side.LEFT)
-        self._handle_edge(tile_a, tile_c, Side.BOTTOM)
-        self._handle_edge(tile_c, tile_a, Side.TOP)
-        self._handle_edge(tile_b, tile_d, Side.BOTTOM)
-        self._handle_edge(tile_d, tile_b, Side.TOP)
 
     def complete_graph(self):
         """
         Complete the global graph by joining adjacent tiles.
+
+        Walks every tile and joins it to its eastern and southern neighbors plus
+        the two diagonal pairs at its southeastern corner, so every adjacency in
+        the tile grid is covered exactly once.
+
+        The bounds guards are load bearing. Iterating a 2x2 block over
+        range(tile_rows - 1) x range(tile_cols - 1) instead visits nothing at all
+        when the tile grid is a single tile row or column, silently leaving every
+        seam unjoined so basins are cut off at tile boundaries.
         """
-        for tile_row in range(self.tile_rows - 1):
-            for tile_col in range(self.tile_cols - 1):
+        for tile_row in range(self.tile_rows):
+            for tile_col in range(self.tile_cols):
                 tile_a = self._get_tile_edge_data(tile_row, tile_col)
-                tile_b = self._get_tile_edge_data(tile_row, tile_col + 1)
-                tile_c = self._get_tile_edge_data(tile_row + 1, tile_col)
-                tile_d = self._get_tile_edge_data(tile_row + 1, tile_col + 1)
-                self._join_adjacent_tiles(tile_a, tile_b, tile_c, tile_d)
+                has_east = tile_col + 1 < self.tile_cols
+                has_south = tile_row + 1 < self.tile_rows
+
+                if has_east:
+                    self._join_east_neighbor(
+                        tile_a, self._get_tile_edge_data(tile_row, tile_col + 1)
+                    )
+                if has_south:
+                    self._join_south_neighbor(
+                        tile_a, self._get_tile_edge_data(tile_row + 1, tile_col)
+                    )
+                if has_east and has_south:
+                    self._join_diagonal_neighbors(
+                        tile_a,
+                        self._get_tile_edge_data(tile_row, tile_col + 1),
+                        self._get_tile_edge_data(tile_row + 1, tile_col),
+                        self._get_tile_edge_data(tile_row + 1, tile_col + 1),
+                    )
